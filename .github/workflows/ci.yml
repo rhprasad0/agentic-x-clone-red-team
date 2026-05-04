@@ -1,0 +1,53 @@
+name: Public Artifact Checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Required scaffold files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f SPEC.md
+          test -f THREAT_MODEL.md
+          test -f RED_TEAM_HARNESS.md
+          test -f docker-compose.yml
+          test -f .env.example
+          test -f docs/architecture.md
+          test -f docs/resume-blurb.md
+          test -f docs/red-team-scenarios.md
+          test -f scripts/public_safety_scan.py
+
+      - name: Markdown tabs check
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files -z -- '*.md' | xargs -0 grep -n $'\t'; then
+            echo "Markdown files should not contain tab characters."
+            exit 1
+          fi
+
+      - name: Basic public-safety grep
+        shell: bash
+        run: |
+          set -euo pipefail
+          pattern='(/[h]ome/|/[U]sers/|AKI[A-Z0-9]{16}|s[k]-[A-Za-z0-9]{20,}|xo[x][A-Za-z]-[A-Za-z0-9-]{20,})'
+          if git ls-files -z --cached --others --exclude-standard | xargs -0 grep -IEn "$pattern"; then
+            echo "Potential secret, private path, or unsafe public artifact found."
+            exit 1
+          fi
+
+      - name: Python public-safety scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/public_safety_scan.py .
+

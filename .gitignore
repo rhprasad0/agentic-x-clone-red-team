@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Next.js and build output
+.next/
+out/
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local caches and tooling
+.cache/
+.turbo/
+.vercel/
+.DS_Store
+Thumbs.db
+
+# Local prompt scratch files
+codex-bootstrap-prompt.md
+
