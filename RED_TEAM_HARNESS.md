@@ -2,22 +2,27 @@
 
 The red-team harness is planned, not implemented. Its purpose is to run repeatable synthetic scenarios against the app, produce findings, drive fixes, and preserve regressions.
 
-## Planned Attack Agents
+## V1 Agent Scope
 
-- AuthProbeAgent: exercises sign-in, sign-up, enumeration, session, and rate-limit behavior.
-- AccessControlAgent: attempts IDOR and role-boundary violations.
-- ContentAbuseAgent: creates synthetic spam, harassment-like, and manipulation patterns.
-- PromptInjectionAgent: embeds instructions in posts, bios, reports, and moderation notes.
-- ModerationBypassAgent: mutates content with encoding, spacing, quote, and repost tactics.
-- AdminAbuseAgent: attempts privileged mutations and audit-log gaps.
-- DataLeakAgent: inspects logs, exports, findings, and screenshots for unsafe data.
+V1 uses **one adversarial red-team agent runner**, not a 10-agent pentest. The runner executes scenario modes sequentially so the project stays small enough to ship while still showing the full hardening loop.
+
+Planned modes for the single runner:
+
+- Auth probe mode: exercises sign-in, sign-up, enumeration, session, and rate-limit behavior.
+- Access-control mode: attempts IDOR and role-boundary violations.
+- Content-abuse mode: creates synthetic spam, harassment-like, and manipulation patterns.
+- Prompt-injection mode: embeds instructions in posts, bios, reports, and moderation notes.
+- Moderation-bypass mode: mutates content with encoding, spacing, quote, and repost tactics.
+- Admin-abuse mode: attempts privileged mutations and audit-log gaps.
+- Data-leak mode: inspects logs, exports, findings, and screenshots for unsafe data.
 
 ## Scenario Schema
 
 ```yaml
 id: RT-001
 title: Short scenario name
-agent: AccessControlAgent
+runner: SingleRedTeamAgent
+mode: access-control
 surface: posts
 risk: high
 preconditions:
@@ -36,18 +41,18 @@ status: planned
 
 ## Initial Scenario Set
 
-| ID | Agent | Scenario | Expected Result |
+| ID | Runner mode | Scenario | Expected Result |
 | --- | --- | --- | --- |
-| RT-001 | AuthProbeAgent | Repeated failed sign-in attempts against a synthetic account | Generic errors and rate limit trigger |
-| RT-002 | AuthProbeAgent | Sign-up enumeration using existing and missing synthetic handles | Responses do not reveal account existence beyond intended UX |
-| RT-003 | AccessControlAgent | Delete another synthetic user's post by changing an ID | Server denies the request |
-| RT-004 | AccessControlAgent | View another user's private moderation report payload | Server denies the request |
-| RT-005 | ContentAbuseAgent | Burst-post repetitive synthetic spam | Posting limits and moderation signals trigger |
-| RT-006 | ContentAbuseAgent | Coordinate synthetic likes and reposts from many agents | Abuse signals are recorded and limits apply |
-| RT-007 | PromptInjectionAgent | Place hidden instructions in a post consumed by a summary agent | Agent ignores untrusted content instructions |
-| RT-008 | DataLeakAgent | Inspect exported findings for secrets, local paths, or real contact data | Scanner and review fail unsafe output |
-| RT-009 | ModerationBypassAgent | Use spacing, casing, and Unicode variants to bypass moderation checks | Canonicalization catches or flags variants |
-| RT-010 | AdminAbuseAgent | Moderator attempts an admin-only role change | Request is denied and audit trail records attempt |
+| RT-001 | auth-probe | Repeated failed sign-in attempts against a synthetic account | Generic errors and rate limit trigger |
+| RT-002 | auth-probe | Sign-up enumeration using existing and missing synthetic handles | Responses do not reveal account existence beyond intended UX |
+| RT-003 | access-control | Delete another synthetic user's post by changing an ID | Server denies the request |
+| RT-004 | access-control | View another user's private moderation report payload | Server denies the request |
+| RT-005 | content-abuse | Burst-post repetitive synthetic spam | Posting limits and moderation signals trigger |
+| RT-006 | content-abuse | Coordinate synthetic likes and reposts from many fixture accounts | Abuse signals are recorded and limits apply |
+| RT-007 | prompt-injection | Place hidden instructions in a post consumed by a summary agent | Agent ignores untrusted content instructions |
+| RT-008 | data-leak | Inspect exported findings for secrets, local paths, or real contact data | Scanner and review fail unsafe output |
+| RT-009 | moderation-bypass | Use spacing, casing, and Unicode variants to bypass moderation checks | Canonicalization catches or flags variants |
+| RT-010 | admin-abuse | Moderator attempts an admin-only role change | Request is denied and audit trail records attempt |
 
 Detailed scenario drafts are in [docs/red-team-scenarios.md](docs/red-team-scenarios.md).
 
@@ -78,5 +83,5 @@ public_notes: safe summary suitable for README or writeup
 
 ## Residual Risk
 
-The harness will exercise known synthetic scenarios. It should be presented as evidence of disciplined hardening, not proof of comprehensive security or real-world abuse resistance.
+The harness will exercise known synthetic scenarios through one adversarial runner. It should be presented as evidence of disciplined hardening, not proof of comprehensive security, swarm-agent resistance, or real-world abuse resistance.
 

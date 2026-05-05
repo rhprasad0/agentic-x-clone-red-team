@@ -2,9 +2,9 @@
 
 ## Scope
 
-Build a synthetic X/Twitter-style application and red-team harness that demonstrates a full agentic hardening workflow. The system should support fictional users, posts, social interactions, moderation workflows, and controlled attack simulations.
+Build a synthetic X/Twitter-style application and single-agent red-team harness that demonstrates a full agentic hardening workflow. The system should support fictional users, posts, social interactions, moderation workflows, and controlled attack simulations.
 
-The V1 goal is not feature parity with X/Twitter. The goal is a credible product surface large enough to exercise authentication, authorization, content moderation, rate limits, prompt-injection defenses, and admin controls.
+The V1 goal is not feature parity with X/Twitter and not a 10-agent pentest. The goal is a credible product surface large enough for one adversarial agent runner to exercise authentication, authorization, content moderation, rate limits, prompt-injection defenses, and admin controls.
 
 ## Non-Goals
 
@@ -13,6 +13,7 @@ The V1 goal is not feature parity with X/Twitter. The goal is a credible product
 - No recommendation algorithm beyond simple deterministic ranking in V1.
 - No payment flows, private messaging, ad targeting, or third-party contact import in V1.
 - No claim that synthetic red-team coverage proves comprehensive security.
+- No 10-agent swarm benchmark in V1; the first hardening loop uses one adversarial red-team agent runner.
 
 ## User Model
 
@@ -22,8 +23,8 @@ Planned synthetic roles:
 - Member: authenticated synthetic account that can post, follow, like, repost, and report.
 - Moderator: synthetic reviewer that can inspect reports and apply moderation actions.
 - Admin: privileged operator role for configuration and audit review.
-- Activity agent: controlled synthetic actor used to generate traffic and test behaviors.
-- Attack agent: controlled adversarial actor used by the red-team harness.
+- Activity generator: controlled synthetic fixture runner used to generate traffic and test behaviors.
+- Red-team agent runner: one controlled adversarial actor used by the red-team harness. It can switch between scenario modes, but it remains a single runner for V1.
 
 Synthetic users should use fictional names, handles, avatars, and content. Test fixtures must be deterministic enough for regression tests.
 
@@ -47,7 +48,13 @@ Synthetic users should use fictional names, handles, avatars, and content. Test 
 - Rate limits are applied to high-risk routes.
 - Moderation actions are auditable.
 - Synthetic activity can be generated from deterministic fixtures.
-- Red-team scenarios can be executed repeatedly and mapped to findings.
+- Single-agent red-team scenarios can be executed repeatedly and mapped to findings.
 - Each accepted finding has a fix, regression test, or documented residual-risk note.
 - Public docs avoid claims of production readiness before implementation evidence exists.
+
+## Deployment Scope
+
+V1 starts local-first with Docker Compose for Postgres and Redis. A production-like AWS/EKS deployment is a later credibility layer once the app and single-agent loop exist.
+
+The future EKS baseline should be bounded: 2-AZ VPC, public ALB, private workers, EKS Auto Mode or a small managed node group, ECR immutable images, Secrets Manager integration, IRSA or Pod Identity, CloudWatch logging/metrics, and explicit cost guardrails.
 

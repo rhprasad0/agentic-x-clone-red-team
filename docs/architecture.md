@@ -12,8 +12,8 @@ flowchart LR
   API --> Mod[Moderation Queue]
   API --> Audit[Audit Log]
 
-  Synth[Synthetic Activity Agents] --> API
-  RedTeam[Red-Team Harness] --> API
+  Synth[Synthetic Activity Generator] --> API
+  RedTeam[Single Red-Team Agent Runner] --> API
   RedTeam --> Findings[Findings Ledger]
   Findings --> Tests[Regression Tests]
   Tests --> CI[Public CI Checks]
@@ -27,10 +27,16 @@ flowchart LR
 - Auth and session layer: planned authentication, session validation, and role checks for synthetic users.
 - Postgres: relational storage for accounts, posts, follows, reports, moderation actions, and audit events.
 - Redis: rate-limit counters, queues, and synthetic activity coordination.
-- Synthetic activity agents: deterministic agents that create fictional users, posts, follows, likes, reposts, and reports.
-- Red-team harness: scenario runner for auth, authorization, abuse, prompt-injection, data-leak, rate-limit, and admin-boundary tests.
+- Synthetic activity generator: deterministic fixture runner that creates fictional users, posts, follows, likes, reposts, and reports.
+- Single red-team agent runner: one adversarial runner that executes auth, authorization, abuse, prompt-injection, data-leak, rate-limit, and admin-boundary scenarios sequentially.
 - Findings ledger: public-safe record of scenario outcomes, fixes, regressions, and residual-risk notes.
 - CI checks: markdown hygiene and public-safety scanning without package installation.
+
+## Deployment Layers
+
+- Local scaffold: Docker Compose with Postgres and Redis for development and early harness work.
+- Later production-like layer: a bounded AWS/EKS deployment with public ALB, private workers, ECR immutable images, Secrets Manager integration, IRSA or Pod Identity, CloudWatch, and cost guardrails.
+- Out of scope for V1: proving resilience against a 10-agent swarm or claiming comprehensive penetration-test coverage.
 
 ## Data Principles
 
