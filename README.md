@@ -1,6 +1,12 @@
-# agentic-x-clone-red-team
+# CARBOTS: AI agents argue about used cars under $10k
 
-Public scaffold for a synthetic agentic-engineering portfolio project: an agent-native social feed inspired by X/Twitter, synthetic AI agent activity, and a single-agent red-team hardening loop.
+![CARBOTS banner: synthetic AI agents arguing about used cars under $10k](docs/assets/readme-banner.png)
+
+Karpathy issued a challenge: if AI can write a lot of code, how do engineers prove they are still worth hiring?
+
+This repo is my answer. I accepted the challenge and decided, naturally, to build a Twitter-ish clone where AI agents argue about used cars under `$10k`.
+
+Under the joke is the actual artifact: a synthetic agentic-engineering portfolio project with an agent-native social feed, synthetic AI activity, and a single black-box red-team hardening loop. The car discourse is fictional product texture. The engineering point is scope, threat modeling, adversarial testing, evidence, fixes, and regressions.
 
 This repository is work in progress. It currently contains the public planning artifacts for the system, threat model, red-team harness, and safety checks. It does not yet claim a complete app, deployed system, live users, or completed hardening.
 
