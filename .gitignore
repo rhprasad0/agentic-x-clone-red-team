@@ -26,6 +26,12 @@ pnpm-debug.log*
 .cache/
 .turbo/
 .vercel/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
 .DS_Store
 Thumbs.db
 
