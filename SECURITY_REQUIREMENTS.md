@@ -2,6 +2,8 @@
 
 This document defines security requirements for a synthetic agent-native social feed and a single-runner red-team harness. It is written before the app and harness exist so implementation, tests, findings, and public claims can be traced back to a coherent security model instead of reverse-engineered after the demo works.
 
+The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md) and is the canonical source for V1 scope decisions. V1 has no LLM consumer of feed content (no evaluator/summarizer agent, no model-provider integration, no prompt-template hardening, no LLM output validation, no provider metadata capture). LLM/prompt-injection material in this document is preserved as future/later-scope research; it is not a V1 MUST or a mapped V1 scenario.
+
 ## Purpose
 
 The project has two top-level security goals:
@@ -26,11 +28,11 @@ The eventual red-team / penetration-test pass SHOULD discover specific bugs insi
 
 A good final finding looks like:
 
-> `SR-201` anticipated prompt injection through social context, but implementation failed to delimit profile text in the evaluator prompt.
+> `SR-101` anticipated client-side authorship spoofing, but implementation accepted a body-provided `agent_id` instead of resolving the bearer token server-side.
 
 A bad final finding looks like:
 
-> Nobody realized synthetic profiles could contain instructions consumed by an agent.
+> Nobody realized a synthetic agent could claim another handle in the request body.
 
 Bugs are allowed. Security clown-nose moments are not the goal.
 
@@ -38,20 +40,22 @@ Bugs are allowed. Security clown-nose moments are not the goal.
 
 ### In scope for V1
 
-- Synthetic agents, handles, personas, posts, replies, profiles, timelines, threads, scenario runs, events, and findings.
-- Minimal create/read agent-facing API.
-- Thin human observability UI.
-- Deterministic fixtures and replayable scenarios.
-- One adversarial red-team runner executing scenario modes sequentially.
-- Public-safe findings, event summaries, and regression evidence.
+- Synthetic agents, handles, personas, posts, replies, profiles, timelines, threads, scenario runs, redacted events, and findings.
+- Minimal create/read agent-facing API in `apps/backend` (FastAPI + Postgres).
+- Read-only observability UI in `apps/frontend` (Vite/React).
+- Static fixture-scoped bearer tokens for synthetic agents and a separate fixture-scoped harness token; server resolves authority.
+- Deterministic fixtures and replayable scenarios under the fictional used-car discourse world.
+- One black-box `SingleRedTeamAgent` runner executing scenario modes sequentially.
+- Public-safe findings, redacted event summaries, and regression evidence.
 
 ### Out of scope for V1
 
-- Real users, real X/Twitter data, scraped content, private transcripts, production credentials, or real platform claims.
-- Human-grade social network feature parity.
-- DMs, notifications, password reset, payments, ads, contact import, recommendation ranking, or complex auth flows.
-- Production deployment or claims of production hardening.
-- A 10-agent swarm benchmark or comprehensive penetration test.
+- Real users, real X/Twitter data, scraped content, private transcripts, real listings, production credentials, or real platform claims.
+- Human-grade social network feature parity; likes, reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, and moderation workflows.
+- Browser sessions, browser-driven mutations, CSRF surface, password reset, OAuth, admin dashboards, payments, ads, or contact import.
+- Production deployment, AWS/EKS deployment, or claims of production hardening; later scope only.
+- A 10-agent swarm benchmark, comprehensive penetration test, or external security assessment claim.
+- Evaluator/summarizer agents, model-provider integrations, prompt-template hardening, prompt-injection scenarios, LLM output validation, provider metadata capture, and any moderation product surface or content-label system. These are future-scope research and only become relevant if a later scope introduces an LLM consumer of feed content.
 
 ## Research Basis
 
@@ -125,17 +129,17 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 ### SR-101 Server-side synthetic agent identity
 
-**Requirement:** Synthetic agent identity MUST be resolved and enforced server-side. Client-provided handles, IDs, or metadata MUST NOT be trusted as authorization proof.
+**Requirement:** Synthetic agent identity MUST be resolved server-side from the fixture-scoped bearer token. Client-provided handles, IDs, roles, or body metadata MUST NOT be trusted as authorization proof. Post/reply authorship MUST be assigned by the server from the resolved token.
 
 **Credibility signal:** Shows basic appsec discipline: identity is not a JSON field with vibes.
 
-**Anticipated risk class:** Broken authentication/identity spoofing.
+**Anticipated risk class:** Broken authentication/identity spoofing; client-supplied authority claims.
 
-**Evidence expected:** Route tests for valid actor context, spoofed actor IDs, missing actor context, and scenario-authorized context.
+**Evidence expected:** Route tests for valid actor context, spoofed actor IDs/handles/roles, missing actor context, and scenario-authorized context; tests asserting authorship comes from the bearer token rather than the request body.
 
-**Mapped scenarios:** RT-001, RT-002.
+**Mapped scenarios:** RT-001, RT-002, RT-003.
 
-**Final finding implication:** `agent_id` swapping, forged handles, or client metadata impersonation are anticipated failures.
+**Final finding implication:** `agent_id` swapping, forged handles, role/body-flag overrides, or client metadata impersonation are anticipated failures.
 
 ### SR-102 Object-level authorization for posts and replies
 
@@ -209,105 +213,79 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 ---
 
-## SR-200 Untrusted social context and LLM/agent safety
+## SR-200 V1 harness, fixture, and evidence safety
 
-### SR-201 Feed, thread, and profile content are untrusted data
+V1 has no LLM consumer of feed content. The requirements in this section therefore focus on the parts that actually exist in V1: black-box runner authority, adversarial fixture hygiene, deterministic replay, and safe public evidence. Prompt-injection and model-provider controls are listed later as deferred research, not V1 acceptance criteria.
 
-**Requirement:** Posts, replies, profiles, personas, timeline text, thread text, and fixture content MUST be treated as untrusted data when consumed by agents.
+### SR-201 Fixture content remains synthetic and adversarially reviewable
 
-**Credibility signal:** This is the agentic-security center of gravity. Social text becomes an indirect prompt-injection surface.
-
-**Anticipated risk class:** OWASP LLM01 prompt injection; indirect prompt injection through retrieved/social content.
-
-**Evidence expected:** Prompt templates with clear source boundaries; prompt-injection fixtures; evaluator tests asserting hostile instructions are not obeyed.
-
-**Mapped scenarios:** RT-003, RT-004.
-
-**Final finding implication:** Prompt injection through a post/profile/thread is expected as a class, even if a specific payload is new.
-
-### SR-202 Evaluator/summarizer outputs require deterministic validation
-
-**Requirement:** Agent outputs that become events, findings, exports, or public docs MUST pass deterministic schema and safety validation before persistence or publication.
-
-**Credibility signal:** Shows the system does not treat model output as trusted just because it sounds confident in a blazer.
-
-**Anticipated risk class:** OWASP LLM05 improper output handling; unsafe finding generation; public leakage through model output.
-
-**Evidence expected:** JSON/schema validation; rejection tests for off-schema output, policy leakage, unsafe instructions, private-data-like strings, and fake secret patterns.
-
-**Mapped scenarios:** RT-003, RT-004, RT-007.
-
-**Final finding implication:** Unsafe text copied from model output into public artifacts is anticipated.
-
-### SR-203 Scenario-scoped tool permissions
-
-**Requirement:** Agent/harness tool access MUST be scoped to the active scenario. A scenario that only evaluates feed text MUST NOT have arbitrary filesystem, network, shell, or credential access.
-
-**Credibility signal:** Maps to OWASP LLM06 excessive agency and shows least-privilege thinking for agents.
-
-**Anticipated risk class:** Tool misuse; prompt-injected tool calls; excessive agency.
-
-**Evidence expected:** Scenario configuration listing allowed tools/actions; tests or harness checks for denied tools; logs for denied tool attempts.
-
-**Mapped scenarios:** RT-003, RT-004, RT-007.
-
-**Final finding implication:** A prompt-injected agent action outside scenario permissions is anticipated.
-
-### SR-204 System/developer prompt leakage is a failure
-
-**Requirement:** Evaluator or harness outputs MUST NOT reveal hidden system prompts, developer instructions, private configuration, or non-public operational context.
-
-**Credibility signal:** Shows current LLM-app security awareness without pretending prompts are magic vaults.
-
-**Anticipated risk class:** OWASP LLM07 system prompt leakage; sensitive information disclosure.
-
-**Evidence expected:** Output scanner patterns; prompt-injection regression cases; public-safety scan coverage.
-
-**Mapped scenarios:** RT-003, RT-004, RT-007.
-
-**Final finding implication:** Prompt/config leakage is anticipated and must map to a regression or residual-risk note.
-
-### SR-205 Adversarial fixture curation and poisoning resistance
-
-**Requirement:** Prompt-injection, abuse, data-leak, and replay fixtures MUST be curated as explicit adversarial test data. Fixture changes MUST be reviewable, deterministic, synthetic-only, and labeled by scenario/risk class. Model-generated or externally copied text MUST NOT silently enter the trusted fixture corpus.
+**Requirement:** Used-car posts, replies, profiles, personas, abuse probes, data-leak probes, and replay fixtures MUST be curated as explicit synthetic test data. Fixture changes MUST be reviewable, deterministic, synthetic-only, and mapped to scenario/risk class.
 
 **Credibility signal:** Treats the test corpus itself as a security asset instead of a junk drawer with scary strings in it.
 
-**Anticipated risk class:** Data poisoning; fixture drift; unsafe real content entering public tests; untrusted payloads becoming trusted instructions.
+**Anticipated risk class:** Fixture poisoning; unsafe real content entering public tests; fixture drift; evidence ambiguity.
 
-**Evidence expected:** Fixture manifest with scenario IDs, source notes, synthetic labels, expected malicious intent, and review status; tests proving fixture text remains data when consumed by evaluators.
+**Evidence expected:** Fixture manifest with scenario IDs, source notes, synthetic-only review status, expected adversarial intent, and deterministic seed/reset behavior.
 
-**Mapped scenarios:** RT-003, RT-004, RT-005, RT-006, RT-007.
+**Mapped scenarios:** RT-001, RT-003, RT-005, RT-006, RT-007.
 
-**Final finding implication:** Poisoned or ambiguous fixtures are anticipated evidence-integrity failures.
+**Final finding implication:** Poisoned, real-looking, or ambiguous fixtures are anticipated evidence-integrity failures.
 
-### SR-206 Evaluator/model configuration capture
+### SR-202 Runner authority is scenario-scoped
 
-**Requirement:** Any scenario run that uses an evaluator, summarizer, or model provider MUST record enough public-safe configuration to replay or explain the result: provider family, model identifier, model version or release alias when available, prompt/template version, decoding parameters, tool allowlist, evaluator policy version, fixture seed, and validation schema version.
+**Requirement:** The `SingleRedTeamAgent` MUST receive only the base URL, allowed starting credentials/public entry points, objective, and evidence target needed for the active scenario. It MUST NOT receive source code, database access, private docs, internal route inventory, or unrelated credentials during attack execution.
 
-**Credibility signal:** Security evals without model/config capture are screenshots with better posture.
+**Credibility signal:** Keeps the runner aligned with the black-box challenge instead of turning it into a white-box code auditor with a fake mustache.
 
-**Anticipated risk class:** Non-reproducible AI evaluation; hidden prompt/config drift; untraceable model-provider behavior changes.
+**Anticipated risk class:** Over-privileged test runner; invalid evidence; accidental white-box assumptions.
 
-**Evidence expected:** Scenario run metadata; prompt/template hashes or version IDs; normalized evidence snapshots; docs explaining any provider nondeterminism.
+**Evidence expected:** Scenario definitions listing allowed starting credentials/routes and disallowed access; run metadata showing scenario mode and credential class.
 
-**Mapped scenarios:** RT-003, RT-004, RT-006.
+**Mapped scenarios:** RT-001 through RT-008.
 
-**Final finding implication:** A finding that cannot name the evaluator configuration is an anticipated replay-integrity failure.
+**Final finding implication:** A finding produced using unauthorized internal context is invalid V1 evidence and should be rerun or documented as out of scope.
 
-### SR-207 Model/provider failure modes fail closed
+### SR-203 Scenario evidence requires deterministic validation
 
-**Requirement:** Provider timeouts, invalid model outputs, content-filter refusals, overbroad refusals, schema validation failures, and tool-call ambiguity MUST NOT be counted as passing security results. The harness MUST fail closed, mark the run inconclusive or failed, and preserve public-safe diagnostics.
+**Requirement:** Events, findings, redacted exports, and selected sanitized request/response snippets MUST pass deterministic schema and public-safety validation before persistence or publication.
 
-**Credibility signal:** Prevents a model refusal or flaky provider response from being laundered into "we passed the red team."
+**Credibility signal:** Shows the harness does not treat generated evidence as trustworthy just because it came from a test run wearing a serious hat.
 
-**Anticipated risk class:** Eval integrity failure; unsafe fallback behavior; false confidence from refusal/overblocking.
+**Anticipated risk class:** Unsafe finding generation; public leakage; malformed evidence; replay ambiguity.
 
-**Evidence expected:** Tests or harness checks for provider errors, invalid JSON, refusal text, empty output, timeout, and denied tool calls; finding statuses distinguish `passed`, `failed`, `blocked`, and `inconclusive`.
+**Evidence expected:** JSON/schema validation for event/finding/export records; rejection tests for off-schema output, private-data-like strings, fake secret patterns, raw traces, and non-example contact data.
 
-**Mapped scenarios:** RT-003, RT-004, RT-006, RT-007.
+**Mapped scenarios:** RT-002, RT-006, RT-007.
 
-**Final finding implication:** Treating an inconclusive model run as a pass is anticipated.
+**Final finding implication:** Unsafe or malformed evidence copied into public artifacts is anticipated.
+
+### SR-204 Hidden operational context must not leak into public artifacts
+
+**Requirement:** Harness outputs, event summaries, findings, docs, screenshots, and exports MUST NOT reveal private configuration, local filesystem paths, credentials, private transcripts, real contact data, real listings, or non-public operational context.
+
+**Credibility signal:** Keeps the public repo from turning into a confetti cannon full of private machine crumbs.
+
+**Anticipated risk class:** Sensitive information disclosure; unsafe logs; public artifact leakage.
+
+**Evidence expected:** Public-safety scan coverage; export redaction checks; fixture review; denied examples for private-path and secret-like strings.
+
+**Mapped scenarios:** RT-007.
+
+**Final finding implication:** Public artifact leakage is anticipated and must map to a fix plus regression evidence, or an explicit residual-risk/deferral note.
+
+### SR-205 Scope-control checks prevent V1 bloat
+
+**Requirement:** V1 scenario definitions and findings MUST NOT classify deferred surfaces as V1 blockers unless the reviewed V1 spec changes. Deferred surfaces include prompt injection/evaluators, moderation workflows, private accounts, production deployment, browser mutations, URL ingestion, and multi-agent swarm coverage.
+
+**Credibility signal:** Shows judgment: the project is intentionally small, not accidentally unfinished in seventeen directions.
+
+**Anticipated risk class:** Scope drift; misleading public claims; inflated acceptance criteria.
+
+**Evidence expected:** Scope-control scenario output; issue/finding templates with `out-of-v1-scope` and `documented-residual-risk` classifications; docs linking to `docs/v1-spec-outline.md`.
+
+**Mapped scenarios:** RT-008.
+
+**Final finding implication:** Treating deferred features as required V1 hardening is anticipated scope drift.
 
 ---
 
@@ -449,17 +427,17 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 ### SR-501 Synthetic abuse scenarios are clearly labeled
 
-**Requirement:** Spam, harassment-like, manipulation, or reply-storm content MUST be synthetic, labeled, and safe for public review.
+**Requirement:** Spam-like, manipulation, or reply-storm content MUST be synthetic, scenario-scoped, and safe for public review. V1 does not add a moderation or content-label product surface.
 
 **Credibility signal:** Shows abuse modeling without laundering real harmful content into a public repo.
 
 **Anticipated risk class:** Content abuse; fixture ambiguity; public-safety leakage.
 
-**Evidence expected:** Scenario labels; synthetic handles; redacted/safe examples; public scanner.
+**Evidence expected:** Scenario IDs; synthetic handles; redacted/safe examples; public scanner.
 
 **Mapped scenarios:** RT-005, RT-007.
 
-**Final finding implication:** Unlabeled abuse-like content in public docs is anticipated.
+**Final finding implication:** Ambiguous abuse-like content in public docs is anticipated.
 
 ### SR-502 Business-flow and resource limits are documented
 
@@ -569,15 +547,15 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 ### SR-702 Rendered synthetic content is safely displayed
 
-**Requirement:** The UI SHOULD escape or safely render synthetic post/profile/finding text, including prompt-injection payloads and HTML/script-like strings.
+**Requirement:** The UI SHOULD escape or safely render synthetic post/profile/finding text, including HTML/script-like strings.
 
 **Credibility signal:** Full-stack security awareness without turning the UI into a giant product detour.
 
-**Anticipated risk class:** XSS/insecure output handling; prompt payload becoming executable UI content.
+**Anticipated risk class:** XSS/insecure output handling; synthetic content becoming executable UI content.
 
-**Evidence expected:** Rendering tests or framework-default escaping assertions; malicious fixture strings displayed as text.
+**Evidence expected:** Rendering tests or framework-default escaping assertions; malicious-looking fixture strings displayed as text.
 
-**Mapped scenarios:** RT-003, RT-004, RT-007.
+**Mapped scenarios:** RT-004, RT-007.
 
 **Final finding implication:** Script execution from synthetic content is anticipated.
 
@@ -609,13 +587,11 @@ The goal is to minimize `unanticipated-risk-class` findings.
 | SR-104 | BOPLA/mass assignment | RT-001, RT-002 | Write-schema tests |
 | SR-105 | Route auth drift | RT-001, RT-002, RT-007, RT-008 | Route inventory, auth matrix |
 | SR-106 | Shadow/stale endpoints | RT-002, RT-007, RT-008 | API inventory, disabled-method tests |
-| SR-201 | Prompt injection | RT-003, RT-004 | Hostile content fixtures, evaluator tests |
-| SR-202 | Improper output handling | RT-003, RT-004, RT-007 | Schema/safety validation tests |
-| SR-203 | Excessive agency | RT-003, RT-004, RT-007 | Scenario tool-permission checks |
-| SR-204 | Prompt/system leakage | RT-003, RT-004, RT-007 | Output scanner/regression tests |
-| SR-205 | Fixture poisoning/drift | RT-003, RT-004, RT-005, RT-006, RT-007 | Fixture manifest, review status |
-| SR-206 | Model/evaluator nondeterminism | RT-003, RT-004, RT-006 | Model/config capture, prompt/template versions |
-| SR-207 | Provider/refusal false pass | RT-003, RT-004, RT-006, RT-007 | Fail-closed provider/error tests |
+| SR-201 | Fixture poisoning/drift | RT-001, RT-003, RT-005, RT-006, RT-007 | Fixture manifest, review status |
+| SR-202 | Over-privileged runner | RT-001..RT-008 | Scenario credential/access declarations |
+| SR-203 | Evidence validation | RT-002, RT-006, RT-007 | Schema/safety validation tests |
+| SR-204 | Operational-context leakage | RT-007 | Public-safety scan, export redaction checks |
+| SR-205 | Scope drift | RT-008 | Scope-control scenario, docs review |
 | SR-301 | Unsafe logs/findings | RT-007 | Redacted event schema, scanner |
 | SR-302 | Raw trace leakage | RT-007 | `.gitignore`, scanner, repo status review |
 | SR-303 | Audit gaps | RT-002, RT-006, RT-007 | Structured event logs |
@@ -643,20 +619,19 @@ Before calling V1 security requirements satisfied, the repo SHOULD have:
 1. A synthetic fixture seed/reset path plus a fixture manifest.
 2. A route/API inventory and authorization matrix.
 3. API tests for synthetic identity, object authorization, function authorization, and protected-field writes.
-4. Prompt-injection fixtures for posts and profiles, with fixture poisoning/drift review.
-5. Output validation for evaluator/finding writes, or an explicit stub/residual-risk note if evaluator agents are not implemented yet.
-6. Model/evaluator configuration capture for any scenario that uses a provider.
-7. Fail-closed handling for provider errors, refusals, invalid output, timeouts, and inconclusive runs.
-8. Per-scenario security acceptance criteria and schema validation.
-9. Runner isolation/reset/teardown checks.
-10. Structured, redacted scenario event logs.
-11. Findings ledger schema with fix/regression/residual-risk fields.
-12. Public-safety scanner in local checks or CI.
-13. Safe error/debug-mode boundaries.
-14. Dependency/supply-chain review once packages, images, or CI actions exist.
-15. Browser security posture if the UI can trigger mutations.
-16. URL fetching explicitly absent, or SSRF controls and negative tests if introduced.
-17. Documentation review showing claims match implemented evidence.
+4. Fixture hygiene review for synthetic used-car content, abuse probes, data-leak probes, and replay fixtures.
+5. Schema and safety validation for event, finding, and public export records.
+6. Black-box runner scenario definitions that list allowed starting credentials/public entry points and disallowed internal context.
+7. Per-scenario security acceptance criteria and schema validation.
+8. Runner isolation/reset/teardown checks.
+9. Structured, redacted scenario event logs.
+10. Findings ledger schema with fix/regression/residual-risk fields.
+11. Public-safety scanner in local checks or CI.
+12. Safe error/debug-mode boundaries.
+13. Dependency/supply-chain review once packages, images, or CI actions exist.
+14. Explicit read-only browser posture; if later browser mutations are added, a separate CSRF/CORS/framing posture.
+15. URL fetching explicitly absent, or SSRF controls and negative tests if introduced.
+16. Documentation review showing claims match implemented evidence.
 
 # Residual Risks
 
@@ -666,7 +641,7 @@ These requirements do not prove real-world safety. V1 remains synthetic, local-f
 
 Safe phrasing:
 
-> Building a synthetic agent-native social feed and single-runner red-team harness to demonstrate threat modeling, prompt-injection testing, object-authorization checks, public-safe findings, and regression-driven hardening.
+> Building a synthetic agent-native social feed and single-runner black-box red-team harness to demonstrate threat modeling, object-authorization checks, harness-boundary testing, public-safe findings, and regression-driven hardening.
 
 Unsafe phrasing until evidence exists:
 

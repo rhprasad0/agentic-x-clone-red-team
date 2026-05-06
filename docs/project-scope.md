@@ -15,33 +15,37 @@ This repository should not overstate the source wording. Use the challenge as in
 
 ## V1 Scope
 
-V1 is a single-agent hardening case study around a minimal agent-native social substrate. It is not a human-grade Twitter clone and not a 10-agent pentest.
+V1 is a single-agent hardening case study around a KarpathyTalk-minimal agent-native social substrate. It is not a human-grade Twitter clone, not a real marketplace, and not a 10-agent pentest.
 
 The V1 artifact should include:
 
-- A minimal agent-facing create/read API: create synthetic agents, create posts, create replies, read timelines, read threads, read profiles, and read scenario event logs.
-- A thin human observability UI for timelines, threads, synthetic agent profiles, scenario runs, and findings.
-- Deterministic synthetic agents, posts, replies, personas, and prompt-injection fixtures.
-- One adversarial red-team agent runner that executes a curated scenario set sequentially.
-- A findings ledger that maps scenarios to outcomes, fixes, regression tests, and residual risk.
-- Public-safe documentation that shows methodology and evidence without secrets, real users, private paths, or real platform data.
+- A minimal agent-facing create/read API: fixture-defined synthetic agents, create posts, create replies, read timelines, read threads, read profiles, and read scenario event/finding records.
+- A thin read-only human observability UI for timelines, threads, synthetic agent profiles, scenario runs, redacted events, and findings.
+- Deterministic synthetic used-car fixtures: fictional agents arguing about reliable cars under `$10k`, sketchy listings, financing traps, and suspicious-but-fake marketplace vibes.
+- Static fixture-scoped bearer tokens for local synthetic agents and a separate harness token, with server-side authority resolution.
+- One black-box adversarial red-team runner that executes a curated scenario set sequentially against exposed app/API behavior.
+- A findings ledger that maps scenarios to outcomes, fix references plus regression evidence, or explicit residual-risk/deferral notes.
+- Public-safe documentation and evidence exports that show methodology and sanitized synthetic snippets without secrets, real users, private paths, raw traces, or real platform data.
 
 ## V1 Non-Goals
 
 - No human-grade Twitter/X feature parity.
-- No complex auth, DMs, notifications, payments, ads, or contact import.
-- No recommendation system beyond deterministic timeline ordering.
-- No rich moderation product surface unless a scenario explicitly needs it.
+- No likes, reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation ranking, private accounts, or moderation workflows.
+- No browser-write workflows, browser auth/session system, CSRF-oriented mutation surface, reset/seed/admin controls in the UI, or human-user auth.
+- No evaluator/summarizer agent, model-provider integration, prompt-template hardening, prompt-injection scenario, LLM output validation, or provider metadata capture in V1. Prompt injection becomes relevant only if a later scope introduces an LLM consumer of feed content.
+- No URL ingestion, link previews, external web import, or browser-agent behavior unless separately scoped with SSRF and data-handling controls.
 - No 10-agent swarm benchmark.
-- No claim of comprehensive pentesting.
-- No real users, real social content, scraped platform data, private transcripts, or production credentials.
+- No claim of comprehensive pentesting or external security assessment.
+- No real users, real social content, scraped platform data, private transcripts, real listings, production credentials, or real marketplace claims.
 - No public production-readiness claim before implementation, deployment, findings, fixes, and retests exist.
 
 ## Infrastructure Scope
 
-Local-first development is the default. A production-like AWS/EKS deployment is a later credibility layer, not required for the first working app.
+Local-first development is the V1 default. Acceptance is the monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, black-box runner, and public-safe evidence export.
 
-The target EKS design, when added, should stay intentionally bounded:
+A production-like AWS/EKS deployment is a later credibility layer, not required for the first working app. If described, keep it in a future appendix and do not present it as implemented V1 evidence.
+
+When added later, the target EKS design should stay intentionally bounded:
 
 - 2-AZ VPC unless availability goals justify more.
 - Public ALB and private worker/data subnets.
@@ -56,7 +60,7 @@ The target EKS design, when added, should stay intentionally bounded:
 
 The first public win is not "the app is unbreakable." The win is evidence of disciplined engineering:
 
-- The app has enough agent-facing social context to exercise posting, reading, threading, prompt-injection, object-level authorization, and public-safe logging risks.
-- The single red-team agent finds or verifies meaningful scenarios.
-- Findings are triaged into fixes, regression tests, or explicit residual-risk notes.
+- The app has enough agent-facing social context to exercise posting, reading, threading, object-level authorization, harness boundaries, replay integrity, and public-safe evidence handling.
+- The single black-box red-team runner finds or verifies meaningful V1 scenarios.
+- Findings are triaged into fix references plus regression evidence, or explicit residual-risk/deferral notes.
 - The public writeup is honest about scope and limitations.

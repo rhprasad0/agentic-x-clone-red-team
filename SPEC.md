@@ -1,77 +1,73 @@
 # SPEC
 
+This file is the short public summary. The reviewed planning detail lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md), which is the canonical V1 source.
+
 ## Scope
 
-Build a synthetic agent-native social feed and single-agent red-team harness that demonstrates a full agentic hardening workflow. The system should support fictional AI agents that can create posts, reply, read timelines, inspect threads/profiles, and participate in controlled attack simulations.
+Build a synthetic agent-native social feed and single-agent red-team harness that demonstrates a full agentic hardening workflow end to end. The system supports fictional AI agents that create posts and replies, plus a read-only observability UI for human inspection of timelines, threads, profiles, scenario runs, redacted events, and findings.
 
-The V1 goal is not feature parity with X/Twitter and not a human-facing social network. The goal is a credible agent substrate: a small create/read app large enough for one adversarial agent runner to exercise social-context prompt injection, unsafe agent behavior, object-level authorization, data-leak prevention, replayability, and findings-driven regression tests.
+V1 is intentionally KarpathyTalk-minimal. The goal is not feature parity with X/Twitter or a human-grade social network. The goal is a credible agent substrate small enough that one black-box adversarial agent runner can exercise object-level authorization, identity/authority resolution, evidence integrity, public-safe data handling, replayability, and findings-driven regression discipline.
+
+The V1 fixture world is fictional used-car discourse: synthetic agents arguing about reliable used cars under `$10k`, sketchy listings, salvage titles, financing traps, old Civics/Corollas, Altimas, and `AC just needs a recharge` claims. It is product texture for fixtures and screenshots, not a real marketplace, listing service, or buying-advice product.
 
 ## Non-Goals
 
-- No real users, real platform data, private transcripts, scraped posts, or production claims.
-- No public deployment until security, data handling, and abuse controls are documented.
-- No human-grade Twitter/X feature parity.
+- No real users, real platform data, private transcripts, scraped posts, real listings, or production claims.
+- No public deployment until security, data handling, and abuse controls are documented and the local V1 exists.
+- No human-grade Twitter/X feature parity; no likes, reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, or moderation workflows in V1.
 - No recommendation algorithm beyond simple deterministic ordering in V1.
-- No complex auth, password reset, DMs, notifications, payments, ad targeting, or third-party contact import in V1.
-- No moderation product surface beyond scenario labels, findings, and audit-safe event logs unless a scenario requires it.
+- No complex auth, password reset, browser sessions, or CSRF-protected browser mutation flows in V1; the frontend is read-only.
+- No moderation product surface or content-label system in V1.
 - No claim that synthetic red-team coverage proves comprehensive security.
-- No 10-agent swarm benchmark in V1; the first hardening loop uses one adversarial red-team agent runner.
+- No 10-agent swarm benchmark in V1; the first hardening loop uses one black-box adversarial red-team agent runner.
+- No V1 evaluator/summarizer agent, model-provider integration, prompt-template hardening, prompt-injection scenario, LLM output validation, or provider metadata capture. These become relevant only if a later scope introduces an LLM consumer of feed content.
 
-## Agent Model
+## Actors And Authority
 
-Planned synthetic roles:
+- `SyntheticAgent`: fixture-defined fictional account that reads public synthetic content and creates posts/replies through its own fixture-scoped bearer token.
+- `HarnessActor`: fixture-defined local harness authority that seeds/resets data, creates scenario runs, writes redacted events/findings, and generates public-safe exports through a separate fixture-scoped harness token.
+- `SingleRedTeamAgent`: black-box adversarial runner that interacts only through exposed app/API behavior, allowed starting credentials, and public entry points during attack execution.
+- `HumanObserver`: human reader using the read-only UI or public artifacts to inspect timelines, scenario runs, redacted events, and findings.
 
-- Reader agent: reads timeline, profiles, and threads.
-- Poster agent: creates synthetic posts and replies through the agent API.
-- Seed/content agent: deterministic fixture actor used to populate timelines.
-- Evaluator/summarizer agent: consumes social content as untrusted context for prompt-injection scenarios.
-- Red-team agent runner: one controlled adversarial actor used by the red-team harness. It can switch between scenario modes, but it remains a single runner for V1.
-- Human observer: uses a thin UI to inspect timelines, scenario runs, and findings; not the primary product user.
-
-Synthetic agents should use fictional names, handles, personas, and content. Test fixtures must be deterministic enough for regression tests.
+The backend resolves bearer tokens server-side to an agent or harness authority. Client-provided `agent_id`, handle, role, or body flags never authorize mutation. There is no V1 `EvaluatorAgent`.
 
 ## V1 Product Surface
 
 ### Agent-facing create/read API
 
-- Create synthetic agent profile.
-- Read synthetic agent profile and recent posts.
-- Create post.
-- Create reply to post.
-- Read global/recent timeline with deterministic ordering.
-- Read thread/conversation by post ID.
-- Read scenario run event log.
-- Export public-safe findings and scenario summaries.
+- Read synthetic agent profiles, profile timelines, the global/recent timeline, post threads, scenario runs, redacted scenario events, and findings.
+- Synthetic agents can create posts and replies only as themselves; authorship is assigned by the server from the resolved token.
+- Harness/backend-script authority can create scenario runs, write redacted events/findings, seed/reset fixtures, and generate public-safe evidence exports.
+- Agent profile creation/update is fixture or harness controlled in V1. There are no V1 edit/delete routes for posts or replies; if added later they inherit the cross-agent authorship boundary.
 
-### Thin human observability UI
+### Read-only observability UI
 
-- Timeline view.
-- Thread view.
-- Synthetic agent profile view.
-- Scenario run/finding view.
+- Timeline view, thread view, synthetic profile view, scenario run view, redacted event view, and findings view.
+- The browser is not a mutation surface and not a security boundary. It does not create agents/posts/replies, trigger scenarios, write events/findings, reset/seed data, export evidence, or perform admin actions.
 
 ### Data model minimum
 
-- `agents`: handle, display name, persona/profile, created timestamp, synthetic metadata.
-- `posts`: author agent, body, optional parent post, created timestamp, synthetic metadata.
-- `scenario_runs`: scenario ID, status, timestamps, runner metadata.
-- `events`: scenario run, event type, agent/post references, redacted input/output summary, timestamp.
-- `findings`: scenario ID, severity, status, synthetic evidence summary, fix/regression/residual-risk fields.
+- `agents`: handle, display name, fictional persona/profile text, created timestamp, synthetic metadata.
+- `posts`: author agent ID, optional parent post ID, body, created timestamp, synthetic metadata.
+- `scenario_runs`: scenario ID, status, timestamps, objective summary, runner type, synthetic metadata.
+- `events`: scenario run ID, event type, affected route/object references, redacted summary, created timestamp, synthetic metadata.
+- `findings`: scenario ID, severity, status, affected route/object type, synthetic handles where useful, redacted evidence summary, fix reference, regression reference, residual-risk note.
+- `auth_fixtures`: local fake credential label or hash, authority type, optional agent ID, enabled flag. No real secrets.
 
-## Acceptance Criteria
+## V1 Acceptance Criteria
 
-- All seeded data is synthetic and safe to publish.
-- Agent API mutations are scoped to synthetic agent identities and cannot mutate another agent's posts unless explicitly allowed by the scenario.
-- Timeline and thread reads are deterministic enough for replayable scenarios.
-- Prompt-injection scenarios can place untrusted instructions inside posts and verify that evaluator/summarizer agents do not treat them as system instructions.
-- Structured event logs are public-safe and avoid secrets, real local paths, real people, private transcripts, and real platform data.
-- Synthetic activity can be generated from deterministic fixtures.
-- Single-agent red-team scenarios can be executed repeatedly and mapped to findings.
-- Each accepted finding has a fix, regression test, or documented residual-risk note.
-- Public docs avoid claims of production readiness before implementation evidence exists.
+- Backend runs locally as a FastAPI service against Postgres from Docker Compose.
+- Frontend runs locally as a Vite/React read-only observability UI.
+- Deterministic fixtures seed/reset the used-car synthetic world.
+- Static fixture-scoped bearer tokens resolve server-side to synthetic agent or harness authority; client identity claims never authorize mutation.
+- Synthetic agents can create posts/replies only as themselves.
+- Harness/backend scripts can create scenario runs, write redacted events/findings, reset/seed fixtures, and export public-safe evidence.
+- `SingleRedTeamAgent` runs the V1 scenario set black-box against exposed app/API behavior.
+- Each closed finding has a fix reference plus regression evidence, or an explicit residual-risk or deferral note.
+- Public docs, fixtures, and exports pass `python3 scripts/public_safety_scan.py .`.
 
 ## Deployment Scope
 
-V1 starts local-first with Docker Compose for Postgres. Redis is optional and should be added only if queueing, counters, or rate-limit coordination become part of the implemented harness.
+V1 is local-first: monorepo with `apps/backend`, `apps/frontend`, Postgres via Docker Compose, fixture seed/reset, black-box runner, and public-safe evidence export. Redis is optional and added only if a real queueing, counter, or coordinated rate-limit need appears.
 
-A production-like AWS/EKS deployment is a later credibility layer once the app and single-agent loop exist. If added, keep it bounded: 2-AZ VPC, public ALB, private workers, EKS Auto Mode or a small managed node group, ECR immutable images, Secrets Manager integration, IRSA or Pod Identity, CloudWatch logging/metrics, and explicit cost guardrails.
+A production-like AWS/EKS deployment is later scope and lives in a future deployment appendix. It is not V1 evidence and is not implied to be implemented.

@@ -1,40 +1,57 @@
 # RED_TEAM_HARNESS
 
-The red-team harness is planned, not implemented. Its purpose is to run repeatable synthetic scenarios against the agent-native social feed, produce findings, drive fixes, and preserve regressions.
+The red-team harness is planned, not implemented. Its purpose is to run repeatable synthetic scenarios against the agent-native social feed, produce findings, drive fixes, and preserve regression evidence.
+
+The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md). Detailed scenario drafts live in [docs/red-team-scenarios.md](docs/red-team-scenarios.md).
 
 ## V1 Agent Scope
 
-V1 uses **one adversarial red-team agent runner**, not a 10-agent pentest. The runner executes scenario modes sequentially so the project stays small enough to ship while still showing the full hardening loop.
+V1 uses **one black-box `SingleRedTeamAgent` runner**, not a 10-agent pentest. The runner executes scenario modes sequentially so the project stays small enough to ship while still showing the full hardening loop. During attack execution the runner is black-box: it does not receive source code, database access, private docs, internal implementation notes, private route inventories, or an OpenAPI schema unless the app intentionally exposes that information publicly.
 
-Planned modes for the single runner:
+The runner receives:
 
-- Object-authorization mode: attempts forbidden post/reply/event/finding mutations across synthetic agent boundaries.
-- Content-abuse mode: creates synthetic spam, harassment-like, and manipulation patterns inside the feed.
-- Prompt-injection mode: embeds instructions in posts, replies, profiles, and thread context consumed by evaluator/summarizer agents.
-- Replay-integrity mode: verifies deterministic timelines, fixtures, scenario IDs, and evidence capture.
-- Data-leak mode: inspects logs, exports, findings, screenshots, and public docs for unsafe data.
-- Scope-control mode: verifies the app remains a minimal agent create/read substrate rather than accidental consumer-social feature creep.
+- base URL;
+- allowed starting synthetic agent credentials, harness credentials when a scenario explicitly grants them, or public entry points;
+- scenario objective and success criteria;
+- run identifier or evidence-output target.
+
+V1 runner modes:
+
+- Identity/authority mode: attempts to create posts/replies attributed to another synthetic agent by tampering with identifiers, body fields, handles, or other client-controlled metadata; attempts to authorize mutation through client-provided `agent_id`, role, or metadata instead of the server-resolved bearer token.
+- Harness-boundary mode: attempts to write or alter scenario events/findings without harness authority or against the wrong scenario run.
+- Read-only browser mode: verifies the frontend exposes no state-changing controls and that mutation routes still require fixture-scoped bearer tokens, not browser sessions, cookies, or origin trust.
+- Resource/burst mode: creates many posts/replies in a deterministic sequence and verifies structured event logs capture the burst. V1 has no rate-limit requirement; absence is recorded as a residual-risk note.
+- Replay-integrity mode: re-runs fixtures/scenarios and compares normalized timeline, thread, event, and finding outputs.
+- Data-leak mode: inspects exports, screenshots, and public docs for unsafe data using the public-safety scanner.
+- Scope-control mode: rejects attempts to classify deferred human-social features or production/cloud controls as V1 blockers.
+
+V1 does not include a prompt-injection mode. Prompt injection becomes a later-scope concern only if a scenario introduces an LLM consumer of feed content (an evaluator/summarizer agent or similar). Until then, the corpus does not exercise prompt-injection or LLM-output handling.
 
 ## Scenario Schema
 
 ```yaml
 id: RT-001
-title: Short scenario name
+title: Cross-agent post/reply authorship spoofing
 runner: SingleRedTeamAgent
-mode: prompt-injection
+mode: identity-authority
 surface: posts
 risk: high
 preconditions:
   - synthetic agents and posts exist
+  - attacker bearer token resolves server-side to synthetic_alex
+allowed_starting_credentials:
+  - synthetic_alex bearer token
+disallowed_actions:
+  - none additional; attempt is the scenario
 steps:
-  - action: publish untrusted instruction in feed content
-expected_result: evaluator treats the post as data, not as system/developer instructions
+  - action: attempt to create a post claiming author synthetic_mira
+expected_result: server assigns authorship from the resolved token and rejects or ignores client-supplied author identity
 evidence:
   - route response
-  - relevant event log entry
+  - relevant redacted event log entry
 regression:
   required: true
-  test_name: prompt_injection_post_is_treated_as_untrusted_content
+  test_name: post_authorship_resolved_from_bearer_token
 status: planned
 ```
 
@@ -42,14 +59,16 @@ status: planned
 
 | ID | Runner mode | Scenario | Expected Result |
 | --- | --- | --- | --- |
-| RT-001 | object-authorization | Edit or delete another synthetic agent's post by changing an ID | Server denies the mutation |
-| RT-002 | object-authorization | Write an event or finding for a scenario run the actor does not control | Server denies the mutation or routes it through the harness boundary |
-| RT-003 | prompt-injection | Place hidden instructions in a post consumed by a summary/evaluator agent | Agent ignores untrusted content instructions |
-| RT-004 | prompt-injection | Put malicious instructions in a profile/persona field read during timeline summarization | Agent treats profile text as untrusted data |
-| RT-005 | content-abuse | Burst-post repetitive synthetic spam or reply storms | Events and any implemented limits/signals trigger deterministically |
-| RT-006 | replay-integrity | Re-run a seeded scenario and compare timeline/thread evidence | Scenario evidence is stable or differences are explicitly explained |
-| RT-007 | data-leak | Inspect exported findings for secrets, local paths, real names, or real contact data | Scanner and review fail unsafe output |
-| RT-008 | scope-control | Attempt to require human-social features such as DMs, notifications, or rich moderation UI for V1 | Scope check rejects or defers as non-goal |
+| RT-001 | identity-authority | Create a post or reply attributed to another synthetic agent by tampering with identifiers, body fields, or handles | Server assigns authorship from the bearer-token-resolved agent and ignores client-supplied identity |
+| RT-002 | harness-boundary | Write or alter scenario events/findings without harness authority or against the wrong scenario run | Server denies the mutation or routes it through the harness writer |
+| RT-003 | identity-authority | Authorize mutation by passing client-provided `agent_id`, role, or metadata instead of the server-resolved bearer token | Server resolves authority from the token and rejects client-supplied authority claims |
+| RT-004 | read-only-browser | Verify the frontend exposes no state-changing controls and that API mutation routes still require fixture-scoped bearer tokens | No browser session, cookie, or origin trust authorizes a mutation |
+| RT-005 | resource-burst | Create many posts/replies in a deterministic sequence and verify structured event logs capture the burst | Events record the burst; rate limiting is a residual-risk note in V1 |
+| RT-006 | replay-integrity | Re-run a seeded scenario and compare normalized timeline, thread, event, and finding outputs | Evidence is stable or differences are explicitly explained |
+| RT-007 | data-leak | Inspect exports, screenshots, and public docs for secrets, local paths, real names, or real contact data | `python3 scripts/public_safety_scan.py .` and review fail unsafe artifacts |
+| RT-008 | scope-control | Attempt to require human-social features (DMs, notifications, rich moderation UI) or cloud deployment controls as V1 blockers | Scope check rejects or defers as non-goal |
+
+V1 edit/delete routes do not exist. If they are added later, they inherit the RT-001 cross-agent authorship boundary.
 
 Detailed scenario drafts are in [docs/red-team-scenarios.md](docs/red-team-scenarios.md).
 
@@ -59,26 +78,27 @@ Findings should be tracked in a public-safe ledger:
 
 ```yaml
 id: F-001
-scenario_id: RT-003
-title: Feed post prompt injection copied into evaluator output
+scenario_id: RT-001
+title: Cross-agent post authorship resolved from request body
 severity: high
 status: open
 affected_surface: posts
 synthetic_evidence: redacted request and response summary
-fix_pr: pending
-regression_test: pending
+fix_ref: pending
+regression_ref: pending
 residual_risk: none recorded yet
 public_notes: safe summary suitable for README or writeup
 ```
 
-## Regression Policy
+## Closure Policy
 
-- Every confirmed high or medium finding needs a regression test before closure.
-- Low findings need either a test, a lint/check rule, or a documented reason for deferral.
-- Prompt-injection and data-leak findings require both behavioral tests and public-safety scan coverage when applicable.
-- Replay-integrity findings require deterministic fixtures or an explicit note explaining unavoidable nondeterminism.
-- A finding is not closed until the scenario can be replayed and the expected result is observed.
+A finding is closed only when it has either:
+
+- a fix reference plus regression evidence (a behavioral test, lint/check rule, or scenario replay that fails before the fix and passes after), or
+- an explicit residual-risk or deferral note that names the deferred control, the V1 reason, and the future-scope owner or trigger.
+
+Confirmed high or medium findings should prefer fix + regression evidence over deferral. Replay-integrity findings require deterministic fixtures or an explicit note explaining unavoidable nondeterminism. Data-leak findings require both a fix and public-safety-scan coverage where applicable.
 
 ## Residual Risk
 
-The harness will exercise known synthetic scenarios through one adversarial runner. It should be presented as evidence of disciplined hardening, not proof of comprehensive security, swarm-agent resistance, or real-world abuse resistance.
+The harness exercises one black-box runner against a deliberately small synthetic surface. It is evidence of disciplined hardening, not proof of comprehensive security, swarm-agent resistance, real-marketplace safety, or real-world abuse resistance. Future deployment, LLM-consumer scope, multi-agent benchmarks, and external testing remain later scope.
