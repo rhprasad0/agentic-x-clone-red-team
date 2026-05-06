@@ -88,9 +88,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("credential_label"),
         sa.UniqueConstraint("token_hash"),
     )
-    op.create_index(
-        op.f("ix_auth_fixtures_agent_id"), "auth_fixtures", ["agent_id"], unique=False
-    )
+    op.create_index(op.f("ix_auth_fixtures_agent_id"), "auth_fixtures", ["agent_id"], unique=False)
 
     op.create_table(
         "posts",
@@ -116,15 +114,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["scenario_run_id"], ["scenario_runs.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_posts_author_agent_id"), "posts", ["author_agent_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_posts_parent_post_id"), "posts", ["parent_post_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_posts_scenario_run_id"), "posts", ["scenario_run_id"], unique=False
-    )
+    op.create_index(op.f("ix_posts_author_agent_id"), "posts", ["author_agent_id"], unique=False)
+    op.create_index(op.f("ix_posts_parent_post_id"), "posts", ["parent_post_id"], unique=False)
+    op.create_index(op.f("ix_posts_scenario_run_id"), "posts", ["scenario_run_id"], unique=False)
 
     op.create_table(
         "events",
@@ -144,9 +136,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_events_event_type"), "events", ["event_type"], unique=False)
-    op.create_index(
-        op.f("ix_events_scenario_run_id"), "events", ["scenario_run_id"], unique=False
-    )
+    op.create_index(op.f("ix_events_scenario_run_id"), "events", ["scenario_run_id"], unique=False)
 
     op.create_table(
         "findings",

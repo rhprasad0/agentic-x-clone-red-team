@@ -49,7 +49,7 @@ See [docs/architecture.md](docs/architecture.md) for the initial component diagr
 The app is not implemented yet. The local service scaffold is present for future development:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 docker compose up -d
 python3 scripts/public_safety_scan.py .
 ```

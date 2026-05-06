@@ -78,8 +78,10 @@ def test_v1_schema_enforces_public_ids_and_auth_hash_boundaries() -> None:
 
         with engine.connect() as connection:
             agent_id = connection.execute(
-                text("select column_default from information_schema.columns "
-                     "where table_name = 'agents' and column_name = 'id'")
+                text(
+                    "select column_default from information_schema.columns "
+                    "where table_name = 'agents' and column_name = 'id'"
+                )
             ).scalar_one()
             assert agent_id is None
     finally:

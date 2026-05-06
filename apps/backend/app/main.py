@@ -3,6 +3,7 @@ from collections.abc import Callable
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes import agents, fixtures, posts, scenario_runs, timeline
 from app.core.config import Settings, get_settings
 
 health_router = APIRouter(tags=["health"])
@@ -17,6 +18,12 @@ def register_routes(app: FastAPI) -> None:
     """Register API routes; future route modules should be included here."""
 
     app.include_router(health_router)
+    app.include_router(agents.router)
+    app.include_router(timeline.router)
+    app.include_router(posts.router)
+    app.include_router(scenario_runs.router)
+    app.include_router(scenario_runs.finding_router)
+    app.include_router(fixtures.router)
 
 
 def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastAPI:
@@ -30,7 +37,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
         allow_credentials=False,
-        allow_methods=["GET", "OPTIONS"],
+        allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
     )
     register_routes(app)
