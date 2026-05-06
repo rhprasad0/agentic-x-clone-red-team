@@ -119,7 +119,7 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 **Evidence expected:** README/spec/threat-model wording review; stale-phrase search; public writeup review.
 
-**Mapped scenarios:** RT-008.
+**Mapped scenarios:** RT-007 and the supporting scope-control check in `docs/red-team-scenarios.md`.
 
 **Final finding implication:** If a pentest contradicts public claims, classify as `anticipated-risk/failed-implementation` or `anticipated-risk/incomplete-requirement` depending on whether the claim guidance was specific enough.
 
@@ -281,9 +281,9 @@ V1 has no LLM consumer of feed content. The requirements in this section therefo
 
 **Anticipated risk class:** Scope drift; misleading public claims; inflated acceptance criteria.
 
-**Evidence expected:** Scope-control scenario output; issue/finding templates with `out-of-v1-scope` and `documented-residual-risk` classifications; docs linking to `docs/v1-spec-outline.md`.
+**Evidence expected:** Scope-control review output; issue/finding templates with `out-of-v1-scope` and `documented-residual-risk` classifications; docs linking to `docs/v1-spec-outline.md`.
 
-**Mapped scenarios:** RT-008.
+**Mapped scenarios:** Supporting scope-control check in `docs/red-team-scenarios.md`.
 
 **Final finding implication:** Treating deferred features as required V1 hardening is anticipated scope drift.
 
@@ -495,7 +495,7 @@ V1 has no LLM consumer of feed content. The requirements in this section therefo
 
 **Evidence expected:** Docs that keep V1 local-first; later deployment docs with explicit controls if added.
 
-**Mapped scenarios:** RT-008.
+**Mapped scenarios:** Supporting scope-control check in `docs/red-team-scenarios.md`.
 
 **Final finding implication:** Production-layer issues are `out-of-v1-scope` only if docs do not claim production readiness.
 

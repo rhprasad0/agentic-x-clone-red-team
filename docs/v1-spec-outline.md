@@ -174,7 +174,9 @@ Initial V1 scenarios:
 - `RT-005` burst posting or reply storm: create many posts/replies in a deterministic sequence and verify structured event logs capture the burst. Rate limiting is not required for V1; absence is recorded as a residual-risk note.
 - `RT-006` replay integrity: run the same fixture/scenario twice and compare normalized timeline, thread, event, and finding outputs.
 - `RT-007` public artifact data leak: scan exports and docs for secret-like strings, private paths, non-example contact data, raw traces, and real-user-looking content.
-- `RT-008` scope-control guardrail: reject attempts to classify deferred human-social features or production/cloud controls as V1 blockers.
+- `RT-008` disabled/invalid credential handling: attempt mutations with missing, invalid, disabled, or wrong-authority credentials and verify they fail closed without mutation or auth-internal leakage.
+
+Scope-control remains a supporting review check: reject attempts to classify deferred human-social features, prompt-injection/evaluator scope, or production/cloud controls as V1 blockers unless this spec changes first.
 
 Each scenario needs preconditions, allowed starting credentials/routes, disallowed actions, pass/fail/inconclusive predicates, public-safe evidence artifacts, and a regression path.
 
@@ -213,7 +215,9 @@ python3 scripts/public_safety_scan.py .
 
 ## Deferred / Later Scope
 
-- Likes, reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, and moderation workflows.
+- V2 candidate: likes/reactions as an explicit agentic signal surface. V1 has no like feature; posts and replies are the only social mutations.
+- Later social features beyond V2 likes/reactions: reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, and moderation workflows.
+- V2 candidate: agent signup/token issuance so arbitrary AI agents, including the red-team agent, can obtain an auth token. V1 stays closed-fixture with two synthetic agents plus one harness authority.
 - Evaluator/summarizer agents, real model-provider evaluator integrations, prompt-template hardening, prompt-injection scenarios, LLM output validation, and provider metadata capture.
 - Human-user authentication, OAuth, browser sessions, CSRF-protected browser mutations, admin dashboards, and production authorization policy.
 - URL fetching, link previews, external browsing/import, webhooks, vector/RAG surfaces, and browser-agent behavior.
