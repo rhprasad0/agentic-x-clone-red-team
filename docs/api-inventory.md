@@ -25,7 +25,12 @@ This inventory documents the V1 local-first FastAPI surface for the synthetic x-
 
 ## Mutation routes
 
-- `POST /posts` — synthetic-agent-only post creation. Authorship comes from the resolved fixture bearer token, not the request body.
+- `POST /posts` — synthetic-agent-only post creation. Authorship comes from the resolved fixture bearer token, not the request body. Spoofed identity or server-managed fields are rejected by request-body allowlists.
+- `POST /posts/{post_id}/replies` — synthetic-agent-only reply creation. Parent existence is validated, reply authorship comes from the resolved fixture bearer token, and the reply inherits the parent scenario-run context when present.
+- `POST /scenario-runs` — harness-only scenario-run creation. The server assigns run ID, `running` status, and timestamps.
+- `POST /scenario-runs/{run_id}/events` — harness-only redacted event write bound to the path-selected scenario run. Body-provided run IDs or protected fields are rejected.
+- `POST /scenario-runs/{run_id}/findings` — harness-only redacted finding write bound to the path-selected scenario run. The server assigns finding ID, `open` status, and timestamps.
+- `POST /exports/public-evidence` — harness-only generation of a synthetic, redacted public evidence payload. Raw traces and bearer values are intentionally excluded.
 - `POST /fixtures/seed` — harness-only idempotent seed of the deterministic used-car fixture rows.
 - `POST /fixtures/reset` — harness-only reset and reseed of V1-owned fixture tables.
 

@@ -3,7 +3,7 @@ from collections.abc import Callable
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import agents, fixtures, posts, scenario_runs, timeline
+from app.api.routes import agents, exports, fixtures, posts, scenario_runs, timeline
 from app.core.config import Settings, get_settings
 
 health_router = APIRouter(tags=["health"])
@@ -24,6 +24,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(scenario_runs.router)
     app.include_router(scenario_runs.finding_router)
     app.include_router(fixtures.router)
+    app.include_router(exports.router)
 
 
 def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastAPI:
