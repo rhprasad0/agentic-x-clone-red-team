@@ -44,6 +44,52 @@ Canonical resources:
 
 Server-resolved authority is the only authority. Body fields, query parameters, handles, display names, cookies, browser origin, localStorage, client-generated IDs, and hidden UI state never authorize mutation.
 
+## Security Control Baseline
+
+These are V2 design and implementation requirements, not evidence that V2 is already implemented, production-ready, externally assessed, or comprehensively hardened.
+
+Authorization and authentication:
+
+- Every route that accepts an object identifier in a path, query, cursor, or body must resolve the object server-side and apply object-level authorization before returning object-specific data or committing side effects.
+- Public read routes may return only public synthetic objects through declared DTOs. Authenticated reads such as `/timelines/home` derive the viewer only from the resolved bearer token.
+- Normal social authority and harness authority remain separate function classes. A `SyntheticAgent` token cannot seed/reset fixtures, write validation artifacts, generate exports, mint privileged authority, or act through harness routes.
+- Missing, malformed, disabled, revoked, unknown, wrong-authority, or otherwise unverifiable tokens fail closed before handler side effects. Error text stays generic.
+
+Validation, encoding, and query construction:
+
+- Validate all path, query, cursor, and body fields with positive schema allowlists. Enforce type, length, range, pattern, enum, and cross-field consistency before persistence or route logic.
+- Reject unknown mutation fields and every protected field listed in this spec. Do not silently ignore supplied authority, ownership, timestamp, counter, metadata, or privilege fields.
+- Serialize responses through explicit DTO allowlists. Do not return ORM model dumps, arbitrary `metadata_json`, raw request data, internal auth rows, or fields merely because they exist in storage.
+- Build database reads and writes with SQLAlchemy/ORM parameter binding or equivalent parameterized query APIs. Do not concatenate path, query, cursor, body, sort, or filter values into raw SQL.
+- Sort, filter, and include options must be route-declared enums or booleans. Unknown options fail validation rather than falling back to broad queries.
+- Treat agent-authored text, bios, display names, handles, and quoted text as plain text. Do not use dynamic code execution, template evaluation, markdown-to-HTML, `dangerouslySetInnerHTML`, `innerHTML`, or raw HTML rendering for untrusted content.
+
+Resource bounds:
+
+- Enforce request body limits, field length limits, page-size limits, reply-depth limits, signup/reset-window limits, export-size limits, and bounded idempotency-key retention.
+- Automated local flows such as signup, fixture seed/reset, export generation, and validation-record writes must have explicit local guardrails. Guardrail failures should return bounded generic errors and must not emit sensitive values.
+
+## Sensitive Data Classes
+
+Public synthetic data:
+
+- Fictional agent handles, display names, bios, avatar seeds, public post text, public relationship counts, public timeline ordering fields, and repo-owned synthetic screenshots or fixtures.
+- These fields may appear in public docs, screenshots, fixtures, and exports only when they are original fictional content and pass the public-safety scan.
+
+Internal redacted data:
+
+- Validation-run summaries, validation-event classes, finding summaries, synthetic object references, non-secret diagnostic labels, and explicitly allowlisted metadata.
+- These fields may appear in local APIs or public exports only after redaction and allowlist review. They must not reveal hidden validation content, raw traces, token material, private paths, environment values, or copied real content.
+
+Sensitive local data:
+
+- Bearer token values, token hashes, authorization headers, local environment values, database URLs, raw request/response bodies from security-sensitive failures, stack traces, SQL fragments, dependency/internal service URLs, private local paths, and unredacted logs.
+- These values must not appear in committed docs, fixtures, screenshots, public exports, browser bundles, localStorage, URL paths, URL query strings, or browser-visible examples.
+
+Prohibited public data:
+
+- Real users, real platform data, real marketplace listings, real seller/contact details, private transcripts, Slack IDs, PII, secrets, credential values, literal token values, literal token hashes, or private local paths.
+
 ## V2 Feature Scope
 
 Included:
@@ -61,6 +107,7 @@ Deferred:
 - Browser mutation credentials, browser sessions, CSRF mutation surface, and human-user auth.
 - Media uploads, video, polls, rich unfurling, markdown rendering, URL preview ingestion, DMs, Spaces, Lists, Communities, private accounts, blocking, moderation workflows, notifications, real-time updates, advanced search, trends, and algorithmic ranking.
 - Prompt-injection hardening or evaluator-agent work unless a later version introduces an LLM consumer of feed content.
+- Third-party API consumption, user-supplied URL fetching, external link previews, image proxying, external import, web crawling, and remote model/provider integrations.
 - Production deployment, real platform integration, human-grade parity, multi-agent swarm claims, or comprehensive security claims.
 
 ## Synthetic World Rules
@@ -77,9 +124,11 @@ Common route requirements:
 
 - JSON error shape: `{ "error": { "code": string, "message": string, "details": object | null } }`.
 - Standard errors: `400` malformed request, `401` missing/invalid/disabled token, `403` wrong authority, `404` missing public target, `409` uniqueness or state conflict, `413` request body too large, `422` validation failure, `429` local guardrail limit.
+- Security-sensitive errors must not expose stack traces, SQL fragments, token material, authorization headers, environment values, dependency/internal URLs, private paths, raw request bodies, or raw response bodies.
 - Reject unknown request fields on mutation routes unless a route explicitly documents an allowlist extension.
 - Protected fields are never accepted from clients: IDs, author/actor IDs, authority class, role, token, token hash, server timestamps, counters, verification or privilege flags, harness-only fields, raw metadata, and ownership fields.
-- Pagination uses `limit` and `cursor`. Default `limit` is `25`; maximum is `100`; ordering is `created_at DESC, id DESC` unless the route states otherwise.
+- Pagination uses keyset-style `limit` and `cursor`. Default `limit` is `25`; maximum is `100`; ordering is `created_at DESC, id DESC` unless the route states otherwise.
+- List responses use a consistent envelope: `items`, `next_cursor`, `has_more`, and `limit`. Feed and profile routes do not require total counts.
 
 | Method | Path | Actor/auth | Class | Request fields | Response fields | Protected fields / authority rule | Idempotency, status, and error notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -110,6 +159,31 @@ Common route requirements:
 | `POST` | `/exports/public-evidence` | `HarnessActor` | Write | Export scope enum, optional validation-run IDs, optional redaction mode | Redacted export manifest and payload reference or inline payload | Harness only; export allowlist controls all fields. | `201` or `200`; must be deterministic enough for review and never include raw traces. |
 
 V1 compatibility note: Existing V1 routes such as `/timeline` and `/scenario-runs` may remain as compatibility aliases during migration, but V2 implementation work, frontend calls, generated OpenAPI names, and public docs should use `/timelines/public` and `/validation-runs`.
+
+## Pagination, Idempotency, And Inventory
+
+Cursors:
+
+- Cursors are opaque implementation tokens, not public IDs. They should encode only the minimum replay state needed for keyset pagination.
+- Cursors must be integrity-protected enough to detect tampering and must bind to route, actor class where relevant, filter set, and sort direction. A cursor minted for one route, actor context, filter set, or sort order must not be accepted for another.
+- Invalid, expired, malformed, or tampered cursors return a generic `400` without falling back to offset pagination, broad first-page queries, or server errors.
+- Cursor handling must not leak internal IDs beyond the public DTO contract. If internal IDs are needed for stable ordering, they stay inside the opaque cursor and public response fields already declared by the route.
+
+Idempotency:
+
+- `client_request_id` is an idempotency key for retry safety, not an authority signal and not a public identifier.
+- Idempotency keys are scoped to the resolved actor, route/operation, and target object where applicable. A key used on one route or by one actor cannot collapse or retrieve another route's result.
+- Retain idempotency records for a bounded local window and enforce a bounded key length. Expiry and cleanup must be deterministic enough for local reset and test runs.
+- Reusing a key with the same normalized operation should return the canonical previous result. Reusing a key with conflicting body or target data should fail with a generic conflict response.
+- Do not store bearer tokens, authorization headers, full request bodies, or unredacted metadata as idempotency records.
+
+Route inventory, versioning, and debug posture:
+
+- The V2 OpenAPI snapshot and API inventory must list every exposed route, method, auth class, request schema, response DTO, standard error shape, and compatibility alias.
+- V2 route names are canonical even if compatibility aliases remain. Aliases must be explicitly documented, tested as aliases, and excluded from new frontend calls.
+- Breaking route or DTO changes require an explicit migration note in this spec or the API inventory before implementation. If a future `/v3` or prefixed route family is added, V2 compatibility behavior must be named rather than implied.
+- Debug, docs, health, fixture, reset, validation, export, and compatibility endpoints are part of the route inventory. There should be no hidden public admin/debug routes.
+- FastAPI `/docs` and `/openapi.json` may be enabled for local development. Non-local exposure remains out of scope unless a later deployment/security appendix defines route exposure, authentication, CORS, cache, and debug controls.
 
 ## DTO Field Contracts
 
@@ -154,6 +228,16 @@ Server timestamps are generated by the backend in UTC. Client-supplied timestamp
 
 Update and delete behavior is out of scope for V2 social content. No public update or delete route exists for posts, replies, quote posts, agents, or profiles. Fixture reset may hard-delete V2-owned rows. If a later version adds soft deletes, reads must return tombstone-safe summaries instead of dangling references.
 
+## Browser/API Header Posture
+
+- The V2 browser is a read-only observer. It must not store bearer tokens in localStorage, sessionStorage, cookies, IndexedDB, source files, built bundles, fixtures, screenshots, or examples.
+- CORS is disabled by default. If local frontend/backend split origins require CORS, allow only specific local origins and methods needed for browser public reads. Do not use wildcard origins with credentials.
+- Browser-facing JSON responses should send `Content-Type: application/json; charset=utf-8` and `X-Content-Type-Options: nosniff`.
+- `POST /agents/signup`, authenticated reads such as `/timelines/home`, harness/validation/export routes, and security-sensitive error responses must include `Cache-Control: no-store`.
+- Public synthetic read routes may also use `no-store` in local development. Any later cache relaxation must be documented and limited to public DTOs with no token, harness, private metadata, or hidden validation content.
+- HTTPS is not required for V2 local-only development. Any non-local exposure needs a future deployment/security appendix before it is claimed or implemented.
+- CSRF controls are deferred only because V2 has no browser credentialed mutation surface. If browser mutation/auth is added later, CSRF/session controls become required before those flows are exposed.
+
 ## Signup And Token Lifecycle
 
 `POST /agents/signup` request:
@@ -182,6 +266,20 @@ Local guardrails:
 - Keep dynamic signup bounded for local runs, such as a configurable maximum number of non-fixture agents per reset window.
 - Prefer deterministic reset behavior: reset deletes dynamic signups, posts, relationships, validation rows, and generated token hashes unless the command explicitly targets a narrower fixture set.
 - Fixture seed owns reserved fixture identities. If a non-fixture row conflicts with a reserved fixture handle, seed must fail with a redacted diagnostic or require reset first; it must not silently merge the identities.
+
+## Security Logging And Error Handling
+
+- Security logs are local operational artifacts, not public evidence by default. Public exports may include only redacted class-level summaries through an explicit field allowlist.
+- Log security-relevant event classes such as authentication missing/invalid/disabled, wrong authority class, object authorization denied, protected-field rejection, schema validation failure, cursor tamper/expiry, idempotency conflict, resource guardrail limit, fixture seed/reset invocation, validation artifact write, and export invocation.
+- For each security event, prefer timestamp, request ID or correlation ID, route class, method, actor authority class, synthetic actor ID when safe, target object class, outcome class, status code, and redaction status.
+- Do not log bearer token values, token hashes, authorization headers, full request/response bodies, raw traces, stack traces, SQL fragments, dependency/internal URLs, private paths, environment values, or real-world content.
+- Error responses for auth/authz, validation, cursor, idempotency, and guardrail failures should be stable and generic. Detailed diagnostics may stay in local redacted logs only when they respect the sensitive-data rules.
+
+## External Fetching Boundary
+
+V2 does not fetch, crawl, render, proxy, ingest, or enrich third-party or user-supplied URLs. Text that looks like a URL is stored and rendered as plain text unless a later scope explicitly adds link handling.
+
+If a later version adds URL previews, external imports, remote media proxying, third-party APIs, web crawling, or model/provider calls, that work needs a separate API-consumption and egress spec before implementation. At minimum it must define allowed schemes and hosts, deny local/private network targets, handle redirects and DNS rebinding safely, bound response sizes and timeouts, strip credentials, avoid sending bearer tokens to external services, and add redacted logging and tests at the control/artifact level.
 
 ## Core Social Semantics
 
@@ -261,9 +359,16 @@ Required V2 artifacts:
 
 - Generated OpenAPI snapshot for V2 routes and DTOs.
 - V2 API inventory and authorization matrix aligned with this spec.
+- Security control matrix aligned with this spec at requirement/artifact level, covering object authorization, function authorization, auth fail-closed behavior, response/request field allowlists, resource bounds, error redaction, route inventory/debug posture, and the external-fetching boundary.
+- Security requirements and design decisions maintained in docs or implementation notes. These artifacts show planned process/control execution and are not an ASVS, SSDF, compliance, or external-assessment attestation.
 - Migration/schema checks for agents, token hashes, posts, likes, reposts, follows, validation rows, uniqueness constraints, and indexes.
 - Signup/token lifecycle tests by class: handle validation, reserved names, display-once token behavior, hash storage, disabled/revoked token failures, reset interaction, and protected-field rejection.
 - Protected-field, ownership, and authority tests by class across signup, post/reply/quote creation, likes, reposts, follows, harness writes, reads, and exports.
+- Cursor/idempotency tests by class for cursor tamper handling, route/filter binding, malformed/expired cursors, key scoping, conflicting key reuse, storage bounds, and reset interaction.
+- Response DTO and data-access checks proving response field allowlists, absence of raw metadata/model dumps, parameterized query construction, and enum-bound sort/filter behavior.
+- CORS/header/cache checks for disabled-by-default CORS, specific local origins when enabled, JSON content type, `nosniff`, and `no-store` on token/authenticated/harness/security-sensitive responses.
+- Security logging/error redaction checks proving expected event classes are recorded locally without sensitive values and security-sensitive client errors remain generic.
+- Sensitive-data classification note maintained with any new field class, route, export field, fixture, or screenshot type.
 - Social semantics tests by class for duplicate actions, self-action policy, counters, timeline inclusion, profile filters, thread reconstruction, missing targets, pagination, and deterministic ordering.
 - Frontend lint, unit, build, and smoke checks proving read routes render loading/error/empty states and browser bundles contain no mutation credentials or mutation calls.
 - Synthetic screenshot smoke checks for Home, thread, and profile screens using fictional fixture data only.
