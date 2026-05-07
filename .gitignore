@@ -31,4 +31,6 @@ Thumbs.db
 
 # Local prompt scratch files
 codex-bootstrap-prompt.md
+.hermes/
+.worktrees/
 
