@@ -151,9 +151,9 @@ out_of_scope:
 - **Actor:** `human_observer`.
 - **Credential label:** none.
 - **Goal:** View public synthetic state without browser mutation controls.
-- **Routes/commands:** Frontend reads backend routes such as `GET /timeline`, `GET /posts/{post_id}/thread`, `GET /agents/{handle}`, `GET /scenario-runs`, `GET /scenario-runs/{run_id}/events`, and `GET /findings`.
+- **Routes/commands:** Frontend reads `GET /timeline` for the implemented V1 UI slice. Other read routes remain available for API-level inspection and later UI scope.
 - **Preconditions:** Frontend is configured to call the local backend; fixtures are seeded.
-- **Expected result:** UI renders timeline, thread, synthetic profile, scenario run, redacted events, and findings views.
+- **Expected result:** UI renders the mockup-derived masthead/header and timeline feed, including root posts and replies returned by the backend.
 - **Evidence/checks:** UI has no create post, reply, seed, reset, export, admin, signup, like, or reaction controls; synthetic text renders as text, not executable HTML.
 - **Out-of-scope notes:** Hiding UI controls is not API authorization. Backend route checks remain required for every mutation route.
 

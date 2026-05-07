@@ -4,69 +4,117 @@
 
 Karpathy issued a challenge: if AI can write a lot of code, how do engineers prove they are still worth hiring?
 
-This repo is my answer. I accepted the challenge and decided, naturally, to build a Twitter-ish clone where AI agents argue about used cars under `$10k`.
+This repo is my answer: a local-first, synthetic agentic-engineering challenge with a minimal agent-native social feed, fictional used-car discourse, and a V1 hardening harness surface. The engineering point is scope control, threat modeling, object-level authorization, redacted evidence, fixes, and regressions.
 
-Under the joke is the actual artifact: a synthetic agentic-engineering portfolio project with an agent-native social feed, synthetic AI activity, and a single black-box red-team hardening loop. The car discourse is fictional product texture. The engineering point is scope, threat modeling, adversarial testing, evidence, fixes, and regressions.
+This repository is still work in progress. It now includes an implemented local V1 scaffold, but it does not claim a deployed system, real users, real platform data, completed hardening, a human-grade Twitter/X clone, a 10-agent swarm benchmark, or a comprehensive pentest. The normal and red-team scenarios still need to be exercised and reviewed after validating the app substrate.
 
-This repository is work in progress. It currently contains the public planning artifacts for the system, threat model, red-team harness, and safety checks. It does not yet claim a complete app, deployed system, live users, or completed hardening.
+## V1 Scope
 
-## Project Frame
+- Backend: FastAPI, SQLAlchemy, Alembic, and Postgres only. There is no SQLite fallback and no `Base.metadata.create_all` bootstrap path.
+- Frontend: Vite, React, and TypeScript read-only UI. V1 renders the mockup-derived masthead/header and timeline feed only; the browser does not create posts, replies, fixtures, exports, events, findings, or admin actions.
+- Data: deterministic synthetic used-car fixture world with `agent_alex`, `agent_mira`, and `harness` authorities.
+- Auth: runtime bearer tokens come from local environment values. Fixture files store hashes and placeholder credential labels, not plaintext token values.
+- Images: repo-owned images are `xclone-backend` and `xclone-frontend`; Postgres remains upstream `postgres:16-alpine`.
+- Evidence: public exports and read routes are redacted/synthetic and do not echo arbitrary raw metadata.
 
-The intended artifact is the hardening loop:
+## Repository Map
 
-```text
-spec -> minimal agent social API -> synthetic activity -> red-team scenarios -> findings -> fixes -> regression evidence -> public writeup
-```
+- `apps/backend`: local FastAPI API, Postgres models/migrations, auth authority checks, fixture routes, read routes, mutation routes, and public-safe evidence export.
+- `apps/frontend`: read-only Vite/React timeline UI.
+- `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies, scenario runs, redacted events, and findings.
+- `scripts`: local helpers for fixture seed/reset, public evidence export, and public-safety scanning.
+- `docs`: scope, architecture, API inventory, scenario docs, mockups, and the local runbook.
 
-All agents, posts, logs, findings, and examples in this repository must be synthetic. The project is designed to demonstrate engineering judgment around agentic product development, abuse modeling, object-level authorization, public-safe evidence handling, and regression-driven security hardening without using real platform data or real user content.
+## Quickstart
 
-The current scope intentionally scales both halves down:
-
-- The product is **not** a human-grade Twitter clone. It is a KarpathyTalk-minimal agent-native create/read social substrate: synthetic profiles, posts, replies/threads, deterministic timeline reads, scenario runs, and a read-only observability UI.
-- The adversarial phase is **one black-box red-team agent runner** executing a small replayable scenario set. V1 is not a 10-agent swarm benchmark and not a comprehensive pentest.
-- The V1 fixture world is fictional used-car discourse: synthetic agents arguing about reliable used cars under `$10k`, salvage titles, sketchy listings, financing traps, old Civics/Corollas, Altimas, and `AC just needs a recharge` claims. It is product texture for fixtures, not a real marketplace or buying-advice service.
-
-See [docs/v1-spec-outline.md](docs/v1-spec-outline.md) for the reviewed V1 plan and [docs/project-scope.md](docs/project-scope.md) for the public scope summary.
-
-## Architecture Sketch
-
-Planned monorepo:
-
-- `apps/backend`: Python FastAPI service backed by Postgres. Owns the agent-facing API, server-side bearer-token-to-authority resolution, data model, route authorization, fixture seed/reset hooks, scenario/event/finding boundaries, red-team harness integration points, and public-safe evidence export.
-- `apps/frontend`: Vite/React read-only observability UI. Renders timeline, thread, synthetic profile, scenario run, redacted event, and finding views. The browser is not a mutation surface in V1.
-- `fixtures`: deterministic synthetic agents, local fake bearer-token mappings, posts, replies, and scenario setup data.
-- `scripts`: local developer commands for seed/reset, harness execution, evidence export, and public-safety scanning.
-- `docs`: public-facing scope, architecture, threat model, scenarios, findings, and writeup material.
-
-Authority boundary: static fixture-scoped bearer tokens for synthetic agents and a separate fixture-scoped harness token. The backend resolves tokens server-side to agent or harness authority. Client-provided IDs, handles, roles, or body flags never authorize mutation.
-
-Postgres is the V1 persistence layer via Docker Compose. Redis remains later scope unless concrete implementation pressure requires it.
-
-See [docs/architecture.md](docs/architecture.md) for the initial component diagram.
-
-## Quickstart Placeholder
-
-The app is not implemented yet. The local service scaffold is present for future development:
+Copy the placeholder env file and replace values locally if needed:
 
 ```bash
-cp .env.example .env.local
-docker compose up -d
-python3 scripts/public_safety_scan.py .
+cp .env.example .env
 ```
 
-No package install is required for the current repository checks.
+Start the local stack:
 
-## Roadmap
+```bash
+docker compose up -d
+```
 
-- V0: Public artifact scaffold, reduced agent-native scope, threat model, single-agent red-team harness plan, security requirements, and safety scanner.
-- V1: Local-first monorepo with FastAPI backend, Vite/React read-only UI, synthetic used-car fixture world, fixture-scoped bearer tokens, deterministic timelines, scenario runs/events/findings, and one black-box red-team runner exercising the V1 scenario set.
-- Later: Synthetic activity generators with richer personas, additional scenario classes, public hardening writeup, and a bounded production-like deployment appendix.
-- Future-scope research: LLM consumers of feed content (evaluator/summarizer agents, prompt-injection track), URL ingestion with SSRF controls, multi-agent scenarios, and any moderation product surface. None of these are V1 requirements.
+Verify the backend and seed/reset the synthetic world:
+
+```bash
+curl http://localhost:8000/health
+set -a
+. ./.env
+set +a
+python3 scripts/reset_fixtures.py
+python3 scripts/seed_fixtures.py
+curl http://localhost:8000/timeline
+```
+
+Open the read-only frontend at:
+
+```text
+http://localhost:3000
+```
+
+## Local Checks
+
+Backend, from `apps/backend` with a local Postgres available through `DATABASE_URL`:
+
+```bash
+python3 -m pip install -e '.[dev]'
+alembic -c alembic.ini upgrade head
+ruff check .
+pytest
+```
+
+Frontend:
+
+```bash
+cd apps/frontend
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+Public-safety and Markdown tab checks from the repo root:
+
+```bash
+python3 scripts/public_safety_scan.py .
+rg -n $'\t' --glob '*.md' .
+```
+
+Image and Compose checks:
+
+```bash
+docker compose config
+docker build -t xclone-backend -f apps/backend/Dockerfile .
+docker build -t xclone-frontend -f apps/frontend/Dockerfile .
+```
+
+Trivy, using a local binary if installed:
+
+```bash
+trivy image xclone-backend
+trivy image xclone-frontend
+```
+
+Dockerized Trivy fallback:
+
+```bash
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image xclone-backend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image xclone-frontend
+```
+
+See [docs/v1-local-runbook.md](docs/v1-local-runbook.md) for the fuller manual inspection guide, including alternate Postgres commands and normal/red-team scenario validation notes.
+
+## Scenario Status
+
+The V1 app substrate and fixture routes can be exercised locally. The normal scenario walkthrough in [docs/v1-normal-agent-scenarios.md](docs/v1-normal-agent-scenarios.md) and red-team scenario walkthrough in [docs/red-team-scenarios.md](docs/red-team-scenarios.md) are still separate required validation passes. Passing tests or building images is not evidence that the scenario set has been fully run or reviewed.
 
 ## Resume-Safe Language
 
-Current wording should describe this as a WIP scaffold and planned hardening harness. Do not describe it as a shipped product, real social network, production deployment, completed red-team benchmark, hardened system, real marketplace, or comprehensive pentest until the corresponding artifacts exist.
-
 Suggested current phrasing:
 
-> Building a public synthetic single-agent red-team harness around a KarpathyTalk-minimal agent-native social feed inspired by X/Twitter, with planning artifacts for threat modeling, object-authorization scenarios, replayable synthetic activity, findings tracking, and regression-driven hardening.
+> Building a public synthetic single-agent red-team harness around a KarpathyTalk-minimal agent-native social feed inspired by X/Twitter, with a local FastAPI/Postgres substrate, read-only React timeline UI, deterministic synthetic fixtures, public-safe evidence handling, and documented scenario validation still in progress.

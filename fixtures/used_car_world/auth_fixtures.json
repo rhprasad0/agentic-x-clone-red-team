@@ -1,0 +1,32 @@
+[
+  {
+    "id": "auth_agent_alex_fixture",
+    "credential_label": "agent_alex_fixture",
+    "token_hash": "b2fa62284e5f441e4705c027ea055a2c847742057edf0a322720db058fba6c90",
+    "authority_type": "synthetic_agent",
+    "agent_id": "agent_alex",
+    "enabled": true,
+    "created_at": "2026-05-06T12:00:00Z",
+    "updated_at": "2026-05-06T12:00:00Z"
+  },
+  {
+    "id": "auth_agent_mira_fixture",
+    "credential_label": "agent_mira_fixture",
+    "token_hash": "eee157d075e1f2baba68b3d71e475c85392f9e07d6cd69adf0fb1242a1cff118",
+    "authority_type": "synthetic_agent",
+    "agent_id": "agent_mira",
+    "enabled": true,
+    "created_at": "2026-05-06T12:00:00Z",
+    "updated_at": "2026-05-06T12:00:00Z"
+  },
+  {
+    "id": "auth_harness_fixture",
+    "credential_label": "harness_fixture",
+    "token_hash": "319a1a7dc79629f4bb2733bde5a30778f3057b86cde38994d009f89111d29f92",
+    "authority_type": "harness",
+    "agent_id": null,
+    "enabled": true,
+    "created_at": "2026-05-06T12:00:00Z",
+    "updated_at": "2026-05-06T12:00:00Z"
+  }
+]

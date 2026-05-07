@@ -1,0 +1,13 @@
+[
+  {
+    "id": "finding_fixture_scope_note",
+    "scenario_run_id": "run_used_car_baseline",
+    "severity": "low",
+    "status": "open",
+    "title": "Synthetic fixture scope note",
+    "redacted_evidence_summary": "Synthetic finding notes that fixture data is fictional, local-only, and safe for public examples.",
+    "metadata_json": {"redaction": "public_safe"},
+    "created_at": "2026-05-06T12:03:00Z",
+    "updated_at": "2026-05-06T12:03:00Z"
+  }
+]
