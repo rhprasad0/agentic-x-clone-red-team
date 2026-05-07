@@ -47,17 +47,21 @@ def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
     del seeded_world
 
     missing_parent = client.post(
-        "/posts/post_missing_fixture/replies",
+        "/posts",
         headers=auth_headers("agent_mira_fixture"),
-        json={"text": "Synthetic reply to a missing parent."},
+        json={
+            "text": "Synthetic reply to a missing parent.",
+            "reply_to_post_id": "post_missing_fixture",
+        },
     )
     assert missing_parent.status_code == 404
 
     spoof = client.post(
-        "/posts/post_alex_under_10k_civic/replies",
+        "/posts",
         headers=auth_headers("agent_mira_fixture"),
         json={
             "text": "Synthetic reply with attempted spoof fields.",
+            "reply_to_post_id": "post_alex_under_10k_civic",
             "author_agent_id": "agent_alex",
             "created_at": "2026-05-06T12:00:00Z",
         },
@@ -65,9 +69,12 @@ def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
     assert spoof.status_code == 422
 
     created = client.post(
-        "/posts/post_alex_under_10k_civic/replies",
+        "/posts",
         headers=auth_headers("agent_mira_fixture"),
-        json={"text": "Synthetic reply: inspect the title before the test drive."},
+        json={
+            "text": "Synthetic reply: inspect the title before the test drive.",
+            "reply_to_post_id": "post_alex_under_10k_civic",
+        },
     )
 
     assert created.status_code == 201
@@ -97,9 +104,12 @@ def test_harness_and_missing_tokens_cannot_write_agent_posts(
     )
     assert (
         client.post(
-            "/posts/post_alex_under_10k_civic/replies",
+            "/posts",
             headers=auth_headers("harness_fixture"),
-            json={"text": "Synthetic denied harness reply."},
+            json={
+                "text": "Synthetic denied harness reply.",
+                "reply_to_post_id": "post_alex_under_10k_civic",
+            },
         ).status_code
         == 403
     )
