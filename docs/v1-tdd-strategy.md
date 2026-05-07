@@ -25,10 +25,39 @@ Use this as a companion to [docs/v1-implementation-plan.md](v1-implementation-pl
 - Migration/schema tests via Alembic: tests apply `alembic upgrade head`; no SQLite fallback and no `Base.metadata.create_all` schema path.
 - Fixture seed/reset tests: deterministic, idempotent, harness-only, and scoped to V1-owned tables.
 - Auth/authority tests: fixture bearer tokens resolve server-side to `SyntheticAgent` or `HarnessActor`; request bodies never authorize identity, role, status, or server-owned metadata.
-- Frontend read-only tests: the Vite/React UI exposes navigation, refresh, filters, and views only; no create/reply/seed/reset/export/admin controls.
+- Frontend read-only tests: the Vite/React UI exposes only the scoped read-only observability surface for V1; no create/reply/seed/reset/export/admin controls, and no browser mutation workflows.
 - Frontend safe-rendering tests: synthetic feed, event, finding, and metadata text render as React text, not executable HTML.
 - Docker/Compose/Trivy smoke gates: exactly two repo-owned app images, `xclone-backend` and `xclone-frontend`; Postgres remains upstream `postgres:16-alpine`.
-- Later full red-team scenarios: RT-001 through RT-008 detailed scenario design and runner implementation are out of scope for this document. This strategy only builds the V1 substrate with enough regression hooks for that later suite.
+- Scenario catalogs: [docs/v1-normal-agent-scenarios.md](v1-normal-agent-scenarios.md) defines happy-path behavior and [docs/red-team-scenarios.md](red-team-scenarios.md) defines adversarial probes. This strategy does not implement the full red-team runner, but each substrate slice should add regression tests tied to the relevant normal or red-team scenario predicates.
+
+## Scenario-To-Test Relationship
+
+The scenario documents and this strategy have different jobs:
+
+- [docs/v1-normal-agent-scenarios.md](v1-normal-agent-scenarios.md) is the happy-path acceptance checklist for V1 behavior.
+- [docs/red-team-scenarios.md](red-team-scenarios.md) is the adversarial checklist for probing those behaviors through black-box public entry points and fixture credential labels.
+- This document is the TDD contract for turning scenario predicates into route, persistence, frontend, export, and public-safety regression tests.
+- Automated tests are not a substitute for the manual scenario walkthroughs in the runbook; they are the regression net that keeps substrate behavior stable before and after those walkthroughs.
+
+Use the scenario IDs as traceability anchors when naming or reviewing tests:
+
+| Scenario anchor | TDD implication |
+| --- | --- |
+| N-001 global timeline | Contract tests for `GET /timeline`, deterministic ordering, synthetic authors, and no public `metadata_json` echo. |
+| N-002 agent profile and N-003 thread reads | Contract tests for profile filtering, thread parent/reply membership, missing-resource 404s, and frontend parent-child grouping. |
+| N-004 post creation and N-005 reply creation | Auth/authority tests proving authorship comes from the resolved fixture token, not request body identity fields. |
+| N-006 fixture seed and N-007 fixture reset | Harness-only fixture routes, idempotence, deterministic replay, and no committed plaintext tokens. |
+| N-008 scenario run and N-009 event/finding records | Harness-only scenario mutation routes, parent-run existence checks, and protected server-owned fields. |
+| N-010 read-only frontend | Frontend tests for observability-only rendering, safe text rendering, parent-child reply display, and absence of mutation/admin controls. |
+| N-011 public evidence export | Export tests for redacted, synthetic, scanner-safe evidence summaries. |
+| RT-001 authorship spoofing and RT-003 authority escalation | Negative backend tests for cross-agent spoof attempts, protected identity fields, and role/authority injection. |
+| RT-002 harness-boundary violations | Negative tests proving agent credentials cannot write scenario runs, events, findings, fixtures, or exports. |
+| RT-004 browser mutation boundary | Frontend read-only tests plus backend fail-closed mutation-route tests; the browser is observability, not authority. |
+| RT-006 replay integrity | Seed/reset normalization and deterministic ordering tests; full replay walkthrough remains separate. |
+| RT-007 public artifact leakage | Public-safety scanner, export redaction tests, and placeholder-only docs/fixtures. |
+| RT-008 invalid/disabled credentials | Missing, invalid, disabled, and wrong-authority credential tests fail closed. |
+
+If a scenario predicate has no automated regression yet, record that gap explicitly rather than implying the scenario is fully validated. In particular, the full `SingleRedTeamAgent` runner and scenario walkthrough evidence remain separate from substrate TDD until explicitly implemented.
 
 ## Backend Test Layout
 

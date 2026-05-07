@@ -223,27 +223,39 @@ body {
   font-size: 11px;
 }
 
-.reply-arrow { color: var(--indigo); }
-
-.post.is-reply {
-  padding-left: 56px;
-  background: var(--paper-2);
+.reply-context {
+  color: var(--indigo);
+  font-weight: 600;
 }
 
-.post.is-reply::before {
-  left: 30px;
+.post.has-replies {
+  padding-bottom: 0;
+}
+
+.reply-list {
+  margin: 14px -22px 0 -28px;
+  padding-left: 28px;
+  border-top: 1px solid var(--rule);
+}
+
+.post.is-child-reply {
+  background: #f7f4ea;
+  border-bottom: 0;
+}
+
+.post.is-child-reply::before {
+  background: var(--paper-2);
+  border-right-color: var(--rule);
+}
+
+.post.is-orphan-reply {
+  background: #fff9df;
+  border-top: 1px dashed var(--rule);
+}
+
+.post.is-orphan-reply::before {
   background: var(--indigo);
   border-right-color: var(--indigo);
-}
-
-.post.is-reply::after {
-  content: '↳';
-  position: absolute;
-  left: 12px;
-  top: 22px;
-  color: var(--indigo);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
 }
 
 .state {

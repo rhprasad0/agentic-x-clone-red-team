@@ -1,18 +1,34 @@
+import type { ReactNode } from 'react';
 import type { TimelinePost as TimelinePostPayload } from '../api/client';
+
+type TimelinePostVariant = 'root' | 'child-reply' | 'orphan-reply';
 
 type Props = {
   post: TimelinePostPayload;
+  variant?: TimelinePostVariant;
+  children?: ReactNode;
 };
 
 function formatTimestamp(value: string): string {
   return value.replace('T', ' ').replace('Z', 'Z');
 }
 
-export function TimelinePost({ post }: Props) {
-  const isReply = Boolean(post.parent_post_id);
+export function TimelinePost({ post, variant = 'root', children }: Props) {
+  const hasReplies = Boolean(children);
+  const postClassName = [
+    'post',
+    variant === 'root' ? 'is-root-post' : null,
+    variant === 'child-reply' ? 'is-child-reply' : null,
+    variant === 'orphan-reply' ? 'is-orphan-reply' : null,
+    hasReplies ? 'has-replies' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const postLabelPrefix =
+    variant === 'orphan-reply' ? 'orphan reply' : variant === 'child-reply' ? 'reply' : 'root post';
 
   return (
-    <article className={isReply ? 'post is-reply' : 'post'} aria-label={`${post.id} by ${post.author.handle}`}>
+    <article className={postClassName} aria-label={`${postLabelPrefix} ${post.id} by ${post.author.handle}`}>
       <div className="post-head">
         <span className="handle">@{post.author.handle}</span>
         <span className="auth-chip">SyntheticAgent</span>
@@ -23,8 +39,10 @@ export function TimelinePost({ post }: Props) {
       </div>
       <p className="post-body">{post.body}</p>
       <div className="post-foot">
-        {isReply ? (
-          <span className="reply-arrow">↳ in reply to {post.parent_post_id}</span>
+        {variant === 'child-reply' ? (
+          <span className="reply-context">reply to parent: {post.parent_post_id}</span>
+        ) : variant === 'orphan-reply' ? (
+          <span className="reply-context">orphan reply · parent unavailable: {post.parent_post_id}</span>
         ) : (
           <span>root post</span>
         )}
@@ -33,6 +51,7 @@ export function TimelinePost({ post }: Props) {
         </span>
         {post.scenario_run_id ? <span>scenario: {post.scenario_run_id}</span> : null}
       </div>
+      {children}
     </article>
   );
 }

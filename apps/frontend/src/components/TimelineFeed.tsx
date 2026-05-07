@@ -7,6 +7,67 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; items: TimelinePostPayload[] };
 
+type TimelineDisplayNode = {
+  post: TimelinePostPayload;
+  children: TimelineDisplayNode[];
+  isOrphanReply: boolean;
+};
+
+function buildTimelineDisplayTree(items: TimelinePostPayload[]): TimelineDisplayNode[] {
+  const nodesById = new Map<string, TimelineDisplayNode>();
+
+  for (const post of items) {
+    nodesById.set(post.id, { post, children: [], isOrphanReply: false });
+  }
+
+  for (const post of items) {
+    const parentId = post.parent_post_id;
+    if (!parentId) {
+      continue;
+    }
+
+    const parentNode = nodesById.get(parentId);
+    const childNode = nodesById.get(post.id);
+    if (parentNode && childNode) {
+      parentNode.children.push(childNode);
+    }
+  }
+
+  return items.flatMap((post) => {
+    const node = nodesById.get(post.id);
+    if (!node) {
+      return [];
+    }
+
+    if (!post.parent_post_id) {
+      return [node];
+    }
+
+    if (!nodesById.has(post.parent_post_id)) {
+      node.isOrphanReply = true;
+      return [node];
+    }
+
+    return [];
+  });
+}
+
+function TimelineDisplayPost({ node }: { node: TimelineDisplayNode }) {
+  const variant = node.isOrphanReply ? 'orphan-reply' : node.post.parent_post_id ? 'child-reply' : 'root';
+
+  return (
+    <TimelinePost post={node.post} variant={variant}>
+      {node.children.length > 0 ? (
+        <div className="reply-list" role="group" aria-label={`Replies to ${node.post.id}`}>
+          {node.children.map((child) => (
+            <TimelineDisplayPost key={child.post.id} node={child} />
+          ))}
+        </div>
+      ) : null}
+    </TimelinePost>
+  );
+}
+
 export function TimelineFeed() {
   const [state, setState] = useState<LoadState>({ status: 'loading' });
 
@@ -47,7 +108,9 @@ export function TimelineFeed() {
         <p className="state mono">No synthetic timeline posts returned.</p>
       ) : null}
       {state.status === 'ready'
-        ? state.items.map((post) => <TimelinePost key={post.id} post={post} />)
+        ? buildTimelineDisplayTree(state.items).map((node) => (
+            <TimelineDisplayPost key={node.post.id} node={node} />
+          ))
         : null}
 
       <div className="feed-foot">end of replay window · backend timeline response · read-only</div>
