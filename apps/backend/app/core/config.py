@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"
     signup_max_dynamic_agents: int = Field(default=50, ge=1, le=1000)
+    v2_cursor_signing_key: str = "cursor_signing_key_placeholder"
+    v2_cursor_default_limit: int = Field(default=25, ge=1, le=100)
+    v2_cursor_max_limit: int = Field(default=100, ge=1, le=100)
+    v2_cursor_ttl_seconds: int = Field(default=86400, ge=1, le=604800)
+    v2_client_request_id_max_length: int = Field(default=120, ge=1, le=120)
+    v2_idempotency_ttl_seconds: int = Field(default=86400, ge=1, le=604800)
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod

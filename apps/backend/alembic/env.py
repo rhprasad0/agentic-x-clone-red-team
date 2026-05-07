@@ -12,6 +12,7 @@ from app.models import (  # noqa: F401
     Event,
     Finding,
     Follow,
+    IdempotencyRecord,
     Like,
     Post,
     Repost,

@@ -13,6 +13,7 @@ from app.models.auth_token_hash import AuthTokenHash
 from app.models.event import Event
 from app.models.finding import Finding
 from app.models.follow import Follow
+from app.models.idempotency import IdempotencyRecord
 from app.models.like import Like
 from app.models.post import Post
 from app.models.repost import Repost
@@ -46,6 +47,7 @@ LOAD_ORDER = (
     "findings",
 )
 DELETE_ORDER = (
+    IdempotencyRecord,
     Like,
     Repost,
     Follow,
