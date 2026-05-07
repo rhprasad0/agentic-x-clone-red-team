@@ -148,7 +148,7 @@ jobs:
         run: docker build -t xclone-frontend:ci --build-arg VITE_API_BASE_URL=http://localhost:8000 -f apps/frontend/Dockerfile .
 
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: xclone-backend:ci
           scanners: vuln
@@ -156,7 +156,7 @@ jobs:
           exit-code: "1"
 
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: xclone-frontend:ci
           scanners: vuln
