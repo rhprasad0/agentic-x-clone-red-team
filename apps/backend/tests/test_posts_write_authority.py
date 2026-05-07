@@ -15,7 +15,7 @@ def test_post_authorship_comes_from_agent_token_and_rejects_identity_spoofing(
         "/posts",
         headers=auth_headers("agent_alex_fixture"),
         json={
-            "body": "Synthetic note about a boring Corolla inspection.",
+            "text": "Synthetic note about a boring Corolla inspection.",
             "author_agent_id": "agent_mira",
             "handle": "synthetic_mira",
             "role": "harness",
@@ -27,8 +27,7 @@ def test_post_authorship_comes_from_agent_token_and_rejects_identity_spoofing(
         "/posts",
         headers=auth_headers("agent_alex_fixture"),
         json={
-            "body": "Synthetic note about a boring Corolla inspection.",
-            "metadata_json": {"topic": "inspection"},
+            "text": "Synthetic note about a boring Corolla inspection.",
         },
     )
 
@@ -38,7 +37,8 @@ def test_post_authorship_comes_from_agent_token_and_rejects_identity_spoofing(
     assert payload["author"]["handle"] == "synthetic_alex"
     assert "metadata_json" not in payload
     assert payload["parent_post_id"] is None
-    assert payload["body"] == "Synthetic note about a boring Corolla inspection."
+    assert payload["text"] == "Synthetic note about a boring Corolla inspection."
+    assert payload["counts"]["reply_count"] == 0
 
 
 def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
@@ -49,7 +49,7 @@ def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
     missing_parent = client.post(
         "/posts/post_missing_fixture/replies",
         headers=auth_headers("agent_mira_fixture"),
-        json={"body": "Synthetic reply to a missing parent."},
+        json={"text": "Synthetic reply to a missing parent."},
     )
     assert missing_parent.status_code == 404
 
@@ -57,7 +57,7 @@ def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
         "/posts/post_alex_under_10k_civic/replies",
         headers=auth_headers("agent_mira_fixture"),
         json={
-            "body": "Synthetic reply with attempted spoof fields.",
+            "text": "Synthetic reply with attempted spoof fields.",
             "author_agent_id": "agent_alex",
             "created_at": "2026-05-06T12:00:00Z",
         },
@@ -67,7 +67,7 @@ def test_reply_authorship_comes_from_agent_token_and_parent_must_exist(
     created = client.post(
         "/posts/post_alex_under_10k_civic/replies",
         headers=auth_headers("agent_mira_fixture"),
-        json={"body": "Synthetic reply: inspect the title before the test drive."},
+        json={"text": "Synthetic reply: inspect the title before the test drive."},
     )
 
     assert created.status_code == 201
@@ -86,12 +86,12 @@ def test_harness_and_missing_tokens_cannot_write_agent_posts(
 ) -> None:
     del seeded_world
 
-    assert client.post("/posts", json={"body": "Synthetic denied post."}).status_code == 401
+    assert client.post("/posts", json={"text": "Synthetic denied post."}).status_code == 401
     assert (
         client.post(
             "/posts",
             headers=auth_headers("harness_fixture"),
-            json={"body": "Synthetic denied harness post."},
+            json={"text": "Synthetic denied harness post."},
         ).status_code
         == 403
     )
@@ -99,7 +99,7 @@ def test_harness_and_missing_tokens_cannot_write_agent_posts(
         client.post(
             "/posts/post_alex_under_10k_civic/replies",
             headers=auth_headers("harness_fixture"),
-            json={"body": "Synthetic denied harness reply."},
+            json={"text": "Synthetic denied harness reply."},
         ).status_code
         == 403
     )

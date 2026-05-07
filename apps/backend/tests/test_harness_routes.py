@@ -17,7 +17,6 @@ def test_harness_can_create_scenario_run_event_and_finding(
         json={
             "scenario_id": "RT-005",
             "objective": "Synthetic burst-posting harness smoke.",
-            "metadata_json": {"fixture": "used_car_world"},
         },
     )
     assert run.status_code == 201
@@ -32,7 +31,6 @@ def test_harness_can_create_scenario_run_event_and_finding(
         json={
             "event_type": "route_probe",
             "redacted_summary": "Synthetic harness wrote a redacted route probe.",
-            "metadata_json": {"route": "/timeline"},
         },
     )
     assert event.status_code == 201
@@ -45,7 +43,6 @@ def test_harness_can_create_scenario_run_event_and_finding(
             "severity": "medium",
             "title": "Synthetic route probe finding",
             "redacted_evidence_summary": "Synthetic evidence summary with no raw trace.",
-            "metadata_json": {"redaction": "public_safe"},
         },
     )
     assert finding.status_code == 201
@@ -84,7 +81,12 @@ def test_harness_routes_reject_agents_and_protected_body_fields(
     protected_run = client.post(
         "/scenario-runs",
         headers=harness_headers,
-        json={"scenario_id": "RT-006", "status": "completed", "id": "run_client_supplied"},
+        json={
+            "scenario_id": "RT-006",
+            "status": "completed",
+            "id": "run_client_supplied",
+            "metadata_json": {"operator_note": "do_not_accept"},
+        },
     )
     assert protected_run.status_code == 422
 

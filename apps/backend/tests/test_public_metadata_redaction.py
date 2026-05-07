@@ -4,7 +4,10 @@ from conftest import FIXTURE_CREDENTIAL_VALUES
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.models.event import Event
+from app.models.finding import Finding
 from app.models.post import Post
+from app.models.scenario_run import ScenarioRun
 
 
 def auth_headers(label: str) -> dict[str, str]:
@@ -20,13 +23,7 @@ def test_post_metadata_is_stored_but_not_returned_by_public_reads(
     created = client.post(
         "/posts",
         headers=auth_headers("agent_alex_fixture"),
-        json={
-            "body": "Synthetic note with metadata stored server-side.",
-            "metadata_json": {
-                "operator_note": unsafe_marker,
-                "local_hint": "redacted-local-scratch",
-            },
-        },
+        json={"text": "Synthetic note with metadata stored server-side."},
     )
 
     assert created.status_code == 201
@@ -37,10 +34,16 @@ def test_post_metadata_is_stored_but_not_returned_by_public_reads(
 
     stored = db_session.get(Post, created_payload["id"])
     assert stored is not None
+    stored.metadata_json = {
+        "operator_note": unsafe_marker,
+        "local_hint": "redacted-local-scratch",
+    }
+    db_session.commit()
     assert stored.metadata_json["operator_note"] == unsafe_marker
 
     public_reads = [
         client.get("/timeline").json(),
+        client.get("/timelines/public").json(),
         client.get("/agents/synthetic_alex/posts").json(),
         client.get(f"/posts/{created_payload['id']}/thread").json(),
     ]
@@ -51,7 +54,7 @@ def test_post_metadata_is_stored_but_not_returned_by_public_reads(
 
 
 def test_harness_metadata_is_not_returned_by_reads_or_public_export(
-    client: TestClient, seeded_world: dict
+    client: TestClient, db_session: Session, seeded_world: dict
 ) -> None:
     del seeded_world
     unsafe_marker = "harness_metadata_marker_do_not_echo"
@@ -63,7 +66,6 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
         json={
             "scenario_id": "RT-METADATA",
             "objective": "Synthetic metadata redaction check.",
-            "metadata_json": {"operator_note": unsafe_marker},
         },
     )
     assert run.status_code == 201
@@ -75,7 +77,6 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
         json={
             "event_type": "metadata_probe",
             "redacted_summary": "Synthetic redacted event summary.",
-            "metadata_json": {"operator_note": unsafe_marker},
         },
     )
     finding = client.post(
@@ -85,11 +86,14 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
             "severity": "low",
             "title": "Synthetic metadata redaction finding",
             "redacted_evidence_summary": "Synthetic redacted finding summary.",
-            "metadata_json": {"operator_note": unsafe_marker},
         },
     )
     assert event.status_code == 201
     assert finding.status_code == 201
+    db_session.get(ScenarioRun, run_id).metadata_json = {"operator_note": unsafe_marker}
+    db_session.get(Event, event.json()["id"]).metadata_json = {"operator_note": unsafe_marker}
+    db_session.get(Finding, finding.json()["id"]).metadata_json = {"operator_note": unsafe_marker}
+    db_session.commit()
 
     public_reads = [
         run.json(),
@@ -98,8 +102,8 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
         client.get("/scenario-runs").json(),
         client.get(f"/scenario-runs/{run_id}").json(),
         client.get(f"/scenario-runs/{run_id}/events").json(),
-        client.get(f"/scenario-runs/{run_id}/findings").json(),
-        client.get("/findings").json(),
+        client.get(f"/scenario-runs/{run_id}/findings", headers=harness_headers).json(),
+        client.get("/findings", headers=harness_headers).json(),
         client.post("/exports/public-evidence", headers=harness_headers).json(),
     ]
     for payload in public_reads:

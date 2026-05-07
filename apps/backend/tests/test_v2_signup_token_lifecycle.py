@@ -127,7 +127,7 @@ def test_signup_token_authorizes_agent_posts_by_hash_lookup(
     created = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
-        json={"body": "Synthetic Corolla note after signup."},
+        json={"text": "Synthetic Corolla note after signup."},
     )
 
     assert created.status_code == 201
@@ -145,7 +145,7 @@ def test_env_example_fixture_placeholder_tokens_resolve_through_auth_token_hashe
     agent_post = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {alex_token}"},
-        json={"body": "Synthetic fixture env placeholder token continuity."},
+        json={"text": "Synthetic fixture env placeholder token continuity."},
     )
     fixture_reset = client.post(
         "/fixtures/reset",
@@ -258,16 +258,16 @@ def test_auth_lookup_rejects_missing_malformed_unknown_disabled_revoked_and_wron
     body = signup(client, "token_checker")
     token = body["token"]
 
-    missing = client.post("/posts", json={"body": "Synthetic denied missing token."})
+    missing = client.post("/posts", json={"text": "Synthetic denied missing token."})
     malformed = client.post(
         "/posts",
         headers={"Authorization": f"Basic {token}"},
-        json={"body": "Synthetic denied malformed token."},
+        json={"text": "Synthetic denied malformed token."},
     )
     unknown = client.post(
         "/posts",
         headers={"Authorization": "Bearer unknown_fixture_token_placeholder"},
-        json={"body": "Synthetic denied unknown token."},
+        json={"text": "Synthetic denied unknown token."},
     )
 
     stored_token = db_session.scalar(
@@ -279,7 +279,7 @@ def test_auth_lookup_rejects_missing_malformed_unknown_disabled_revoked_and_wron
     disabled = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
-        json={"body": "Synthetic denied disabled token."},
+        json={"text": "Synthetic denied disabled token."},
     )
 
     stored_token.enabled = True
@@ -288,13 +288,13 @@ def test_auth_lookup_rejects_missing_malformed_unknown_disabled_revoked_and_wron
     revoked = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
-        json={"body": "Synthetic denied revoked token."},
+        json={"text": "Synthetic denied revoked token."},
     )
 
     wrong_authority = client.post(
         "/posts",
         headers=auth_headers("harness_fixture"),
-        json={"body": "Synthetic denied harness token."},
+        json={"text": "Synthetic denied harness token."},
     )
 
     for response in [missing, malformed, unknown, disabled, revoked]:
@@ -314,7 +314,7 @@ def test_fixture_reset_removes_dynamic_signup_agents_and_generated_token_hashes(
     created = client.post(
         "/posts",
         headers={"Authorization": f"Bearer {token}"},
-        json={"body": "Synthetic dynamic post removed by reset."},
+        json={"text": "Synthetic dynamic post removed by reset."},
     )
     assert created.status_code == 201
     assert db_session.get(Agent, body["agent"]["id"]) is not None
@@ -346,6 +346,6 @@ def test_fixture_reset_removes_dynamic_signup_agents_and_generated_token_hashes(
     fixture_post = client.post(
         "/posts",
         headers=auth_headers("agent_alex_fixture"),
-        json={"body": "Synthetic fixture token still works after reset."},
+        json={"text": "Synthetic fixture token still works after reset."},
     )
     assert fixture_post.status_code == 201

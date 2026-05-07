@@ -2,18 +2,19 @@ from fastapi.testclient import TestClient
 
 
 def test_agent_and_scenario_read_routes_smoke(client: TestClient, seeded_world: dict) -> None:
+    harness_headers = {"Authorization": "Bearer harness_fixture_token_placeholder"}
     agents = client.get("/agents")
     agent = client.get("/agents/synthetic_mira")
     runs = client.get("/scenario-runs")
     run = client.get("/scenario-runs/run_used_car_baseline")
     events = client.get("/scenario-runs/run_used_car_baseline/events")
-    findings = client.get("/scenario-runs/run_used_car_baseline/findings")
-    finding = client.get("/findings/finding_fixture_scope_note")
+    findings = client.get("/scenario-runs/run_used_car_baseline/findings", headers=harness_headers)
+    finding = client.get("/findings/finding_fixture_scope_note", headers=harness_headers)
 
     assert agents.status_code == 200
     assert [item["handle"] for item in agents.json()["items"]] == [
-        "synthetic_alex",
         "synthetic_mira",
+        "synthetic_alex",
     ]
     assert agent.status_code == 200
     assert agent.json()["id"] == "agent_mira"
@@ -46,6 +47,8 @@ def test_openapi_docs_posture_is_documented_and_local_docs_are_reachable(
         "/agents/{handle}",
         "/agents/{handle}/posts",
         "/timeline",
+        "/timelines/public",
+        "/timelines/home",
         "/posts/{post_id}/thread",
         "/scenario-runs",
         "/scenario-runs/{run_id}",

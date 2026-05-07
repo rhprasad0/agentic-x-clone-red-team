@@ -125,7 +125,7 @@ def test_hash_bearer_token_is_stable_sha256_without_cleartext() -> None:
 def test_missing_invalid_or_disabled_tokens_fail_closed(
     client: TestClient, headers: dict[str, str]
 ) -> None:
-    response = client.post("/posts", headers=headers, json={"body": "Synthetic Civic note."})
+    response = client.post("/posts", headers=headers, json={"text": "Synthetic Civic note."})
 
     assert response.status_code == 401
 
@@ -134,14 +134,14 @@ def test_agent_post_authorship_comes_from_resolved_token(client: TestClient) -> 
     response = client.post(
         "/posts",
         headers=bearer(AGENT_ALEX_TOKEN),
-        json={"body": "Synthetic Civic inspection note."},
+        json={"text": "Synthetic Civic inspection note."},
     )
 
     assert response.status_code == 201
     payload = response.json()
     assert payload["author"]["id"] == "agent_alex"
     assert payload["author"]["handle"] == "synthetic_alex"
-    assert payload["body"] == "Synthetic Civic inspection note."
+    assert payload["text"] == "Synthetic Civic inspection note."
 
 
 def test_post_body_identity_fields_are_rejected_not_authoritative(client: TestClient) -> None:
@@ -149,7 +149,7 @@ def test_post_body_identity_fields_are_rejected_not_authoritative(client: TestCl
         "/posts",
         headers=bearer(AGENT_ALEX_TOKEN),
         json={
-            "body": "Synthetic spoof attempt.",
+            "text": "Synthetic spoof attempt.",
             "author_agent_id": "agent_mira",
             "handle": "synthetic_mira",
             "role": "harness",
@@ -165,7 +165,7 @@ def test_wrong_authority_tokens_fail_with_forbidden(client: TestClient) -> None:
     harness_post = client.post(
         "/posts",
         headers=bearer(HARNESS_TOKEN),
-        json={"body": "Harness should not author feed posts."},
+        json={"text": "Harness should not author feed posts."},
     )
     agent_seed = client.post("/fixtures/seed", headers=bearer(AGENT_ALEX_TOKEN))
 

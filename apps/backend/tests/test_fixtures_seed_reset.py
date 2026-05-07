@@ -69,7 +69,7 @@ def test_seed_is_idempotent_without_clearing_agent_posts(
     created = client.post(
         "/posts",
         headers={"Authorization": "Bearer agent_alex_fixture_token_placeholder"},
-        json={"body": "Synthetic agent-added listing note."},
+        json={"text": "Synthetic agent-added listing note."},
     )
     assert created.status_code == 201
 
