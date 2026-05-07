@@ -28,19 +28,29 @@ class ActorContext:
         return self.authority_type == AUTHORITY_HARNESS
 
 
+class AuthHTTPException(HTTPException):
+    def __init__(self, event_class: str) -> None:
+        self.event_class = event_class
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 def parse_bearer_token(authorization: str | None) -> str:
     if not authorization:
-        raise_unauthorized()
+        raise_unauthorized("auth_missing")
 
     scheme, separator, token = authorization.partition(" ")
     if separator != " " or scheme.lower() != "bearer" or not token.strip():
-        raise_unauthorized()
+        raise_unauthorized("auth_invalid")
     return token.strip()
 
 
 def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
     if not is_well_formed_bearer_token(token):
-        raise_unauthorized()
+        raise_unauthorized("auth_invalid")
 
     token_hash = hash_bearer_token(token)
     stored_token = db.scalars(
@@ -49,14 +59,16 @@ def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
         .where(AuthTokenHash.token_hash == token_hash)
     ).one_or_none()
 
-    if stored_token is None or not stored_token.enabled or stored_token.revoked_at is not None:
-        raise_unauthorized()
+    if stored_token is None:
+        raise_unauthorized("auth_invalid")
+    if not stored_token.enabled or stored_token.revoked_at is not None:
+        raise_unauthorized("auth_disabled")
 
     stored_token.last_used_at = datetime.now(UTC)
 
     if stored_token.authority_type == AUTHORITY_SYNTHETIC_AGENT:
         if stored_token.agent is None:
-            raise_unauthorized()
+            raise_unauthorized("auth_invalid")
         return ActorContext(
             credential_label=stored_token.label,
             authority_type=AUTHORITY_SYNTHETIC_AGENT,
@@ -70,15 +82,11 @@ def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
             agent=None,
         )
 
-    raise_unauthorized()
+    raise_unauthorized("auth_invalid")
 
 
-def raise_unauthorized() -> None:
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Unauthorized",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+def raise_unauthorized(event_class: str = "auth_invalid") -> None:
+    raise AuthHTTPException(event_class)
 
 
 def require_synthetic_agent(actor: ActorContext) -> ActorContext:

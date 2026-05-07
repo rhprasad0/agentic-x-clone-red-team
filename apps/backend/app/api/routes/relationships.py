@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.security_logging import v2_route_metadata
 from app.services.relationships import (
     create_follow_for_actor,
     create_like_for_actor,
@@ -47,6 +48,11 @@ async def reject_relationship_delete_body(request: Request) -> None:
 
 
 @router.post("/posts/{post_id}/like", status_code=status.HTTP_201_CREATED)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def like_post(
     post_id: str,
     response: Response,
@@ -65,6 +71,11 @@ def like_post(
 
 
 @router.delete("/posts/{post_id}/like", status_code=status.HTTP_204_NO_CONTENT)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def unlike_post(
     post_id: str,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
@@ -76,6 +87,11 @@ def unlike_post(
 
 
 @router.post("/posts/{post_id}/repost", status_code=status.HTTP_201_CREATED)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def repost_post(
     post_id: str,
     response: Response,
@@ -94,6 +110,11 @@ def repost_post(
 
 
 @router.delete("/posts/{post_id}/repost", status_code=status.HTTP_204_NO_CONTENT)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def unrepost_post(
     post_id: str,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
@@ -105,6 +126,11 @@ def unrepost_post(
 
 
 @router.post("/agents/{handle}/follow", status_code=status.HTTP_201_CREATED)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def follow_agent(
     handle: str,
     response: Response,
@@ -123,6 +149,11 @@ def follow_agent(
 
 
 @router.delete("/agents/{handle}/follow", status_code=status.HTTP_204_NO_CONTENT)
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="social_mutation",
+    target_object_class="relationship",
+)
 def unfollow_agent(
     handle: str,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],

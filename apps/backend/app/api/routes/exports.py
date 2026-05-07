@@ -1,12 +1,13 @@
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Body, Depends, Response
+from fastapi import APIRouter, Body, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_harness_authority
 from app.api.dto import export_dto
 from app.core.auth import ActorContext
+from app.core.security_logging import emit_security_event, v2_route_metadata
 from app.services.authorization import export_invocation
 from app.services.evidence_exports import (
     PUBLIC_EVIDENCE_REDACTION_MODE,
@@ -26,7 +27,11 @@ class PublicEvidenceExportRequest(BaseModel):
 
 
 @router.post("/exports/public-evidence")
+@v2_route_metadata(
+    auth_class="harness", route_class="export", target_object_class="public_evidence_export"
+)
 def export_public_evidence(
+    http_request: Request,
     actor: Annotated[ActorContext, Depends(require_harness_authority)],
     db: Annotated[Session, Depends(get_db_session)],
     response: Response,
@@ -38,10 +43,18 @@ def export_public_evidence(
     request = request or PublicEvidenceExportRequest()
     export_invocation(actor)
     response.headers["Cache-Control"] = "no-store"
-    return export_dto(
+    response_json = export_dto(
         build_public_evidence_export(
             db,
             validation_run_ids=request.validation_run_ids,
             redaction_mode=request.redaction_mode,
         )
     )
+    emit_security_event(
+        http_request,
+        event_class="export_invocation",
+        status_code=200,
+        outcome_class="success",
+        actor=actor,
+    )
+    return response_json

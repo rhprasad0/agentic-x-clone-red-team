@@ -23,9 +23,7 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+psycopg://app_user_placeholder:postgres_password_placeholder@localhost:5432/agentic_x_clone"
     )
-    backend_cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"]
-    )
+    backend_cors_origins: list[str] = Field(default_factory=list)
     enable_api_docs: bool = True
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"
@@ -41,7 +39,9 @@ class Settings(BaseSettings):
     @classmethod
     def split_cors_origins(cls, value: Any) -> Any:
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
+            value = [origin.strip() for origin in value.split(",") if origin.strip()]
+        if isinstance(value, list) and any(origin == "*" for origin in value):
+            raise ValueError("Wildcard CORS origins are not allowed")
         return value
 
     @property

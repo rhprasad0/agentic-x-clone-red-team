@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.security_logging import v2_route_metadata
 from app.services.posts import create_post_for_actor
 
 router = APIRouter(tags=["posts"])
@@ -31,6 +32,9 @@ class PostCreate(BaseModel):
 
 
 @router.post("/posts", status_code=status.HTTP_201_CREATED)
+@v2_route_metadata(
+    auth_class="synthetic_agent", route_class="social_mutation", target_object_class="post"
+)
 def create_post(
     payload: PostCreate,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],

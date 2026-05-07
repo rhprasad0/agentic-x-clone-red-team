@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.security_logging import v2_route_metadata
 from app.models.follow import Follow
 from app.services.authorization import public_read_resolution, resolve_public_post
 from app.services.read_models import (
@@ -31,6 +32,12 @@ def reject_get_body(request: Request) -> None:
 
 
 @router.get("/timeline")
+@v2_route_metadata(
+    auth_class="public",
+    route_class="timeline_read",
+    target_object_class="timeline",
+    alias_for="/timelines/public",
+)
 def get_timeline(
     request: Request,
     db: Annotated[Session, Depends(get_db_session)],
@@ -48,6 +55,9 @@ def get_timeline(
 
 
 @router.get("/timelines/public")
+@v2_route_metadata(
+    auth_class="public", route_class="timeline_read", target_object_class="timeline"
+)
 def get_public_timeline(
     request: Request,
     db: Annotated[Session, Depends(get_db_session)],
@@ -68,6 +78,11 @@ def get_public_timeline(
 
 
 @router.get("/timelines/home")
+@v2_route_metadata(
+    auth_class="synthetic_agent",
+    route_class="timeline_read",
+    target_object_class="timeline",
+)
 def get_home_timeline(
     request: Request,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
@@ -97,6 +112,7 @@ def get_home_timeline(
 
 
 @router.get("/posts/{post_id}/thread")
+@v2_route_metadata(auth_class="public", route_class="post_read", target_object_class="post")
 def get_post_thread(
     request: Request,
     post_id: str,

@@ -11,6 +11,7 @@ from app.api.deps import get_db_session
 from app.api.dto import agent_profile, timestamp
 from app.core.auth import AUTHORITY_SYNTHETIC_AGENT
 from app.core.config import get_settings
+from app.core.security_logging import v2_route_metadata
 from app.models.agent import Agent
 from app.models.auth_token_hash import AuthTokenHash
 from app.services.authorization import public_read_resolution, resolve_public_agent
@@ -111,6 +112,7 @@ class AgentSignup(BaseModel):
 
 
 @router.post("/agents/signup", status_code=status.HTTP_201_CREATED)
+@v2_route_metadata(auth_class="public", route_class="agent_signup", target_object_class="agent")
 def signup_agent(
     payload: AgentSignup,
     response: Response,
@@ -178,6 +180,7 @@ def signup_agent(
 
 
 @router.get("/agents")
+@v2_route_metadata(auth_class="public", route_class="agent_read", target_object_class="agent")
 def list_agents(
     request: Request,
     db: Annotated[Session, Depends(get_db_session)],
@@ -190,6 +193,7 @@ def list_agents(
 
 
 @router.get("/agents/{handle}")
+@v2_route_metadata(auth_class="public", route_class="agent_read", target_object_class="agent")
 def get_agent(
     handle: str,
     request: Request,
@@ -201,6 +205,7 @@ def get_agent(
 
 
 @router.get("/agents/{handle}/posts")
+@v2_route_metadata(auth_class="public", route_class="agent_read", target_object_class="post")
 def list_agent_posts(
     handle: str,
     request: Request,
@@ -218,6 +223,7 @@ def list_agent_posts(
 
 
 @router.get("/agents/{handle}/replies")
+@v2_route_metadata(auth_class="public", route_class="agent_read", target_object_class="post")
 def list_agent_replies(
     handle: str,
     request: Request,
@@ -232,6 +238,9 @@ def list_agent_replies(
 
 
 @router.get("/agents/{handle}/likes")
+@v2_route_metadata(
+    auth_class="public", route_class="agent_read", target_object_class="relationship"
+)
 def list_agent_likes(
     handle: str,
     request: Request,
@@ -246,6 +255,9 @@ def list_agent_likes(
 
 
 @router.get("/agents/{handle}/reposts")
+@v2_route_metadata(
+    auth_class="public", route_class="agent_read", target_object_class="relationship"
+)
 def list_agent_reposts(
     handle: str,
     request: Request,
