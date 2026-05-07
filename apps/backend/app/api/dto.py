@@ -152,7 +152,12 @@ class FindingDTO(StrictDTO):
     severity: str
     status: str
     title: str | None
+    affected_route_class: str | None
+    affected_object_class: str | None
     redacted_evidence_summary: str
+    fix_ref: str | None
+    regression_ref: str | None
+    residual_risk: str | None
     created_at: str
 
 
@@ -437,7 +442,12 @@ def finding_dto(finding: Finding) -> dict[str, Any]:
             severity=finding.severity,
             status=finding.status,
             title=finding.title,
+            affected_route_class=finding.affected_route_class,
+            affected_object_class=finding.affected_object_class,
             redacted_evidence_summary=finding.redacted_evidence_summary,
+            fix_ref=finding.fix_ref,
+            regression_ref=finding.regression_ref,
+            residual_risk=finding.residual_risk,
             created_at=timestamp(finding.created_at),
         )
     )

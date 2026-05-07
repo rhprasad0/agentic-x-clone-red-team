@@ -4,7 +4,16 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_error_handlers
-from app.api.routes import agents, exports, fixtures, posts, relationships, scenario_runs, timeline
+from app.api.routes import (
+    agents,
+    exports,
+    fixtures,
+    posts,
+    relationships,
+    scenario_runs,
+    timeline,
+    validation_runs,
+)
 from app.core.config import Settings, get_settings
 
 health_router = APIRouter(tags=["health"])
@@ -23,8 +32,9 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(timeline.router)
     app.include_router(posts.router)
     app.include_router(relationships.router)
+    app.include_router(validation_runs.router)
+    app.include_router(validation_runs.finding_router)
     app.include_router(scenario_runs.router)
-    app.include_router(scenario_runs.finding_router)
     app.include_router(fixtures.router)
     app.include_router(exports.router)
 

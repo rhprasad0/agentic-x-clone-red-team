@@ -4,10 +4,10 @@ from conftest import FIXTURE_CREDENTIAL_VALUES
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models.event import Event
 from app.models.finding import Finding
 from app.models.post import Post
-from app.models.scenario_run import ScenarioRun
+from app.models.validation_event import ValidationEvent
+from app.models.validation_run import ValidationRun
 
 
 def auth_headers(label: str) -> dict[str, str]:
@@ -90,8 +90,10 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
     )
     assert event.status_code == 201
     assert finding.status_code == 201
-    db_session.get(ScenarioRun, run_id).metadata_json = {"operator_note": unsafe_marker}
-    db_session.get(Event, event.json()["id"]).metadata_json = {"operator_note": unsafe_marker}
+    db_session.get(ValidationRun, run_id).metadata_json = {"operator_note": unsafe_marker}
+    db_session.get(ValidationEvent, event.json()["id"]).metadata_json = {
+        "operator_note": unsafe_marker
+    }
     db_session.get(Finding, finding.json()["id"]).metadata_json = {"operator_note": unsafe_marker}
     db_session.commit()
 
@@ -99,9 +101,13 @@ def test_harness_metadata_is_not_returned_by_reads_or_public_export(
         run.json(),
         event.json(),
         finding.json(),
-        client.get("/scenario-runs").json(),
-        client.get(f"/scenario-runs/{run_id}").json(),
-        client.get(f"/scenario-runs/{run_id}/events").json(),
+        client.get("/validation-runs", headers=harness_headers).json(),
+        client.get(f"/validation-runs/{run_id}", headers=harness_headers).json(),
+        client.get(f"/validation-runs/{run_id}/events", headers=harness_headers).json(),
+        client.get(f"/validation-runs/{run_id}/findings", headers=harness_headers).json(),
+        client.get("/scenario-runs", headers=harness_headers).json(),
+        client.get(f"/scenario-runs/{run_id}", headers=harness_headers).json(),
+        client.get(f"/scenario-runs/{run_id}/events", headers=harness_headers).json(),
         client.get(f"/scenario-runs/{run_id}/findings", headers=harness_headers).json(),
         client.get("/findings", headers=harness_headers).json(),
         client.post("/exports/public-evidence", headers=harness_headers).json(),

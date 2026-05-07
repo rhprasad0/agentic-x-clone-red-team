@@ -6,7 +6,7 @@ def auth_headers(label: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {FIXTURE_CREDENTIAL_VALUES[label]}"}
 
 
-def test_harness_can_create_scenario_run_event_and_finding(
+def test_harness_can_create_validation_run_event_and_finding_through_aliases(
     client: TestClient, seeded_world: dict
 ) -> None:
     del seeded_world
@@ -21,6 +21,8 @@ def test_harness_can_create_scenario_run_event_and_finding(
     )
     assert run.status_code == 201
     run_payload = run.json()
+    assert run_payload["id"].startswith("validation_run_")
+    assert run_payload["scenario_run_id"] is None
     assert run_payload["scenario_id"] == "RT-005"
     assert run_payload["status"] == "running"
     assert "metadata_json" not in run_payload
@@ -34,7 +36,7 @@ def test_harness_can_create_scenario_run_event_and_finding(
         },
     )
     assert event.status_code == 201
-    assert event.json()["scenario_run_id"] == run_payload["id"]
+    assert event.json()["validation_run_id"] == run_payload["id"]
 
     finding = client.post(
         f"/scenario-runs/{run_payload['id']}/findings",
@@ -47,7 +49,8 @@ def test_harness_can_create_scenario_run_event_and_finding(
     )
     assert finding.status_code == 201
     finding_payload = finding.json()
-    assert finding_payload["scenario_run_id"] == run_payload["id"]
+    assert finding_payload["validation_run_id"] == run_payload["id"]
+    assert finding_payload["scenario_run_id"] is None
     assert finding_payload["status"] == "open"
 
 

@@ -5,10 +5,15 @@ def test_agent_and_scenario_read_routes_smoke(client: TestClient, seeded_world: 
     harness_headers = {"Authorization": "Bearer harness_fixture_token_placeholder"}
     agents = client.get("/agents")
     agent = client.get("/agents/synthetic_mira")
-    runs = client.get("/scenario-runs")
-    run = client.get("/scenario-runs/run_used_car_baseline")
-    events = client.get("/scenario-runs/run_used_car_baseline/events")
-    findings = client.get("/scenario-runs/run_used_car_baseline/findings", headers=harness_headers)
+    runs = client.get("/validation-runs", headers=harness_headers)
+    run = client.get("/validation-runs/validation_run_used_car_baseline", headers=harness_headers)
+    alias_run = client.get("/scenario-runs/run_used_car_baseline", headers=harness_headers)
+    events = client.get(
+        "/validation-runs/validation_run_used_car_baseline/events", headers=harness_headers
+    )
+    findings = client.get(
+        "/validation-runs/validation_run_used_car_baseline/findings", headers=harness_headers
+    )
     finding = client.get("/findings/finding_fixture_scope_note", headers=harness_headers)
 
     assert agents.status_code == 200
@@ -19,8 +24,10 @@ def test_agent_and_scenario_read_routes_smoke(client: TestClient, seeded_world: 
     assert agent.status_code == 200
     assert agent.json()["id"] == "agent_mira"
     assert runs.status_code == 200
-    assert [item["id"] for item in runs.json()["items"]] == ["run_used_car_baseline"]
+    assert [item["id"] for item in runs.json()["items"]] == ["validation_run_used_car_baseline"]
     assert run.status_code == 200
+    assert alias_run.status_code == 200
+    assert alias_run.json() == run.json()
     assert run.json()["scenario_id"] == "RT-001"
     assert events.status_code == 200
     assert [item["id"] for item in events.json()["items"]] == [
@@ -50,10 +57,11 @@ def test_openapi_docs_posture_is_documented_and_local_docs_are_reachable(
         "/timelines/public",
         "/timelines/home",
         "/posts/{post_id}/thread",
-        "/scenario-runs",
-        "/scenario-runs/{run_id}",
-        "/scenario-runs/{run_id}/events",
-        "/scenario-runs/{run_id}/findings",
+        "/validation-runs",
+        "/validation-runs/{run_id}",
+        "/validation-runs/{run_id}/events",
+        "/validation-runs/{run_id}/findings",
+        "/findings",
         "/findings/{finding_id}",
         "/fixtures/seed",
         "/fixtures/reset",

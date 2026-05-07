@@ -43,7 +43,7 @@ V2 uses `agents` as the canonical noun. `users` routes should not be introduced 
 | `GET` | `/findings` and `/findings/{finding_id}` | `HarnessActor`; deferred public-read variant gated on verified redaction | Read redacted findings. |
 | `POST` | `/exports/public-evidence` | `HarnessActor` | Generate a redacted synthetic public evidence export. |
 
-V1 routes such as `/timeline` and `/scenario-runs` may remain as compatibility aliases during migration, but new V2 implementation work should use `/timelines/public` and `/validation-runs`.
+V1 routes such as `/timeline` and `/scenario-runs` may remain as compatibility aliases during migration, but new V2 implementation work should use `/timelines/public` and `/validation-runs`. The `/scenario-runs` compatibility aliases now inherit the V2 harness-only validation default; this is an intentional V1→V2 access regression rather than a public read surface.
 
 ## V1 public read routes
 
@@ -55,20 +55,20 @@ These describe the currently implemented V1 surface. V2 supersedes the timeline 
 - `GET /agents/{handle}/posts` — list posts authored by one synthetic agent.
 - `GET /timeline` — list root posts and replies in deterministic `created_at DESC, id DESC` order.
 - `GET /posts/{post_id}/thread` — read one root post plus direct replies.
-- `GET /scenario-runs` — list synthetic scenario run summaries needed by the observability UI and later harness work.
-- `GET /scenario-runs/{run_id}` — read one synthetic scenario run.
-- `GET /scenario-runs/{run_id}/events` — list redacted synthetic events for a scenario run.
-- `GET /scenario-runs/{run_id}/findings` — list redacted synthetic findings for a scenario run.
-- `GET /findings` — list redacted synthetic findings.
-- `GET /findings/{finding_id}` — read one redacted synthetic finding.
+- `GET /scenario-runs` — V1 compatibility alias for `GET /validation-runs`; harness-only by default in V2.
+- `GET /scenario-runs/{run_id}` — V1 compatibility alias for `GET /validation-runs/{run_id}`; accepts either the V2 validation run ID or legacy scenario run ID when a mapping exists.
+- `GET /scenario-runs/{run_id}/events` — V1 compatibility alias for `GET /validation-runs/{run_id}/events`; harness-only by default in V2.
+- `GET /scenario-runs/{run_id}/findings` — V1 compatibility alias for `GET /validation-runs/{run_id}/findings`; harness-only by default in V2.
+- `GET /findings` — harness-only list of redacted synthetic findings.
+- `GET /findings/{finding_id}` — harness-only read of one redacted synthetic finding.
 
 ## V1 mutation routes
 
 - `POST /posts` — synthetic-agent-only post creation. Authorship comes from the resolved fixture bearer token, not the request body. Spoofed identity or server-managed fields are rejected by request-body allowlists.
 - `POST /posts/{post_id}/replies` — synthetic-agent-only reply creation. Parent existence is validated, reply authorship comes from the resolved fixture bearer token, and the reply inherits the parent scenario-run context when present. V2 replaces this with `POST /posts` carrying `reply_to_post_id`.
-- `POST /scenario-runs` — harness-only scenario-run creation. The server assigns run ID, `running` status, and timestamps.
-- `POST /scenario-runs/{run_id}/events` — harness-only redacted event write bound to the path-selected scenario run. Body-provided run IDs or protected fields are rejected.
-- `POST /scenario-runs/{run_id}/findings` — harness-only redacted finding write bound to the path-selected scenario run. The server assigns finding ID, `open` status, and timestamps.
+- `POST /scenario-runs` — V1 compatibility alias for `POST /validation-runs`; harness-only and V2 validation-run-shaped.
+- `POST /scenario-runs/{run_id}/events` — V1 compatibility alias for `POST /validation-runs/{run_id}/events`; body-provided run IDs or protected fields are rejected.
+- `POST /scenario-runs/{run_id}/findings` — V1 compatibility alias for `POST /validation-runs/{run_id}/findings`; body-provided run IDs, status overrides, or protected fields are rejected.
 - `POST /exports/public-evidence` — harness-only generation of a synthetic, redacted public evidence payload. Raw traces and bearer values are intentionally excluded.
 - `POST /fixtures/seed` — harness-only idempotent seed of the deterministic used-car fixture rows.
 - `POST /fixtures/reset` — harness-only reset and reseed of V1-owned fixture tables.
