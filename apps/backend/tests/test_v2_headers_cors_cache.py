@@ -53,6 +53,38 @@ def test_cors_is_disabled_by_default_and_local_origins_are_explicitly_configured
     assert allowed.headers.get("access-control-allow-credentials") != "true"
 
 
+@pytest.mark.parametrize("mutation_method", ["DELETE", "PATCH", "POST", "PUT"])
+def test_configured_local_cors_rejects_browser_mutation_preflights(
+    mutation_method: str,
+) -> None:
+    client = TestClient(
+        create_app(lambda: Settings(backend_cors_origins=["http://localhost:3000"]))
+    )
+
+    allowed_read = client.options(
+        "/timelines/public",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    denied_mutation = client.options(
+        "/agents/signup",
+        headers={
+            "Origin": "http://localhost:3000",
+            "Access-Control-Request-Method": mutation_method,
+        },
+    )
+
+    assert allowed_read.status_code == 200
+    assert allowed_read.headers["access-control-allow-origin"] == "http://localhost:3000"
+    allowed_methods = allowed_read.headers["access-control-allow-methods"]
+    assert "GET" in allowed_methods
+    assert denied_mutation.status_code == 400
+    assert "access-control-allow-origin" in denied_mutation.headers
+    assert mutation_method not in denied_mutation.headers["access-control-allow-methods"]
+
+
 def test_local_dev_files_use_explicit_cors_origins_without_wildcards() -> None:
     env_example = (REPO_ROOT / ".env.example").read_text(encoding="utf-8")
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")

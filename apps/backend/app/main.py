@@ -33,6 +33,7 @@ NO_STORE_PREFIXES = (
 )
 SECURITY_SENSITIVE_ERROR_STATUSES = {401, 403, 422}
 MUTATION_METHODS = {"DELETE", "PATCH", "POST", "PUT"}
+BROWSER_CORS_READ_METHODS = ["GET", "HEAD"]
 
 
 @health_router.get("/health")
@@ -69,7 +70,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
             CORSMiddleware,
             allow_origins=settings.backend_cors_origins,
             allow_credentials=False,
-            allow_methods=["DELETE", "GET", "POST", "OPTIONS"],
+            allow_methods=BROWSER_CORS_READ_METHODS,
             allow_headers=["Authorization", "Content-Type"],
         )
     register_error_handlers(app)
