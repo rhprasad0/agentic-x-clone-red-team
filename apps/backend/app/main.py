@@ -4,7 +4,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import register_error_handlers
-from app.api.routes import agents, exports, fixtures, posts, scenario_runs, timeline
+from app.api.routes import agents, exports, fixtures, posts, relationships, scenario_runs, timeline
 from app.core.config import Settings, get_settings
 
 health_router = APIRouter(tags=["health"])
@@ -22,6 +22,7 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(agents.router)
     app.include_router(timeline.router)
     app.include_router(posts.router)
+    app.include_router(relationships.router)
     app.include_router(scenario_runs.router)
     app.include_router(scenario_runs.finding_router)
     app.include_router(fixtures.router)
@@ -39,7 +40,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
         CORSMiddleware,
         allow_origins=settings.backend_cors_origins,
         allow_credentials=False,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["DELETE", "GET", "POST", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
     )
     register_error_handlers(app)
