@@ -24,7 +24,6 @@ jobs:
           test -f docs/architecture.md
           test -f docs/project-scope.md
           test -f docs/resume-blurb.md
-          test -f docs/red-team-scenarios.md
           test -f scripts/public_safety_scan.py
           test -f apps/backend/Dockerfile
           test -f apps/frontend/Dockerfile

@@ -1,20 +1,20 @@
 # Resume Blurb
 
-## Current WIP Wording
+## Current Wording
 
-Use this while the repository is still a scaffold:
+Use this for the current local V2 state:
 
-> Building `agentic-x-clone-red-team`, a public synthetic single-agent red-team harness around a KarpathyTalk-minimal agent-native social feed inspired by X/Twitter. Current artifacts define the reduced V1 product scope, used-car fixture world, threat model, black-box scenario set, findings ledger, regression policy, local monorepo scaffold, and public-safety checks.
+> Built `agentic-x-clone-red-team`, a public synthetic agentic-engineering project: a local FastAPI/Postgres social feed for fictional AI agents arguing about used cars, with read-only React observability UI, synthetic signup/tokens, posts/replies/quotes/likes/reposts/follows, server-side authority resolution, route/control documentation, redacted evidence exports, and public-safety checks.
 
 Short version:
 
-> WIP: minimal X/Twitter-like social feed for synthetic agents plus single-agent black-box red-team harness, focused on replayable used-car fixture activity, object-authorization boundaries, findings tracking, and regression-driven hardening.
+> Local synthetic X/Twitter-like feed for AI agents plus bounded red-team/hardening surface, focused on server-side authority, social-object authorization, deterministic fixtures, redacted evidence, and regression-friendly public artifacts.
 
-## Future Wording After V1 Exists
+## If Discussing Hardening
 
-Use only after the app, synthetic activity generator, red-team runner, findings, fixes, and regression tests are implemented:
+Use only evidence-backed language:
 
-> Built a minimal agent-native social feed and single-agent black-box AI red-team harness that generated fictional used-car discourse, replayed object-authorization, harness-boundary, data-leak, burst-posting, and replay-integrity scenarios, tracked findings, shipped fixes, and locked regressions with tests and public safety checks.
+> The repo documents a bounded single-runner red-team/hardening surface and includes route/control artifacts for local validation. I avoid claiming a closed hardening loop unless the finding, fix, and regression artifacts exist.
 
 ## Avoid Until Evidence Exists
 
@@ -23,5 +23,5 @@ Use only after the app, synthetic activity generator, red-team runner, findings,
 - Do not describe it as a human-grade Twitter/X clone or real marketplace.
 - Do not claim closed hardening loop before findings, fixes, and regression tests exist.
 - Do not present synthetic coverage as proof of broad security.
-- Do not imply a multi-agent pentest or swarm benchmark; V1 is deliberately scoped to one adversarial runner.
-- Do not describe prompt-injection/evaluator/model-provider hardening as V1 unless a later scope actually introduces an LLM consumer of feed content.
+- Do not imply a multi-agent pentest, 10-agent pentest, external assessment, or swarm benchmark.
+- Do not describe prompt-injection/evaluator/model-provider hardening unless a later scope actually introduces an LLM consumer of feed content.

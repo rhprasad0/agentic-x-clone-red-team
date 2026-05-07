@@ -1,12 +1,12 @@
 # V2 TDD Strategy
 
-This document is a strategy and implementation contract for V2. It is not evidence that V2 tests, app code, migrations, fixtures, screenshots, hardening, or validation work already exist.
+This document records the V2 testing strategy and regression contract. V2 is implemented locally, but this document is still not a deployment, closed-hardening-loop, broad security, screenshot, or validation-completion claim.
 
 Use this as a companion to [docs/v2-spec-outline.md](v2-spec-outline.md). The V2 product spec remains canonical for product behavior, API contracts, public-safety posture, and acceptance artifacts. If the spec changes, update this strategy before implementation continues.
 
 ## Why V2 Needs A Stronger TDD Method
 
-V1 proved the backend substrate could move quickly, but it also exposed the dangerous failure mode: a thin frontend can look fine while its read model is semantically wrong. In particular, parent and child posts can become visually decoupled if the frontend test only checks that both texts appear somewhere on the page.
+The early backend substrate moved quickly, but it exposed the dangerous failure mode: a thin frontend can look fine while its read model is semantically wrong. In particular, parent and child posts can become visually decoupled if the frontend test only checks that both texts appear somewhere on the page.
 
 V2 must avoid "screenshot green, model red" testing. The tests need to bind together:
 
@@ -457,9 +457,9 @@ Backend DTOs should include enough structure for the UI to render relationships 
 - `post.counts` envelope with `reply_count`, `like_count`, `repost_count`, and `quote_count` on every public Post DTO (not flattened scalar fields, not omitted on profile/thread reads).
 - Stable `sort_timestamp` on every timeline item: `post.created_at` for post-like items and `reposted_at` for textless repost events.
 
-DTO tests should assert presence of these fields by name, not just type compatibility. Any V2 read route that returns a V1-style flattened row that drops `parent_post_id`, `quote_post_id`, `item_type`, the `counts` envelope, or the `reposted_by`/`reposted_at` pair must make timeline, profile, or thread tests fail loudly. A passing test that only checks rendered text proves nothing about coupling.
+DTO tests should assert presence of these fields by name, not just type compatibility. Any V2 read route that returns a flattened row that drops `parent_post_id`, `quote_post_id`, `item_type`, the `counts` envelope, or the `reposted_by`/`reposted_at` pair must make timeline, profile, or thread tests fail loudly. A passing test that only checks rendered text proves nothing about coupling.
 
-## Commands Once V2 Scaffold Exists
+## Current Verification Commands
 
 Backend:
 
@@ -518,7 +518,7 @@ A V2 slice is done only when:
 - Public-safety scanner passes if files, fixtures, screenshots, exports, or docs changed.
 - No test fixture contains secrets, PII, external platform data, real marketplace data, private local paths, real account handles, or copied real content.
 - DTO and frontend tests assert relationships structurally (DOM containment, role/group hierarchy, `parent_post_id`/`quote_post_id`/`item_type` values), not just by text presence.
-- New frontend code calls canonical V2 routes, not V1 compatibility aliases.
+- New frontend code calls canonical V2 routes, not legacy compatibility aliases.
 - Browser code remains read-only and carries no mutation credentials, no `Authorization` headers, and no calls to mutation routes.
 - Any gap between spec behavior and automated regression coverage is recorded explicitly rather than skipped, xfailed, or commented out.
 
