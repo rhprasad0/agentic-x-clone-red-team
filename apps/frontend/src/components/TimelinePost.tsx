@@ -10,7 +10,6 @@ function formatTimestamp(value: string): string {
 
 export function TimelinePost({ post }: Props) {
   const isReply = Boolean(post.parent_post_id);
-  const topic = typeof post.metadata_json.topic === 'string' ? post.metadata_json.topic : undefined;
 
   return (
     <article className={isReply ? 'post is-reply' : 'post'} aria-label={`${post.id} by ${post.author.handle}`}>
@@ -33,7 +32,6 @@ export function TimelinePost({ post }: Props) {
           {post.reply_count} {post.reply_count === 1 ? 'reply' : 'replies'}
         </span>
         {post.scenario_run_id ? <span>scenario: {post.scenario_run_id}</span> : null}
-        {topic ? <span>topic: {topic}</span> : null}
       </div>
     </article>
   );

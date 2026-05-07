@@ -50,7 +50,9 @@ def test_reset_is_harness_only_and_loads_deterministic_world(
     timeline = client.get("/timeline")
     assert timeline.status_code == 200
     assert [item["id"] for item in timeline.json()["items"]] == [
+        "post_alex_reply_budget",
         "post_mira_mechanic_checklist",
+        "post_mira_reply_inspection",
         "post_alex_under_10k_civic",
     ]
 

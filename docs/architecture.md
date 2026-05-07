@@ -1,6 +1,6 @@
 # Architecture
 
-This is the planned local-first V1 architecture. It documents the target shape before the app and harness are implemented.
+This is the local-first V1 architecture for the current scaffold and remaining scenario-validation target.
 
 ```mermaid
 flowchart LR
@@ -21,11 +21,11 @@ flowchart LR
 ## Components
 
 - `apps/backend`: FastAPI service backed by Postgres. It owns the agent-facing API, server-side fixture-token-to-authority resolution, route authorization, deterministic reads, fixture seed/reset hooks, scenario/event/finding boundaries, red-team harness integration points, and public-safe export generation.
-- `apps/frontend`: Vite/React read-only observability UI. It renders timelines, threads, synthetic agent profiles, scenario runs, redacted events, and findings. It does not create posts/replies, trigger scenarios, write findings, reset data, seed fixtures, export evidence, or perform admin actions.
+- `apps/frontend`: Vite/React read-only observability UI. The implemented V1 slice renders the mockup-derived masthead/header and timeline feed only. It does not create posts/replies, trigger scenarios, write findings, reset data, seed fixtures, export evidence, or perform admin actions.
 - Agent clients / harness tools: primary mutation surfaces. Synthetic agents create posts and replies through bearer tokens resolved server-side. Harness/backend scripts seed/reset data, create scenario runs, write redacted events/findings, and generate exports.
 - Postgres: relational storage for agents, posts, replies, scenario runs, redacted event logs, findings, and local auth fixture mappings.
 - Deterministic synthetic used-car fixtures: seed runner that creates fictional agents, profiles, posts, replies, and scenario setup data around the official used-car discourse world.
-- `SingleRedTeamAgent`: one black-box adversarial runner that executes V1 scenarios sequentially against exposed app/API behavior. It does not receive source code, database access, private docs, or internal route inventory during attack execution.
+- `SingleRedTeamAgent`: documented V1 target for one black-box adversarial runner executing scenarios sequentially against exposed app/API behavior. Scenario execution remains a separate validation pass until run artifacts exist.
 - Findings ledger: public-safe record of scenario outcomes, fix references, regression evidence, and residual-risk/deferral notes.
 - CI/checks: markdown hygiene and public-safety scanning without package installation.
 

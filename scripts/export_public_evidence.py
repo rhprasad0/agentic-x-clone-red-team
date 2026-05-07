@@ -31,7 +31,6 @@ def build_public_evidence_payload() -> dict[str, Any]:
                 "scenario_id": run["scenario_id"],
                 "status": run["status"],
                 "objective": run.get("objective"),
-                "metadata_json": run.get("metadata_json", {}),
                 "created_at": run["created_at"],
                 "events": [
                     {
@@ -39,7 +38,6 @@ def build_public_evidence_payload() -> dict[str, Any]:
                         "scenario_run_id": run_id,
                         "event_type": event["event_type"],
                         "redacted_summary": event["redacted_summary"],
-                        "metadata_json": event.get("metadata_json", {}),
                         "created_at": event["created_at"],
                     }
                     for event in events
@@ -53,7 +51,6 @@ def build_public_evidence_payload() -> dict[str, Any]:
                         "status": finding["status"],
                         "title": finding.get("title"),
                         "redacted_evidence_summary": finding["redacted_evidence_summary"],
-                        "metadata_json": finding.get("metadata_json", {}),
                         "created_at": finding["created_at"],
                     }
                     for finding in findings

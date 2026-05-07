@@ -8,7 +8,6 @@ export type TimelinePost = {
   id: string;
   body: string;
   created_at: string;
-  metadata_json: Record<string, unknown>;
   reply_count: number;
   scenario_run_id: string | null;
   parent_post_id?: string | null;

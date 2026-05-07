@@ -30,6 +30,7 @@ def test_public_evidence_export_is_harness_only_redacted_and_synthetic(
     exported_text = json.dumps(payload, sort_keys=True).lower()
     assert "synthetic" in exported_text
     assert "raw_trace" not in exported_text
+    assert "metadata_json" not in exported_text
     assert "agent_alex_fixture_token_placeholder" not in exported_text
     assert "harness_fixture_token_placeholder" not in exported_text
     private_home_marker = "/" + "home" + "/" + "example"
@@ -49,6 +50,7 @@ def test_export_public_evidence_script_writes_scanner_safe_json(tmp_path: Path) 
     exported_text = json.dumps(written, sort_keys=True).lower()
     assert "synthetic" in exported_text
     assert "raw_trace" not in exported_text
+    assert "metadata_json" not in exported_text
     assert "token_placeholder" not in exported_text
     private_home_marker = "/" + "home" + "/" + "example"
     assert private_home_marker not in exported_text

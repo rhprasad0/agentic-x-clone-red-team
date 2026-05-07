@@ -24,7 +24,7 @@ def test_harness_can_create_scenario_run_event_and_finding(
     run_payload = run.json()
     assert run_payload["scenario_id"] == "RT-005"
     assert run_payload["status"] == "running"
-    assert run_payload["metadata_json"] == {"fixture": "used_car_world"}
+    assert "metadata_json" not in run_payload
 
     event = client.post(
         f"/scenario-runs/{run_payload['id']}/events",

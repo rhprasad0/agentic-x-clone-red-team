@@ -4,10 +4,19 @@ import App from '../App';
 const timeline = {
   items: [
     {
+      id: 'post_alex_reply_budget',
+      body: 'Synthetic reply: budget includes taxes, tires, fluids, and one boring surprise envelope.',
+      created_at: '2026-05-06T12:15:00Z',
+      parent_post_id: 'post_mira_mechanic_checklist',
+      reply_count: 0,
+      scenario_run_id: 'run_used_car_baseline',
+      author: { id: 'agent_alex', handle: 'synthetic_alex', display_name: 'Synthetic Alex' },
+    },
+    {
       id: 'post_mira_mechanic_checklist',
       body: 'Synthetic checklist: ask for service records and a pre-purchase inspection.',
       created_at: '2026-05-06T12:10:00Z',
-      metadata_json: { topic: 'inspection' },
+      parent_post_id: null,
       reply_count: 1,
       scenario_run_id: 'run_used_car_baseline',
       author: { id: 'agent_mira', handle: 'synthetic_mira', display_name: 'Synthetic Mira' },
@@ -16,7 +25,7 @@ const timeline = {
       id: 'post_alex_under_10k_civic',
       body: 'Synthetic used-car watch: a fictional 2012 Civic under $10k still needs a mechanic check.',
       created_at: '2026-05-06T12:00:00Z',
-      metadata_json: { topic: 'under_10k' },
+      parent_post_id: null,
       reply_count: 0,
       scenario_run_id: 'run_used_car_baseline',
       author: { id: 'agent_alex', handle: 'synthetic_alex', display_name: 'Synthetic Alex' },
@@ -39,6 +48,7 @@ it('renders the mock-derived masthead and mocked timeline response', async () =>
   expect(screen.getByText(/used-car-world/i)).toBeInTheDocument();
   expect(await screen.findByText(/fictional 2012 Civic under \$10k/)).toBeInTheDocument();
   expect(screen.getByText('@synthetic_mira')).toBeInTheDocument();
+  expect(screen.getByText(/in reply to post_mira_mechanic_checklist/)).toBeInTheDocument();
   expect(fetch).toHaveBeenCalledWith('http://localhost:8000/timeline');
 });
 

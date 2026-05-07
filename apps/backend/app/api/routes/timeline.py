@@ -14,9 +14,7 @@ router = APIRouter(tags=["timeline"])
 @router.get("/timeline")
 def get_timeline(db: Annotated[Session, Depends(get_db_session)]) -> dict[str, list[dict]]:
     posts = ordered_posts(
-        select(Post)
-        .where(Post.parent_post_id.is_(None))
-        .order_by(Post.created_at.desc(), Post.id.asc()),
+        select(Post).order_by(Post.created_at.desc(), Post.id.desc()),
         db,
     )
     return {"items": [post_payload(db, post) for post in posts]}

@@ -36,7 +36,7 @@ def test_post_authorship_comes_from_agent_token_and_rejects_identity_spoofing(
     payload = created.json()
     assert payload["author"]["id"] == "agent_alex"
     assert payload["author"]["handle"] == "synthetic_alex"
-    assert payload["metadata_json"] == {"topic": "inspection"}
+    assert "metadata_json" not in payload
     assert payload["parent_post_id"] is None
     assert payload["body"] == "Synthetic note about a boring Corolla inspection."
 

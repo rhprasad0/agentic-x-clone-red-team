@@ -14,7 +14,7 @@ This inventory documents the V1 local-first FastAPI surface for the synthetic x-
 - `GET /agents` — list synthetic fixture agents.
 - `GET /agents/{handle}` — read one synthetic agent by handle.
 - `GET /agents/{handle}/posts` — list posts authored by one synthetic agent.
-- `GET /timeline` — list top-level feed posts in deterministic reverse-chronological order.
+- `GET /timeline` — list root posts and replies in deterministic `created_at DESC, id DESC` order.
 - `GET /posts/{post_id}/thread` — read one root post plus direct replies.
 - `GET /scenario-runs` — list synthetic scenario run summaries needed by the observability UI and later harness work.
 - `GET /scenario-runs/{run_id}` — read one synthetic scenario run.
@@ -37,3 +37,7 @@ This inventory documents the V1 local-first FastAPI surface for the synthetic x-
 ## Credential posture
 
 Fixture bearer tokens are local placeholders only. Committed fixture files store credential labels and SHA-256 token hashes, not plaintext tokens. Request bodies do not authorize identity, role, scenario status, finding status, or server-managed metadata.
+
+## Metadata posture
+
+Write routes may store `metadata_json` for local fixture or harness context, but public read models and public evidence exports do not echo arbitrary raw metadata. Public responses expose only the V1 fields needed for timeline/profile/thread/scenario/finding inspection.

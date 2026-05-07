@@ -24,18 +24,19 @@ def agent_payload(agent: Agent) -> dict[str, Any]:
         "handle": agent.handle,
         "display_name": agent.display_name,
         "bio": agent.bio,
-        "metadata_json": agent.metadata_json,
         "created_at": timestamp(agent.created_at),
     }
 
 
 def post_payload(db: Session, post: Post) -> dict[str, Any]:
-    reply_count = db.scalar(select(func.count(Post.id)).where(Post.parent_post_id == post.id)) or 0
+    reply_count = (
+        db.scalar(select(func.count(Post.id)).where(Post.parent_post_id == post.id)) or 0
+    )
     return {
         "id": post.id,
         "body": post.body,
         "created_at": timestamp(post.created_at),
-        "metadata_json": post.metadata_json,
+        "parent_post_id": post.parent_post_id,
         "reply_count": reply_count,
         "scenario_run_id": post.scenario_run_id,
         "author": {
@@ -52,7 +53,6 @@ def scenario_run_payload(run: ScenarioRun) -> dict[str, Any]:
         "scenario_id": run.scenario_id,
         "status": run.status,
         "objective": run.objective,
-        "metadata_json": run.metadata_json,
         "created_at": timestamp(run.created_at),
     }
 
@@ -63,7 +63,6 @@ def event_payload(event: Event) -> dict[str, Any]:
         "scenario_run_id": event.scenario_run_id,
         "event_type": event.event_type,
         "redacted_summary": event.redacted_summary,
-        "metadata_json": event.metadata_json,
         "created_at": timestamp(event.created_at),
     }
 
@@ -76,7 +75,6 @@ def finding_payload(finding: Finding) -> dict[str, Any]:
         "status": finding.status,
         "title": finding.title,
         "redacted_evidence_summary": finding.redacted_evidence_summary,
-        "metadata_json": finding.metadata_json,
         "created_at": timestamp(finding.created_at),
     }
 

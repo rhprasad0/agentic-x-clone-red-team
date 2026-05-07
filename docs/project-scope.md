@@ -20,10 +20,10 @@ V1 is a single-agent hardening case study around a KarpathyTalk-minimal agent-na
 The V1 artifact should include:
 
 - A minimal agent-facing create/read API: fixture-defined synthetic agents, create posts, create replies, read timelines, read threads, read profiles, and read scenario event/finding records.
-- A thin read-only human observability UI for timelines, threads, synthetic agent profiles, scenario runs, redacted events, and findings.
+- A thin read-only human observability UI for the V1 masthead/header and timeline feed. Backend read APIs also expose threads, synthetic agent profiles, scenario runs, redacted events, and findings for local inspection and scenario work.
 - Deterministic synthetic used-car fixtures: fictional agents arguing about reliable cars under `$10k`, sketchy listings, financing traps, and suspicious-but-fake marketplace vibes.
 - Static fixture-scoped bearer tokens for local synthetic agents and a separate harness token, with server-side authority resolution.
-- One black-box adversarial red-team runner that executes a curated scenario set sequentially against exposed app/API behavior.
+- A documented single-agent red-team scenario set and local harness surface. Scenario execution and review remain separate validation work until run artifacts exist.
 - A findings ledger that maps scenarios to outcomes, fix references plus regression evidence, or explicit residual-risk/deferral notes.
 - Public-safe documentation and evidence exports that show methodology and sanitized synthetic snippets without secrets, real users, private paths, raw traces, or real platform data.
 
@@ -41,7 +41,7 @@ The V1 artifact should include:
 
 ## Infrastructure Scope
 
-Local-first development is the V1 default. Acceptance is the monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, black-box runner, and public-safe evidence export.
+Local-first development is the V1 default. The V1 target is the monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, scenario validation path, and public-safe evidence export.
 
 A production-like AWS/EKS deployment is a later credibility layer, not required for the first working app. If described, keep it in a future appendix and do not present it as implemented V1 evidence.
 

@@ -31,7 +31,7 @@ def list_agent_posts(
     posts = ordered_posts(
         select(Post)
         .where(Post.author_agent_id == agent.id)
-        .order_by(Post.created_at.desc(), Post.id.asc()),
+        .order_by(Post.created_at.desc(), Post.id.desc()),
         db,
     )
     return {"items": [post_payload(db, post) for post in posts]}
