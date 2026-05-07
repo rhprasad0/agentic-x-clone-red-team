@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     enable_api_docs: bool = True
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"
+    signup_max_dynamic_agents: int = Field(default=50, ge=1, le=1000)
 
     @field_validator("backend_cors_origins", mode="before")
     @classmethod

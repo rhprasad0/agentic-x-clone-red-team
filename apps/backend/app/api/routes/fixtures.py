@@ -6,12 +6,11 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session
 from app.core.auth import (
     ActorContext,
-    hash_bearer_token,
     parse_bearer_token,
     require_harness,
     resolve_actor_from_token,
 )
-from app.services.fixtures import _load_fixture, reset_used_car_world, seed_used_car_world
+from app.services.fixtures import reset_used_car_world, seed_used_car_world
 
 router = APIRouter(tags=["fixtures"])
 
@@ -21,17 +20,7 @@ def get_fixture_actor(
     authorization: Annotated[str | None, Header()] = None,
 ) -> ActorContext:
     token = parse_bearer_token(authorization)
-    try:
-        return resolve_actor_from_token(db, token)
-    except Exception:
-        token_hash = hash_bearer_token(token)
-        for fixture in _load_fixture("auth_fixtures"):
-            if fixture["token_hash"] == token_hash and fixture["enabled"]:
-                return ActorContext(
-                    credential_label=fixture["credential_label"],
-                    authority_type=fixture["authority_type"],
-                )
-        raise
+    return resolve_actor_from_token(db, token)
 
 
 @router.post("/fixtures/seed")

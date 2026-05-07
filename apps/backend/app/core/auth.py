@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from hashlib import sha256
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models.agent import Agent
 from app.models.auth_token_hash import AuthTokenHash
+from app.services.tokens import hash_bearer_token, is_well_formed_bearer_token
 
 AUTHORITY_SYNTHETIC_AGENT = "synthetic_agent"
 AUTHORITY_HARNESS = "harness"
@@ -27,12 +28,6 @@ class ActorContext:
         return self.authority_type == AUTHORITY_HARNESS
 
 
-def hash_bearer_token(token: str) -> str:
-    """Hash a fixture bearer token for database lookup without storing cleartext."""
-
-    return sha256(token.encode("utf-8")).hexdigest()
-
-
 def parse_bearer_token(authorization: str | None) -> str:
     if not authorization:
         raise_unauthorized()
@@ -44,6 +39,9 @@ def parse_bearer_token(authorization: str | None) -> str:
 
 
 def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
+    if not is_well_formed_bearer_token(token):
+        raise_unauthorized()
+
     token_hash = hash_bearer_token(token)
     stored_token = db.scalars(
         select(AuthTokenHash)
@@ -53,6 +51,8 @@ def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
 
     if stored_token is None or not stored_token.enabled or stored_token.revoked_at is not None:
         raise_unauthorized()
+
+    stored_token.last_used_at = datetime.now(UTC)
 
     if stored_token.authority_type == AUTHORITY_SYNTHETIC_AGENT:
         if stored_token.agent is None:
@@ -76,7 +76,7 @@ def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
 def raise_unauthorized() -> None:
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid bearer token",
+        detail="Unauthorized",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -85,7 +85,7 @@ def require_synthetic_agent(actor: ActorContext) -> ActorContext:
     if not actor.is_synthetic_agent:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Synthetic agent authority required",
+            detail="Forbidden",
         )
     return actor
 
@@ -94,6 +94,6 @@ def require_harness(actor: ActorContext) -> ActorContext:
     if not actor.is_harness:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Harness authority required",
+            detail="Forbidden",
         )
     return actor

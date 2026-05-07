@@ -127,7 +127,7 @@ def _v2_auth_token_hash_rows() -> list[dict[str, Any]]:
             {
                 "id": row["id"],
                 "token_hash": row["token_hash"],
-                "token_prefix": None,
+                "token_prefix": f"fx_{row['id'][-10:]}",
                 "authority_type": row["authority_type"],
                 "agent_id": row.get("agent_id"),
                 "label": row["credential_label"],
@@ -256,6 +256,8 @@ def seed_used_car_world(db: Session) -> dict[str, int | str]:
 
 
 def reset_used_car_world(db: Session) -> dict[str, int | str]:
+    """Reset dynamic V2 rows, then restore only fixture-owned synthetic rows."""
+
     for model in DELETE_ORDER:
         db.execute(delete(model))
     db.commit()

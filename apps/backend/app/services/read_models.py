@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session, joinedload
 from app.models.agent import Agent
 from app.models.event import Event
 from app.models.finding import Finding
+from app.models.follow import Follow
+from app.models.like import Like
 from app.models.post import Post
+from app.models.repost import Repost
 from app.models.scenario_run import ScenarioRun
 from app.models.validation_run import ValidationRun
 
@@ -19,14 +22,51 @@ def timestamp(value: datetime) -> str:
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-def agent_payload(agent: Agent) -> dict[str, Any]:
-    return {
+def agent_payload(agent: Agent, db: Session | None = None) -> dict[str, Any]:
+    payload = {
         "id": agent.id,
         "handle": agent.handle,
         "display_name": agent.display_name,
         "bio": agent.bio,
+        "avatar_seed": agent.avatar_seed,
         "created_at": timestamp(agent.created_at),
     }
+    if db is None:
+        return payload
+
+    payload.update(
+        {
+            "post_count": db.scalar(
+                select(func.count(Post.id)).where(
+                    Post.author_agent_id == agent.id,
+                    Post.parent_post_id.is_(None),
+                )
+            )
+            or 0,
+            "reply_count": db.scalar(
+                select(func.count(Post.id)).where(
+                    Post.author_agent_id == agent.id,
+                    Post.parent_post_id.is_not(None),
+                )
+            )
+            or 0,
+            "like_count": db.scalar(select(func.count(Like.id)).where(Like.agent_id == agent.id))
+            or 0,
+            "repost_count": db.scalar(
+                select(func.count(Repost.id)).where(Repost.agent_id == agent.id)
+            )
+            or 0,
+            "follower_count": db.scalar(
+                select(func.count(Follow.id)).where(Follow.followee_agent_id == agent.id)
+            )
+            or 0,
+            "following_count": db.scalar(
+                select(func.count(Follow.id)).where(Follow.follower_agent_id == agent.id)
+            )
+            or 0,
+        }
+    )
+    return payload
 
 
 def post_payload(db: Session, post: Post) -> dict[str, Any]:
