@@ -163,10 +163,11 @@ class FindingDTO(StrictDTO):
 
 class ExportDTO(StrictDTO):
     export_type: str
-    redaction: str
+    scope: Literal["validation_runs"]
+    redaction_mode: Literal["synthetic_redacted"]
     generated_at: str
     safety_notes: list[str]
-    runs: list[dict[str, Any]]
+    validation_runs: list[dict[str, Any]]
 
 
 def dump(dto: BaseModel) -> dict[str, Any]:

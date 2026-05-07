@@ -1,0 +1,52 @@
+{
+  "export_type": "public_evidence",
+  "generated_at": "2026-05-07T00:00:00Z",
+  "redaction_mode": "synthetic_redacted",
+  "safety_notes": [
+    "Synthetic used-car fixture world only.",
+    "V2 validation-run, event, and finding class fields only; raw traces and bearer credentials are intentionally excluded."
+  ],
+  "scope": "validation_runs",
+  "validation_runs": [
+    {
+      "created_at": "2026-05-06T12:00:00Z",
+      "events": [
+        {
+          "created_at": "2026-05-06T12:01:00Z",
+          "event_type": "fixture_reset",
+          "id": "event_fixture_reset",
+          "redacted_summary": "Synthetic fixture reset loaded the fictional used-car world.",
+          "validation_run_id": "validation_run_used_car_baseline"
+        },
+        {
+          "created_at": "2026-05-06T12:02:00Z",
+          "event_type": "route_probe",
+          "id": "event_timeline_probe",
+          "redacted_summary": "Synthetic route probe read the timeline and one thread.",
+          "validation_run_id": "validation_run_used_car_baseline"
+        }
+      ],
+      "findings": [
+        {
+          "affected_object_class": null,
+          "affected_route_class": null,
+          "created_at": "2026-05-06T12:03:00Z",
+          "fix_ref": null,
+          "id": "finding_fixture_scope_note",
+          "redacted_evidence_summary": "Synthetic finding notes that fixture data is fictional, local-only, and safe for public examples.",
+          "regression_ref": null,
+          "residual_risk": null,
+          "scenario_run_id": "run_used_car_baseline",
+          "severity": "low",
+          "status": "open",
+          "title": "Synthetic fixture scope note",
+          "validation_run_id": "validation_run_used_car_baseline"
+        }
+      ],
+      "id": "validation_run_used_car_baseline",
+      "objective": "Synthetic baseline route-read smoke for the fictional used-car world.",
+      "scenario_id": "RT-001",
+      "status": "completed"
+    }
+  ]
+}

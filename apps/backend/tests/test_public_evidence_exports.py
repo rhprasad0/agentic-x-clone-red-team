@@ -25,8 +25,9 @@ def test_public_evidence_export_is_harness_only_redacted_and_synthetic(
     payload = response.json()
 
     assert payload["export_type"] == "public_evidence"
-    assert payload["redaction"] == "synthetic_redacted"
-    assert payload["runs"]
+    assert payload["scope"] == "validation_runs"
+    assert payload["redaction_mode"] == "synthetic_redacted"
+    assert payload["validation_runs"]
     exported_text = json.dumps(payload, sort_keys=True).lower()
     assert "synthetic" in exported_text
     assert "raw_trace" not in exported_text
