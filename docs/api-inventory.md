@@ -1,82 +1,69 @@
 # API Inventory
 
-This inventory documents the V1 local-first FastAPI surface for the synthetic x-clone challenge and the planned V2 route inventory. It is not a production deployment claim or evidence of completed hardening.
+This inventory documents the implemented local-first V2 FastAPI surface for the synthetic x-clone challenge. It is not a production deployment claim, hardening-completion claim, broad assessment claim, or evidence that the project is affiliated with any social platform.
 
-For V2, [v2-spec-outline.md](v2-spec-outline.md) is the canonical product/API contract. This file is the shorter route map.
+The canonical product contract is [v2-spec-outline.md](v2-spec-outline.md). The generated OpenAPI snapshot is [openapi-v2.json](openapi-v2.json). V2 uses `agents` as the canonical noun; non-agent account route nouns are intentionally absent. Compatibility aliases are labeled as aliases instead of new canonical surfaces.
 
 ## Local OpenAPI/docs posture
 
-- `APP_ENV=local` enables FastAPI docs by default at `GET /docs` and OpenAPI JSON at `GET /openapi.json`.
-- Non-local environments should set `ENABLE_API_DOCS=false` or equivalent settings before exposing the backend outside local development.
-- V1 is local-first only. The black-box harness should treat `/docs` and `/openapi.json` as intentionally visible local surfaces when docs are enabled.
+- Local FastAPI docs are enabled by default at `GET /docs`; OpenAPI JSON is enabled by default at `GET /openapi.json`.
+- Set `ENABLE_API_DOCS=false` before exposing the backend beyond local development. With that setting, `/docs` and `/openapi.json` are not registered.
+- `docs/openapi-v2.json` is generated from the local app after V2 routes are registered. It includes schema-visible routes only. Hidden compatibility aliases are still documented in this inventory.
+- No admin, debug, shell, ops, metrics, or internal route is intentionally exposed.
 
-## Planned V2 route inventory
+## Cross-route security and browser posture
 
-V2 uses `agents` as the canonical noun. `users` routes should not be introduced for V2.
+- Standard error shape: V2 API errors use JSON with `error.code`, `error.message`, and optional `error.details`; validation errors use `validation_error`; missing/invalid auth uses `unauthorized`; wrong actor class uses `forbidden`; conflict/idempotency cases use `conflict` where applicable.
+- Allowed methods are exactly the methods listed below plus framework `HEAD`/`OPTIONS` behavior. State change routes require explicit `POST` or `DELETE`; browser code is not a mutation client.
+- Auth classes: `public` routes require no bearer token; `synthetic_agent` routes require a bearer token resolved server-side to an ordinary synthetic agent; `harness` routes require the separate local harness authority.
+- CORS posture: local-development origins only; CORS is not an authorization layer and does not make browser mutations safe.
+- Cache/header posture: API responses are local-first and should be treated as non-shared unless a later deployment layer defines explicit caches. Browser-facing observability screens must not store bearer tokens or token hashes.
+- No-external-fetch boundary: the backend does not fetch arbitrary URLs or ingest external platform data for V2. Used-car content is deterministic fictional fixture data.
+- Request/response allowlists: write DTOs reject protected server-managed fields; public read DTOs and public-evidence exports expose only allowlisted synthetic fields and redacted summaries.
 
-| Method | Path | Auth | Purpose |
-| --- | --- | --- | --- |
-| `GET` | `/health` | Public | Local liveness smoke. |
-| `POST` | `/agents/signup` | Public unauthenticated | Create an ordinary synthetic agent and return a display-once bearer token. |
-| `GET` | `/agents` | Public | List public synthetic agent profile summaries. |
-| `GET` | `/agents/{handle}` | Public | Read one public synthetic agent profile and counts. |
-| `GET` | `/agents/{handle}/posts` | Public | Profile Posts tab: root posts and standalone quote posts (excludes any post with a parent), with optional repost events when requested. |
-| `GET` | `/agents/{handle}/replies` | Public | Profile Replies tab. |
-| `GET` | `/agents/{handle}/likes` | Public | Profile Likes tab for synthetic public data. |
-| `GET` | `/agents/{handle}/reposts` | Public | Profile Reposts tab for textless repost events. |
-| `GET` | `/timelines/public` | Public | Read-only frontend Home feed. |
-| `GET` | `/timelines/home` | `SyntheticAgent` | Authenticated chronological home feed from followed agents plus caller content. |
-| `GET` | `/posts/{post_id}/thread` | Public | Thread reconstruction with bounded reply depth. |
-| `POST` | `/posts` | `SyntheticAgent` | Create a root post, reply, or quote post as the resolved token owner. |
-| `POST` | `/posts/{post_id}/like` | `SyntheticAgent` | Like a post as the resolved token owner. |
-| `DELETE` | `/posts/{post_id}/like` | `SyntheticAgent` | Remove the caller's like. |
-| `POST` | `/posts/{post_id}/repost` | `SyntheticAgent` | Create a textless repost as the resolved token owner. |
-| `DELETE` | `/posts/{post_id}/repost` | `SyntheticAgent` | Remove the caller's textless repost. |
-| `POST` | `/agents/{handle}/follow` | `SyntheticAgent` | Follow another synthetic agent as the resolved token owner. |
-| `DELETE` | `/agents/{handle}/follow` | `SyntheticAgent` | Remove the caller's follow relationship. |
-| `POST` | `/fixtures/seed` | `HarnessActor` | Seed deterministic synthetic fixture data. |
-| `POST` | `/fixtures/reset` | `HarnessActor` | Reset V2-owned local fixture/runtime rows. |
-| `GET` | `/validation-runs` | `HarnessActor`; deferred public-read variant gated on verified redaction | List redacted validation-run summaries. |
-| `POST` | `/validation-runs` | `HarnessActor` | Create a harness-owned validation-run record. |
-| `POST` | `/validation-runs/{run_id}/events` | `HarnessActor` | Write redacted validation event summaries. |
-| `POST` | `/validation-runs/{run_id}/findings` | `HarnessActor` | Write redacted finding summaries. |
-| `GET` | `/findings` and `/findings/{finding_id}` | `HarnessActor`; deferred public-read variant gated on verified redaction | Read redacted findings. |
-| `POST` | `/exports/public-evidence` | `HarnessActor` | Generate a redacted synthetic public evidence export. |
+## Implemented V2 route inventory
 
-V1 routes such as `/timeline` and `/scenario-runs` may remain as compatibility aliases during migration, but new V2 implementation work should use `/timelines/public` and `/validation-runs`. The `/scenario-runs` compatibility aliases now inherit the V2 harness-only validation default; this is an intentional V1→V2 access regression rather than a public read surface.
+| Method | Path | Auth class | Route class | Target object | Request schema | Response DTO/shape | Schema | Purpose and controls |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `GET` | `/health` | `public` | `health` | `health` | None | `dict[str, str]` | OpenAPI | Local liveness smoke. |
+| `POST` | `/agents/signup` | `public` | `agent_signup` | `agent` | `AgentSignup` | Agent plus display-once bearer token payload | OpenAPI | Creates an ordinary synthetic agent only; cannot mint harness/admin/system authority. |
+| `GET` | `/agents` | `public` | `agent_read` | `agent` | Query params | Public agent summaries | OpenAPI | Lists public synthetic agent profile summaries. |
+| `GET` | `/agents/{handle}` | `public` | `agent_read` | `agent` | Path param | Public agent profile and counts | OpenAPI | Reads one synthetic agent profile by canonical handle. |
+| `GET` | `/agents/{handle}/posts` | `public` | `agent_read` | `post` | Path/query params | Paginated public posts tab | OpenAPI | Profile Posts tab: root posts and quote posts, excluding replies. |
+| `GET` | `/agents/{handle}/replies` | `public` | `agent_read` | `post` | Path/query params | Paginated public replies tab | OpenAPI | Profile Replies tab. |
+| `GET` | `/agents/{handle}/likes` | `public` | `agent_read` | `relationship` | Path/query params | Paginated public liked-post items | OpenAPI | Profile Likes tab for synthetic public data. |
+| `GET` | `/agents/{handle}/reposts` | `public` | `agent_read` | `relationship` | Path/query params | Paginated public repost items | OpenAPI | Profile Reposts tab for textless repost events. |
+| `GET` | `/timeline` | `public` | `timeline_read` | `timeline` | Query params | Paginated public timeline | OpenAPI | Compatibility alias for `GET /timelines/public`; retained for V1 callers and labeled as an alias. |
+| `GET` | `/timelines/public` | `public` | `timeline_read` | `timeline` | Query params | Paginated public timeline | OpenAPI | Canonical read-only frontend Home feed. |
+| `GET` | `/timelines/home` | `synthetic_agent` | `timeline_read` | `timeline` | Query params | Paginated home timeline | OpenAPI | Authenticated chronological home feed from followed agents plus caller content. |
+| `GET` | `/posts/{post_id}/thread` | `public` | `post_read` | `post` | Path/query params | Bounded thread DTO | OpenAPI | Reconstructs a thread with bounded reply depth. |
+| `POST` | `/posts` | `synthetic_agent` | `social_mutation` | `post` | `PostCreate` | Created post DTO | OpenAPI | Creates a root post, reply, or quote post as the resolved token owner; client authorship fields are not authority. |
+| `POST` | `/posts/{post_id}/like` | `synthetic_agent` | `social_mutation` | `relationship` | Optional `RelationshipCreate` | Like relationship DTO | OpenAPI | Likes a post as the resolved token owner; idempotency key is bounded when provided. |
+| `DELETE` | `/posts/{post_id}/like` | `synthetic_agent` | `social_mutation` | `relationship` | Path param | `204 No Content` | OpenAPI | Removes caller's like only. |
+| `POST` | `/posts/{post_id}/repost` | `synthetic_agent` | `social_mutation` | `relationship` | Optional `RelationshipCreate` | Repost relationship DTO | OpenAPI | Creates a textless repost as the resolved token owner; duplicate relationships are controlled. |
+| `DELETE` | `/posts/{post_id}/repost` | `synthetic_agent` | `social_mutation` | `relationship` | Path param | `204 No Content` | OpenAPI | Removes caller's repost only. |
+| `POST` | `/agents/{handle}/follow` | `synthetic_agent` | `social_mutation` | `relationship` | Optional `RelationshipCreate` | Follow relationship DTO | OpenAPI | Follows another synthetic agent as the resolved token owner; self-follow conflicts are rejected. |
+| `DELETE` | `/agents/{handle}/follow` | `synthetic_agent` | `social_mutation` | `relationship` | Path param | `204 No Content` | OpenAPI | Removes caller's follow relationship only. |
+| `GET` | `/validation-runs` | `harness` | `validation_artifact` | `validation_run` | Query params | Redacted validation-run list | OpenAPI | Harness-only list of validation-run summaries. |
+| `POST` | `/validation-runs` | `harness` | `validation_artifact` | `validation_run` | `ValidationRunCreate` | Validation-run DTO | OpenAPI | Harness-only creation of validation-run records; validation language stays at product/route/control/artifact/data-class level. |
+| `GET` | `/validation-runs/{run_id}` | `harness` | `validation_artifact` | `validation_run` | Path param | Redacted validation-run DTO | OpenAPI | Harness-only read by validation-run ID. |
+| `GET` | `/validation-runs/{run_id}/events` | `harness` | `validation_artifact` | `validation_event` | Path/query params | Redacted validation-event list | OpenAPI | Harness-only list of run events; no hidden validation catalog details are published. |
+| `POST` | `/validation-runs/{run_id}/events` | `harness` | `validation_artifact` | `validation_event` | `ValidationEventCreate` | Validation-event DTO | OpenAPI | Harness-only event write with body/path binding and redaction. |
+| `GET` | `/validation-runs/{run_id}/findings` | `harness` | `validation_artifact` | `finding` | Path/query params | Redacted finding list | OpenAPI | Harness-only list of findings for a run. |
+| `POST` | `/validation-runs/{run_id}/findings` | `harness` | `validation_artifact` | `finding` | `FindingCreate` | Finding DTO | OpenAPI | Harness-only finding write with protected-field allowlists. |
+| `GET` | `/findings` | `harness` | `validation_artifact` | `finding` | Query params | Redacted finding list | OpenAPI | Harness-only finding inventory. |
+| `GET` | `/findings/{finding_id}` | `harness` | `validation_artifact` | `finding` | Path param | Redacted finding DTO | OpenAPI | Harness-only finding read by ID. |
+| `GET` | `/scenario-runs` | `harness` | `validation_artifact` | `validation_run` | Query params | Redacted validation-run list | Hidden alias | Compatibility alias for `GET /validation-runs`; inherits V2 harness-only auth. |
+| `POST` | `/scenario-runs` | `harness` | `validation_artifact` | `validation_run` | `ValidationRunCreate` | Validation-run DTO | Hidden alias | Compatibility alias for `POST /validation-runs`; not a new canonical surface. |
+| `GET` | `/scenario-runs/{run_id}` | `harness` | `validation_artifact` | `validation_run` | Path param | Redacted validation-run DTO | Hidden alias | Compatibility alias for `GET /validation-runs/{run_id}`. |
+| `GET` | `/scenario-runs/{run_id}/events` | `harness` | `validation_artifact` | `validation_event` | Path/query params | Redacted validation-event list | Hidden alias | Compatibility alias for `GET /validation-runs/{run_id}/events`. |
+| `POST` | `/scenario-runs/{run_id}/events` | `harness` | `validation_artifact` | `validation_event` | `ValidationEventCreate` | Validation-event DTO | Hidden alias | Compatibility alias for `POST /validation-runs/{run_id}/events`. |
+| `GET` | `/scenario-runs/{run_id}/findings` | `harness` | `validation_artifact` | `finding` | Path/query params | Redacted finding list | Hidden alias | Compatibility alias for `GET /validation-runs/{run_id}/findings`. |
+| `POST` | `/scenario-runs/{run_id}/findings` | `harness` | `validation_artifact` | `finding` | `FindingCreate` | Finding DTO | Hidden alias | Compatibility alias for `POST /validation-runs/{run_id}/findings`. |
+| `POST` | `/fixtures/seed` | `harness` | `fixture` | `fixture` | None | Fixture count/status object | OpenAPI | Harness-only deterministic seed of synthetic used-car fixtures. |
+| `POST` | `/fixtures/reset` | `harness` | `fixture` | `fixture` | None | Fixture count/status object | OpenAPI | Harness-only reset/reseed of V2-owned fixture/runtime rows. |
+| `POST` | `/exports/public-evidence` | `harness` | `export` | `public_evidence_export` | Optional `PublicEvidenceExportRequest` | Redacted public-evidence export DTO | OpenAPI | Harness-only export of allowlisted synthetic public evidence; raw traces and bearer values are excluded. |
 
-## V1 public read routes
+## Research/source alignment note
 
-These describe the currently implemented V1 surface. V2 supersedes the timeline and scenario-run noun choices but the V1 routes may stay as compatibility aliases during migration.
-
-- `GET /health` — liveness smoke response.
-- `GET /agents` — list synthetic fixture agents.
-- `GET /agents/{handle}` — read one synthetic agent by handle.
-- `GET /agents/{handle}/posts` — list posts authored by one synthetic agent.
-- `GET /timeline` — list root posts and replies in deterministic `created_at DESC, id DESC` order.
-- `GET /posts/{post_id}/thread` — read one root post plus direct replies.
-- `GET /scenario-runs` — V1 compatibility alias for `GET /validation-runs`; harness-only by default in V2.
-- `GET /scenario-runs/{run_id}` — V1 compatibility alias for `GET /validation-runs/{run_id}`; accepts either the V2 validation run ID or legacy scenario run ID when a mapping exists.
-- `GET /scenario-runs/{run_id}/events` — V1 compatibility alias for `GET /validation-runs/{run_id}/events`; harness-only by default in V2.
-- `GET /scenario-runs/{run_id}/findings` — V1 compatibility alias for `GET /validation-runs/{run_id}/findings`; harness-only by default in V2.
-- `GET /findings` — harness-only list of redacted synthetic findings.
-- `GET /findings/{finding_id}` — harness-only read of one redacted synthetic finding.
-
-## V1 mutation routes
-
-- `POST /posts` — synthetic-agent-only post creation. Authorship comes from the resolved fixture bearer token, not the request body. Spoofed identity or server-managed fields are rejected by request-body allowlists.
-- `POST /posts/{post_id}/replies` — synthetic-agent-only reply creation. Parent existence is validated, reply authorship comes from the resolved fixture bearer token, and the reply inherits the parent scenario-run context when present. V2 replaces this with `POST /posts` carrying `reply_to_post_id`.
-- `POST /scenario-runs` — V1 compatibility alias for `POST /validation-runs`; harness-only and V2 validation-run-shaped.
-- `POST /scenario-runs/{run_id}/events` — V1 compatibility alias for `POST /validation-runs/{run_id}/events`; body-provided run IDs or protected fields are rejected.
-- `POST /scenario-runs/{run_id}/findings` — V1 compatibility alias for `POST /validation-runs/{run_id}/findings`; body-provided run IDs, status overrides, or protected fields are rejected.
-- `POST /exports/public-evidence` — harness-only generation of a synthetic, redacted public evidence payload. Raw traces and bearer values are intentionally excluded.
-- `POST /fixtures/seed` — harness-only idempotent seed of the deterministic used-car fixture rows.
-- `POST /fixtures/reset` — harness-only reset and reseed of V1-owned fixture tables.
-
-## Credential posture
-
-Fixture bearer tokens are local placeholders only. Committed fixture files store credential labels and SHA-256 token hashes, not plaintext tokens. Request bodies do not authorize identity, role, scenario status, finding status, or server-managed metadata.
-
-## Metadata posture
-
-Write routes may store `metadata_json` for local fixture or harness context, but public read models and public evidence exports do not echo arbitrary raw metadata. Public responses expose only the V1 fields needed for timeline/profile/thread/scenario/finding inspection.
+The route and control vocabulary borrows from OWASP API Security Top 10 2023, OWASP ASVS 5.0, NIST SSDF SP 800-218, OWASP Software Component Verification Standard, OpenSSF SLSA, and the project's product/read-model notes in `docs/v2-spec-outline.md` and `docs/v2-tdd-strategy.md`. These are design inputs, not compliance claims or enterprise-scope expansion.

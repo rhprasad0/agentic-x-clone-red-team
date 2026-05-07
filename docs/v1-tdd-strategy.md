@@ -312,7 +312,7 @@ Respect V1 scope:
 - backend tests use real Postgres plus Alembic migrations, not SQLite or Base.metadata.create_all;
 - full RT-001 through RT-008 runner design stays separate unless explicitly requested.
 
-Keep everything public-safe: synthetic data only, placeholder credentials only, no private paths, no real user data, no private transcripts, and no production or completed-hardening claims.
+Keep everything public-safe: synthetic data only, placeholder credentials only, no private paths, no non-synthetic person data, no private transcripts, and no production or closed-hardening-loop claims.
 
 Do not commit.
 ```

@@ -14,7 +14,7 @@ V1 is local-first and synthetic. It uses exactly two synthetic agents plus one h
 
 Scenario definitions use credential labels only. They never include bearer token values. The `SingleRedTeamAgent` is black-box during attack execution: it receives base URL, allowed starting credential labels or public entry points, objective/success criteria, and a run/evidence target. It does not receive source code, private route inventory, database access, fixture JSON, private docs, token values, or local raw traces.
 
-V1 social mutations are only posts and replies. There are no V1 likes/reactions, browser posting controls, signup/token issuance for arbitrary agents, prompt-injection/evaluator scenarios, edit/delete routes, production deployment controls, real users, real listings, or real marketplace data.
+V1 social mutations are only posts and replies. There are no V1 likes/reactions, browser posting controls, signup/token issuance for arbitrary agents, prompt-injection/evaluator scenarios, edit/delete routes, production deployment controls, non-synthetic people, real listings, or real marketplace data.
 
 ## Scenario Schema
 
@@ -182,10 +182,10 @@ residual_risk_or_deferral_notes:
 - **Attack flow:**
   - Generate a public evidence export if the export route/script exists.
   - Run `python3 scripts/public_safety_scan.py .`.
-  - Review public docs/exports/screenshots for actual bearer token values, token hashes, environment values, private paths, raw traces, non-example contact data, real user/listing data, and claims that imply production deployment or completed hardening without evidence.
+  - Review public docs/exports/screenshots for actual bearer token values, token hashes, environment values, private paths, raw traces, non-example contact data, non-synthetic person/listing data, and claims that imply production deployment or closed hardening loop without evidence.
 - **Expected security property:** Public artifacts contain only synthetic, redacted, billboard-safe content and use credential labels rather than token values.
 - **Pass predicates:** Public-safety scan passes; exports include redacted summaries only; no token values, token hashes, raw traces, private paths, real contact data, real listing details, or private transcripts appear; claims remain scoped as planned/WIP unless evidence exists.
-- **Fail predicates:** Any actual credential value, token hash, private path, raw trace, non-example contact data, real user/listing detail, private transcript, or unsupported production/comprehensive-hardening claim appears in committed or public export material.
+- **Fail predicates:** Any actual credential value, token hash, private path, raw trace, non-example contact data, non-synthetic person/listing detail, private transcript, or unsupported production/comprehensive-hardening claim appears in committed or public export material.
 - **Inconclusive predicates:** Export path is not implemented and no generated public artifacts exist; scanner cannot run; artifact source is unclear; finding requires private raw trace review not allowed in public evidence.
 - **Evidence to capture:** Scanner result, artifact path category without private local path detail, redacted finding summary, and remediation/regression reference.
 - **Regression test name:** `test_public_evidence_exports_and_docs_are_redacted_and_synthetic`.

@@ -18,10 +18,10 @@ Use only after the app, synthetic activity generator, red-team runner, findings,
 
 ## Avoid Until Evidence Exists
 
-- Do not call the app production-ready.
-- Do not claim real users, real platform data, real listings, or a live social network.
+- Do not call the app deployed-service ready.
+- Do not claim non-synthetic people, external platform data, real listings, or a live social network.
 - Do not describe it as a human-grade Twitter/X clone or real marketplace.
-- Do not claim completed hardening before findings, fixes, and regression tests exist.
-- Do not present synthetic coverage as proof of comprehensive security.
-- Do not imply a 10-agent pentest or swarm benchmark; V1 is deliberately scoped to one adversarial runner.
+- Do not claim closed hardening loop before findings, fixes, and regression tests exist.
+- Do not present synthetic coverage as proof of broad security.
+- Do not imply a multi-agent pentest or swarm benchmark; V1 is deliberately scoped to one adversarial runner.
 - Do not describe prompt-injection/evaluator/model-provider hardening as V1 unless a later scope actually introduces an LLM consumer of feed content.

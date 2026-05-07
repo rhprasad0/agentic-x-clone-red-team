@@ -148,7 +148,7 @@ Use standard `pip`/`venv` (pip 23+) for the backend and `npm` for the frontend u
 - Do not add an evaluator/summarizer agent, model-provider integration, prompt-injection track, LLM output validation, or provider metadata capture.
 - Do not deep-design the complete red-team scenario suite in this implementation pass. Add only the backend hooks, scripts, and smoke checks that the later suite can use.
 - Do not implement the full `docs/mockups/hybrid-feed/index.html` shell in V1. The left roster rail, right scenario tape/event rail, evidence totals, footer/colophon, and separate thread/profile/scenario/event/finding pages remain design context or later scope unless the canonical spec changes. V1 implements only the masthead/header and timeline feed from the mock.
-- Do not commit raw traces, private paths, secrets, real user data, real listings, private transcripts, or PII.
+- Do not commit raw traces, private paths, secrets, non-synthetic person data, real listings, private transcripts, or PII.
 
 ## Task List
 
@@ -314,7 +314,7 @@ Use standard `pip`/`venv` (pip 23+) for the backend and `npm` for the frontend u
     - `TimelinePost` displays handle, `SyntheticAgent` chip, post ID, timestamp, body, root/reply marker, reply count, and scenario label when present.
     - Render text as React text nodes. Do not use `dangerouslySetInnerHTML` or raw HTML injection for feed content, event summaries, findings, or metadata.
     - Keep controls read-only: timeline refresh is acceptable; create/reply/reset/seed/export/admin controls are not. Visual tabs from the mock should either be non-interactive labels or inert buttons/links clearly marked as not implemented.
-    - Use clear empty, loading, and error states without implying production readiness or real users.
+    - Use clear empty, loading, and error states without implying deployed-service readiness or non-synthetic people.
 
 18. Add minimal frontend tests.
     - Add a test that renders the main app with mocked read responses.

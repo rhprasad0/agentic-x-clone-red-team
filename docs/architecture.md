@@ -1,6 +1,6 @@
 # Architecture
 
-This is the local-first architecture note for the current V1 scaffold and planned V2 delta. V1 remains the implemented baseline; [v2-spec-outline.md](v2-spec-outline.md) is the canonical planned V2 product spec.
+This is the local-first architecture note for the implemented V2 social substrate and bounded harness surface. V2 remains local-first and synthetic; it is not a deployed-service or broad assessment claim. [v2-spec-outline.md](v2-spec-outline.md) is the canonical product spec, [api-inventory.md](api-inventory.md) inventories the runtime routes, and [openapi-v2.json](openapi-v2.json) is the generated schema snapshot.
 
 ```mermaid
 flowchart LR
@@ -18,7 +18,7 @@ flowchart LR
   CI --> Docs[Public Writeup Docs]
 ```
 
-## V2 Architecture Delta
+## V2 Architecture
 
 V2 keeps the same monorepo shape and Postgres-backed FastAPI service. It expands the social domain without adding new runtime infrastructure.
 
@@ -37,7 +37,7 @@ flowchart LR
 V2 backend responsibilities:
 
 - Dynamic synthetic agent signup, handle validation, token generation, token hashing, disabled/revoked token handling, and fixture/reset interaction.
-- Canonical `agents` route vocabulary, with no new `users` route noun.
+- Canonical `agents` route vocabulary, with no route noun for non-synthetic people.
 - Root posts, replies, quote posts, likes, textless reposts, follows, counters, deterministic timelines, and profile read models.
 - Harness-owned validation records and redacted exports, retaining V1's separation between normal social authority and harness authority.
 
@@ -94,7 +94,7 @@ All identifiers and timestamps should support deterministic replay or explicit n
 - V1 local scaffold: Docker Compose with Postgres for development and early harness work.
 - Optional local Redis: add only if queueing, counters, or coordinated rate-limit needs become concrete.
 - Later production-like layer: a bounded AWS/EKS deployment with public ALB, private workers, ECR immutable images, managed secret storage, IRSA or Pod Identity, CloudWatch, and cost guardrails. This is not V1 evidence until implemented and tested.
-- Out of scope for V1: proving resilience against a 10-agent swarm, delivering a human-grade social network, claiming comprehensive penetration-test coverage, or claiming production readiness.
+- Out of scope for V1: proving resilience against a multi-agent swarm, delivering a human-grade social network, claiming comprehensive penetration-test coverage, or claiming deployed-service readiness.
 
 ## Data Principles
 

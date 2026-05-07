@@ -1,6 +1,6 @@
 # V1 Local Runbook
 
-This guide is for manual local inspection of the V1 scaffold. It is not production deployment guidance and does not claim completed hardening.
+This guide is for manual local inspection of the V1 scaffold. It is not production deployment guidance and does not claim closed hardening loop.
 
 ## 1. Prepare Environment
 

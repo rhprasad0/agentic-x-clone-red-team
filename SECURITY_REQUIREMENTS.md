@@ -2,7 +2,7 @@
 
 This document defines security requirements for a synthetic agent-native social feed and a single-runner red-team harness. It is written before the app and harness exist so implementation, tests, findings, and public claims can be traced back to a coherent security model instead of reverse-engineered after the demo works.
 
-The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md) and is the canonical source for V1 scope decisions. V1 has no LLM consumer of feed content (no evaluator/summarizer agent, no model-provider integration, no prompt-template hardening, no LLM output validation, no provider metadata capture). LLM/prompt-injection material in this document is preserved as future/later-scope research; it is not a V1 MUST or a mapped V1 scenario.
+The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md) and is the canonical source for V1 scope decisions. V2 route/control artifacts now live in [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md). V1 has no LLM consumer of feed content (no evaluator/summarizer agent, no model-provider integration, no prompt-template hardening, no LLM output validation, no provider metadata capture). LLM/prompt-injection material in this document is preserved as future/later-scope research; it is not a V1 MUST or a mapped V1 scenario.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ That means the repo should show:
 - evidence expectations before implementation;
 - a finding lifecycle with regression and residual-risk handling;
 - public-safe examples, fixtures, logs, and writeups;
-- no claims of production readiness or comprehensive hardening before evidence exists.
+- no claims of deployed-service readiness or comprehensive hardening before evidence exists.
 
 ### R0.2 Anticipatory Coverage
 
@@ -50,11 +50,11 @@ Bugs are allowed. Security clown-nose moments are not the goal.
 
 ### Out of scope for V1
 
-- Real users, real X/Twitter data, scraped content, private transcripts, real listings, production credentials, or real platform claims.
+- Non-synthetic people, real X/Twitter data, scraped content, private transcripts, real listings, production credentials, or real platform claims.
 - Human-grade social network feature parity; likes, reposts, quote posts, follows, mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, and moderation workflows.
 - Browser sessions, browser-driven mutations, CSRF surface, password reset, OAuth, admin dashboards, payments, ads, or contact import.
 - Production deployment, AWS/EKS deployment, or claims of production hardening; later scope only.
-- A 10-agent swarm benchmark, comprehensive penetration test, or external security assessment claim.
+- A multi-agent swarm benchmark, comprehensive penetration test, or external security assessment claim.
 - Evaluator/summarizer agents, model-provider integrations, prompt-template hardening, prompt-injection scenarios, LLM output validation, provider metadata capture, and any moderation product surface or content-label system. These are future-scope research and only become relevant if a later scope introduces an LLM consumer of feed content.
 
 ## Research Basis
@@ -101,13 +101,13 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 **Credibility signal:** Shows professional public-repo hygiene and avoids accidental leakage during an open interview project.
 
-**Anticipated risk class:** Public artifact leakage; accidental use of real user/platform/private data.
+**Anticipated risk class:** Public artifact leakage; accidental use of non-synthetic person/platform/private data.
 
 **Evidence expected:** Public-safety scanner, synthetic fixtures, `.env.example` placeholders, docs language checks.
 
 **Mapped scenarios:** RT-007.
 
-**Final finding implication:** Any real secret, private path, private transcript, real email, real platform data, or PII in public artifacts is `anticipated-risk/failed-implementation`, not a surprise.
+**Final finding implication:** Any real secret, private path, private transcript, real email, external platform data, or PII in public artifacts is `anticipated-risk/failed-implementation`, not a surprise.
 
 ## SR-001 Claims must match evidence
 
@@ -185,7 +185,7 @@ The goal is to minimize `unanticipated-risk-class` findings.
 
 ### SR-105 Route inventory and authorization matrix
 
-**Requirement:** V1 MUST maintain a route/API inventory that lists every create/read/export/reset/harness endpoint, allowed actor classes, object types touched, required authorization checks, and whether the route is public-observer, synthetic-agent, or harness-only.
+**Requirement:** V1/V2 MUST maintain a route/API inventory that lists every create/read/export/reset/harness endpoint, allowed actor classes, object types touched, required authorization checks, schema/debug posture, compatibility aliases, and whether the route is public-observer, synthetic-agent, or harness-only. V2 inventory and generated OpenAPI artifacts are `docs/api-inventory.md` and `docs/openapi-v2.json`; requirement/artifact-level control mapping is `docs/v2-security-control-matrix.md`.
 
 **Credibility signal:** Shows ASVS-style authorization documentation and prevents the classic "oh, that debug route counts too" moment.
 
@@ -497,7 +497,7 @@ V1 has no LLM consumer of feed content. The requirements in this section therefo
 
 **Mapped scenarios:** Supporting scope-control check in `docs/red-team-scenarios.md`.
 
-**Final finding implication:** Production-layer issues are `out-of-v1-scope` only if docs do not claim production readiness.
+**Final finding implication:** Production-layer issues are `out-of-v1-scope` only if docs do not claim deployed-service readiness.
 
 ### SR-603 Dependency and supply-chain hygiene
 
@@ -645,11 +645,11 @@ Safe phrasing:
 
 Unsafe phrasing until evidence exists:
 
-- “Production-ready social network.”
+- “Deployed-service ready social network.”
 - “Fully hardened X/Twitter clone.”
 - “Comprehensive pentest.”
-- “Real users / real platform data.”
-- “10-agent swarm benchmark.”
+- “Non-synthetic people / external platform data.”
+- “multi-agent swarm benchmark.”
 
 The strongest public story is not “I cloned X.” It is:
 

@@ -1,12 +1,12 @@
 # V1 Spec Outline
 
-> Public-facing planning spec for the local-first V1. This is not an implementation, deployment, completed-hardening, or comprehensive security-assessment claim.
+> Public-facing planning spec for the local-first V1. This is not an implementation, deployment, closed-hardening-loop, or broad security-assessment claim.
 
 ## Product Frame
 
 V1 is a KarpathyTalk-minimal agentic-engineering challenge: a small agent-native social substrate plus one black-box adversarial runner. The product surface is intentionally narrow so the hardening loop can be replayed, documented, and kept public-safe.
 
-The public story is not a full X/Twitter clone, not a real marketplace, not a production service, and not a 10-agent pentest. It is a synthetic social feed for fictional agents, deterministic fixtures, scoped attack scenarios, redacted findings, regression paths, and explicit residual-risk notes.
+The public story is not a full X/Twitter clone, not a real marketplace, not a production service, and not a multi-agent pentest. It is a synthetic social feed for fictional agents, deterministic fixtures, scoped attack scenarios, redacted findings, regression paths, and explicit residual-risk notes.
 
 ## Critical Decisions Resolved
 
@@ -33,12 +33,12 @@ The public story is not a full X/Twitter clone, not a real marketplace, not a pr
 
 ## Non-Goals
 
-- No real users, scraped social data, private transcripts, real platform data, secrets, credentials, or PII.
-- No production-readiness claim, completed-hardening claim, comprehensive pentest claim, or real marketplace claim.
+- No non-synthetic people, scraped social data, private transcripts, external platform data, secrets, credentials, or PII.
+- No deployed-service readiness claim, closed-hardening-loop claim, broad pentest claim, or real marketplace claim.
 - No human-grade Twitter/X feature parity.
 - No browser-write workflows, browser auth/session system, or CSRF-oriented browser mutation surface.
 - No evaluator/summarizer agent or LLM consumer of feed content in V1.
-- No 10-agent swarm benchmark.
+- No multi-agent swarm benchmark.
 
 ## Synthetic World
 
@@ -52,7 +52,7 @@ Representative seed content can include:
 - Altima discourse, mismatched body panels, and too-good-to-be-true listings;
 - claims like `AC just needs a recharge` treated as fictional feed content.
 
-This theme is product texture for fixtures and screenshots. It is not a used-car marketplace, buying advice service, or real user community.
+This theme is product texture for fixtures and screenshots. It is not a used-car marketplace, buying advice service, or non-synthetic person community.
 
 ## Architecture
 
@@ -193,7 +193,7 @@ Public evidence may include:
 
 Public evidence must not include:
 
-- raw traces, full logs, local filesystem paths, environment values, provider traces, private run metadata, secret-like strings, unreviewed traces, real contact data, real user data, real listings, or real platform data.
+- raw traces, full logs, local filesystem paths, environment values, provider traces, private run metadata, secret-like strings, unreviewed traces, real contact data, non-synthetic person data, real listings, or external platform data.
 
 Local raw/debug artifacts may exist during runs, but they must remain ignored and uncommitted. Public exports must pass:
 
@@ -222,7 +222,7 @@ python3 scripts/public_safety_scan.py .
 - Human-user authentication, OAuth, browser sessions, CSRF-protected browser mutations, admin dashboards, and production authorization policy.
 - URL fetching, link previews, external browsing/import, webhooks, vector/RAG surfaces, and browser-agent behavior.
 - Redis-backed queues/counters/rate limits unless concrete V1 implementation pressure requires them.
-- Multi-agent swarm benchmark, comprehensive pentest, external security assessment, or production-hardening claim.
+- Multi-agent swarm benchmark, broad pentest, external security assessment, or production-hardening claim.
 - Production-like AWS/EKS/cloud deployment.
 
 ## Future Deployment Appendix

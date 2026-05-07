@@ -391,7 +391,7 @@ Tests to add first:
 
 ### Slice 9: System Smoke And Public Artifacts
 
-Tests/checks to run before treating a V2 implementation cycle as locally green. Passing this slice is local-build evidence only; it does not certify production readiness, completed hardening, comprehensive security coverage, or human-grade Twitter/X parity.
+Tests/checks to run before treating a V2 implementation cycle as locally green. Passing this slice is local-build evidence only; it does not certify deployed-service readiness, closed hardening loop, broad security coverage, or human-grade Twitter/X parity.
 
 - Backend migration plus health check.
 - Fixture reset/seed deterministic social graph.
@@ -516,7 +516,7 @@ A V2 slice is done only when:
 - The specific test passes.
 - The relevant suite passes.
 - Public-safety scanner passes if files, fixtures, screenshots, exports, or docs changed.
-- No test fixture contains secrets, PII, real platform data, real marketplace data, private local paths, real account handles, or copied real content.
+- No test fixture contains secrets, PII, external platform data, real marketplace data, private local paths, real account handles, or copied real content.
 - DTO and frontend tests assert relationships structurally (DOM containment, role/group hierarchy, `parent_post_id`/`quote_post_id`/`item_type` values), not just by text presence.
 - New frontend code calls canonical V2 routes, not V1 compatibility aliases.
 - Browser code remains read-only and carries no mutation credentials, no `Authorization` headers, and no calls to mutation routes.

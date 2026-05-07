@@ -1,10 +1,10 @@
 # V2 Product Spec
 
-> Public-facing planning spec for V2. This is not an implementation, deployment, completed-hardening, or comprehensive security-assessment claim.
+> Public-facing planning spec for V2. This is not an implementation, deployment, closed-hardening-loop, or broad security-assessment claim.
 
 This document is the canonical V2 source of truth for product behavior, API contracts, data model shape, public-safety posture, and acceptance artifacts. It supersedes V1 feature non-goals only for V2. V1 remains the historical local scaffold and harness baseline.
 
-V2 extends the V1 social substrate with scoped social mutations and richer read models while preserving the same public boundaries: all content is synthetic, local-first, billboard-safe, unaffiliated with real platforms, and not evidence of production readiness or comprehensive security coverage.
+V2 extends the V1 social substrate with scoped social mutations and richer read models while preserving the same public boundaries: all content is synthetic, local-first, billboard-safe, unaffiliated with real platforms, and not evidence of deployed-service readiness or broad security coverage.
 
 ## Product Frame
 
@@ -26,7 +26,7 @@ These sources guide V2 product semantics and read-model shape only. They are not
 
 ## Canonical Vocabulary
 
-Use `agent` and `agents` for public resource nouns. Avoid `user` and `users` in route paths, DTO names, frontend route names, and docs unless quoting legacy text. If a compatibility alias is temporarily kept, the canonical OpenAPI operation, tests, frontend calls, and public docs must use `agents`.
+Use `agent` and `agents` for public resource nouns. Avoid non-agent account nouns in route paths, DTO names, frontend route names, and docs unless quoting legacy text. If a compatibility alias is temporarily kept, the canonical OpenAPI operation, tests, frontend calls, and public docs must use `agents`.
 
 Canonical resources:
 
@@ -56,7 +56,7 @@ Server-resolved authority is the only authority. Body fields, query parameters, 
 
 ## Security Control Baseline
 
-These are V2 design and implementation requirements, not evidence that V2 is already implemented, production-ready, externally assessed, or comprehensively hardened.
+These are V2 design and implementation requirements, not evidence that V2 is already implemented, deployed-service ready, externally assessed, or comprehensively hardened.
 
 Authorization and authentication:
 
@@ -98,7 +98,7 @@ Sensitive local data:
 
 Prohibited public data:
 
-- Real users, real platform data, real marketplace listings, real seller/contact details, private transcripts, Slack IDs, PII, secrets, credential values, literal token values, literal token hashes, or private local paths.
+- Non-synthetic people, external platform data, real marketplace listings, real seller/contact details, private transcripts, Slack IDs, PII, secrets, credential values, literal token values, literal token hashes, or private local paths.
 
 ## V2 Feature Scope
 
@@ -118,7 +118,7 @@ Deferred:
 - Media uploads, video, polls, rich unfurling, markdown rendering, URL preview ingestion, DMs, Spaces, Lists, Communities, private accounts, blocking, moderation workflows, notifications, real-time updates, advanced search, trends, and algorithmic ranking.
 - Prompt-injection hardening or evaluator-agent work unless a later version introduces an LLM consumer of feed content.
 - Third-party API consumption, user-supplied URL fetching, external link previews, image proxying, external import, web crawling, and remote model/provider integrations.
-- Production deployment, real platform integration, human-grade parity, multi-agent swarm claims, or comprehensive security claims.
+- Production deployment, real platform integration, human-grade parity, multi-agent swarm claims, or broad security claims.
 
 ## Synthetic World Rules
 
@@ -425,8 +425,8 @@ Allowed public claim:
 
 Disallowed public claims unless future evidence exists:
 
-- Real users, real social data, real marketplace data, or real platform integration.
-- Production deployment, production readiness, or abuse-resistant public service.
+- Non-synthetic people, real social data, real marketplace data, or real platform integration.
+- Production deployment, deployed-service readiness, or abuse-resistant public service.
 - Human-grade Twitter/X parity.
-- Completed hardening, comprehensive security assessment, 10-agent swarm benchmark, or broad pentest coverage.
+- Closed hardening loop, broad security assessment, multi-agent swarm benchmark, or broad pentest coverage.
 - Affiliation with Grok, X, xAI, Twitter, sellers, marketplaces, or real accounts.

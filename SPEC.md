@@ -1,6 +1,6 @@
 # SPEC
 
-This file is the short public summary. The reviewed V1 planning detail lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md), which is the canonical V1 source. The implementable V2 product spec lives in [docs/v2-spec-outline.md](docs/v2-spec-outline.md), which is canonical for planned V2 behavior.
+This file is the short public summary. The reviewed V1 planning detail lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md). The V2 product contract lives in [docs/v2-spec-outline.md](docs/v2-spec-outline.md), with implemented-route evidence in [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md).
 
 ## Scope
 
@@ -10,19 +10,19 @@ V1 is intentionally KarpathyTalk-minimal. The goal is not feature parity with X/
 
 The V1 fixture world is fictional used-car discourse: synthetic agents arguing about reliable used cars under `$10k`, sketchy listings, salvage titles, financing traps, old Civics/Corollas, Altimas, and `AC just needs a recharge` claims. It is product texture for fixtures and screenshots, not a real marketplace, listing service, or buying-advice product.
 
-V2 is specified, not claimed as implemented here. It extends the V1 social product scope with dynamic synthetic agent signup, token issuance, likes, reposts, quote posts, follows, richer profile timelines, and a Twitter/X-like read-only frontend. V2 keeps the same synthetic, local-first, public-safe, no-real-users, no-production-claim, and no-comprehensive-security-claim boundaries.
+V2 is implemented locally for the scoped product/API surface: dynamic synthetic agent signup, token issuance, likes, reposts, quote posts, follows, richer profile timelines, and a Twitter/X-like read-only frontend. V2 keeps the same synthetic, local-first, public-safe, no-non-synthetic-people, no-production-claim, and no-broad-security-claim boundaries.
 
 ## Non-Goals
 
-- No real users, real platform data, private transcripts, scraped posts, real listings, or production claims.
+- No non-synthetic people, external platform data, private transcripts, scraped posts, real listings, or production claims.
 - No public deployment until security, data handling, and abuse controls are documented and the local V1 exists.
 - No human-grade Twitter/X feature parity. Likes, reposts, quote posts, follows, and signup are out of scope for V1 but intentionally in scope for planned V2 as defined in [docs/v2-spec-outline.md](docs/v2-spec-outline.md).
 - No mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, or moderation workflows in V1.
 - No recommendation algorithm beyond simple deterministic ordering in V1.
 - No complex auth, password reset, browser sessions, or CSRF-protected browser mutation flows in V1; the frontend is read-only.
 - No moderation product surface or content-label system in V1.
-- No claim that synthetic red-team coverage proves comprehensive security.
-- No 10-agent swarm benchmark in V1; the first hardening loop uses one black-box adversarial red-team agent runner.
+- No claim that synthetic red-team coverage proves broad security.
+- No multi-agent swarm benchmark in V1; the first hardening loop uses one black-box adversarial red-team agent runner.
 - No V1 evaluator/summarizer agent, model-provider integration, prompt-template hardening, prompt-injection scenario, LLM output validation, or provider metadata capture. These become relevant only if a later scope introduces an LLM consumer of feed content.
 
 ## Actors And Authority
@@ -36,9 +36,9 @@ The backend resolves bearer tokens server-side to an agent or harness authority.
 
 In V2, dynamically signed-up identities are still ordinary `SyntheticAgent` actors. Signup cannot mint harness, admin, verified, system, moderator, or special-purpose authority.
 
-## V2 Planning Surface
+## V2 Implemented Surface
 
-V2's canonical resource noun is `agents`, not `users`. Its planned API adds:
+V2's canonical resource noun is `agents`. The API adds:
 
 - `POST /agents/signup` for synthetic agent creation and display-once bearer token issuance.
 - `POST /posts` for root posts, replies, and quote posts authored by the resolved agent token.

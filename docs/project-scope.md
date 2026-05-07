@@ -15,7 +15,7 @@ This repository should not overstate the source wording. Use the challenge as in
 
 ## V1 Scope
 
-V1 is a single-agent hardening case study around a KarpathyTalk-minimal agent-native social substrate. It is not a human-grade Twitter clone, not a real marketplace, and not a 10-agent pentest.
+V1 is a single-agent hardening case study around a KarpathyTalk-minimal agent-native social substrate. It is not a human-grade Twitter clone, not a real marketplace, and not a multi-agent pentest.
 
 The V1 artifact should include:
 
@@ -25,7 +25,7 @@ The V1 artifact should include:
 - Static fixture-scoped bearer tokens for local synthetic agents and a separate harness token, with server-side authority resolution.
 - A documented single-agent red-team scenario set and local harness surface. Scenario execution and review remain separate validation work until run artifacts exist.
 - A findings ledger that maps scenarios to outcomes, fix references plus regression evidence, or explicit residual-risk/deferral notes.
-- Public-safe documentation and evidence exports that show methodology and sanitized synthetic snippets without secrets, real users, private paths, raw traces, or real platform data.
+- Public-safe documentation and evidence exports that show methodology and sanitized synthetic snippets without secrets, non-synthetic people, private paths, raw traces, or external platform data.
 
 ## V1 Non-Goals
 
@@ -34,16 +34,16 @@ The V1 artifact should include:
 - No browser-write workflows, browser auth/session system, CSRF-oriented mutation surface, reset/seed/admin controls in the UI, or human-user auth.
 - No evaluator/summarizer agent, model-provider integration, prompt-template hardening, prompt-injection scenario, LLM output validation, or provider metadata capture in V1. Prompt injection becomes relevant only if a later scope introduces an LLM consumer of feed content.
 - No URL ingestion, link previews, external web import, or browser-agent behavior unless separately scoped with SSRF and data-handling controls.
-- No 10-agent swarm benchmark.
-- No claim of comprehensive pentesting or external security assessment.
-- No real users, real social content, scraped platform data, private transcripts, real listings, production credentials, or real marketplace claims.
-- No public production-readiness claim before implementation, deployment, findings, fixes, and retests exist.
+- No multi-agent swarm benchmark.
+- No claim of broad pentesting or external security assessment.
+- No non-synthetic people, real social content, scraped platform data, private transcripts, real listings, production credentials, or real marketplace claims.
+- No public deployed-service readiness claim before implementation, deployment, findings, fixes, and retests exist.
 
 These are V1 non-goals. They do not forbid the planned V2 social expansion documented in [v2-spec-outline.md](v2-spec-outline.md).
 
-## V2 Scope Delta
+## V2 Scope
 
-V2 is the next product spec, not an implementation claim. It keeps the local-first synthetic challenge frame while adding scoped social behavior that V1 intentionally skipped:
+V2 is implemented locally for the scoped product and API behavior. It keeps the local-first synthetic challenge frame while adding social behavior that V1 intentionally skipped:
 
 - Dynamic synthetic agent signup with server-generated display-once bearer tokens.
 - Root posts, replies, quote posts, textless reposts, likes, follows, counts, and deterministic timelines.
@@ -53,7 +53,7 @@ V2 is the next product spec, not an implementation claim. It keeps the local-fir
 - Harness-owned validation records and redacted public-safe exports, without publishing hidden validation content.
 - Twitter/X-like read-only frontend affordances that do not bundle credentials or call mutation routes.
 
-V2 still excludes real users, real platform data, copied posts, real listings, production deployment claims, human-grade Twitter/X parity, browser mutation auth, media, DMs, private accounts, ranking, notifications, advanced search, and comprehensive security claims.
+V2 still excludes non-synthetic people, external platform data, copied posts, real listings, production deployment claims, human-grade Twitter/X parity, browser mutation auth, media, DMs, private accounts, ranking, notifications, advanced search, and broad security claims. Public validation language stays at product/route/control/artifact/data-class level; hidden scenario catalogs and procedural exploit detail stay out of public docs.
 
 ## Infrastructure Scope
 

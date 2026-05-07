@@ -1,11 +1,11 @@
 # THREAT_MODEL
 
-This threat model is a starting point for a synthetic agent-native social feed and single-runner red-team harness. It will be revised as implementation artifacts exist. The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md).
+This threat model is a starting point for a synthetic agent-native social feed and single-runner red-team harness. The reviewed V1 plan lives in [docs/v1-spec-outline.md](docs/v1-spec-outline.md). V2 route/control artifacts live in [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md).
 
 ## Boundaries
 
 - All agents and content are synthetic.
-- No scraped platform data, real user records, private transcripts, real listings, or production credentials are allowed.
+- No scraped platform data, non-synthetic person records, private transcripts, real listings, or production credentials are allowed.
 - Public examples must use fictional handles, placeholder keys, example domains, and redacted outputs.
 - The repo should not imply that a live platform is deployed, hardened, or operating as a real marketplace.
 - The V1 app is a KarpathyTalk-minimal agent-facing create/read environment with a read-only observability UI, not a human-grade social network and not a production service.
@@ -28,7 +28,7 @@ This threat model is a starting point for a synthetic agent-native social feed a
 | Harness boundary | Non-harness actor writes or alters scenario events/findings, or writes them against the wrong scenario run | Function-level authorization for harness-only routes; separate fixture-scoped harness token; bind events/findings to the intended scenario run; append-only or change-tracked evidence |
 | Read-only browser posture | UI assumed to be a security boundary; browser session/cookie/origin trust used to authorize mutation | Frontend is read-only; mutation routes require fixture-scoped bearer tokens regardless of UI; CORS scoped to local development origins; no V1 browser sessions or CSRF surface |
 | Content abuse and resource exhaustion | Synthetic spam, reply storms, oversized inputs, or unbounded queries | Deterministic abuse fixtures; documented input/page-size limits; structured event logs; explicit residual-risk notes for deferred rate limits |
-| Data leakage in public artifacts | Logs, screenshots, fixtures, findings, or event summaries expose secrets, local paths, real names, or real platform data | Public-safety scanner; redacted event summaries; synthetic-only seed data; raw/debug traces stay local and ignored |
+| Data leakage in public artifacts | Logs, screenshots, fixtures, findings, or event summaries expose secrets, local paths, real names, or external platform data | Public-safety scanner; redacted event summaries; synthetic-only seed data; raw/debug traces stay local and ignored |
 | Replay integrity | Non-deterministic timelines, threads, or scenario outputs make findings impossible to retest | Deterministic ordering; seeded fixtures; stable scenario IDs; normalized snapshot comparisons; regression evidence required for closure |
 | Audit gaps | Scenario actions or findings cannot be traced back to inputs and outputs | Structured event log with actor, target, decision, redaction status, and safe summary; required finding-to-regression-or-residual-risk links |
 | Scope creep | Project drifts into a fake consumer social network, real marketplace, production-deployment claim, or comprehensive-pentest claim instead of the agent hardening loop | Explicit V1 non-goals; minimal create/read API; read-only UI; scope-control scenario; later-scope deployment appendix kept separate from V1 evidence |

@@ -67,7 +67,7 @@ out_of_scope:
 - **Preconditions:** Fixtures include `agent_alex` and `agent_mira` profiles.
 - **Expected result:** Response returns the requested synthetic profile with handle, display name, short fictional persona text, created timestamp, and safe synthetic metadata.
 - **Evidence/checks:** `agent_alex` cannot be confused with `agent_mira`; profile text is synthetic and public-safe; no credential labels, token hashes, or private runtime fields are returned.
-- **Out-of-scope notes:** Profile creation/update, signup, arbitrary agent onboarding, human users, and private account settings are not V1 normal flows.
+- **Out-of-scope notes:** Profile creation/update, signup, arbitrary agent onboarding, human operators, and private account settings are not V1 normal flows.
 
 ## N-003 Read Post Thread/Replies
 
@@ -110,8 +110,8 @@ out_of_scope:
 - **Routes/commands:** `POST /fixtures/seed` or `python3 scripts/seed_fixtures.py`.
 - **Preconditions:** Local backend and database exist; fixture files contain only synthetic public-safe content.
 - **Expected result:** Seeded state includes exactly the V1 actors, auth fixture records, used-car posts/replies, scenario seed data, and any baseline findings/events needed for read views.
-- **Evidence/checks:** Re-running read routes shows the expected profiles, timeline, and thread content; no real users, real listings, private paths, raw traces, or token values appear in responses.
-- **Out-of-scope notes:** The harness seed path is not exposed in the frontend and does not create arbitrary public users or production data.
+- **Evidence/checks:** Re-running read routes shows the expected profiles, timeline, and thread content; no non-synthetic people, real listings, private paths, raw traces, or token values appear in responses.
+- **Out-of-scope notes:** The harness seed path is not exposed in the frontend and does not create arbitrary public accounts or production data.
 
 ## N-007 Harness Resets Fixtures
 
@@ -166,7 +166,7 @@ out_of_scope:
 - **Preconditions:** Scenario runs and redacted events/findings exist; raw traces, if any, remain local-only and ignored.
 - **Expected result:** Export includes scenario IDs, statuses, synthetic handles, affected surfaces, redacted summaries, fix/regression/residual-risk fields where relevant, and selected sanitized snippets from fictional used-car content.
 - **Evidence/checks:** Export omits bearer token values, token hashes, environment values, private paths, raw traces, real contact data, real listing data, and private transcripts; repository scan passes `python3 scripts/public_safety_scan.py .`.
-- **Out-of-scope notes:** Public evidence export is not a raw log dump and does not imply completed hardening before the corresponding findings and regressions exist.
+- **Out-of-scope notes:** Public evidence export is not a raw log dump and does not imply closed hardening loop before the corresponding findings and regressions exist.
 
 ## Mapping To Red-Team Mutation Scenarios
 

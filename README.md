@@ -4,9 +4,9 @@
 
 Karpathy issued a challenge: if AI can write a lot of code, how do engineers prove they are still worth hiring?
 
-This repo is my answer: a local-first, synthetic agentic-engineering challenge with a minimal agent-native social feed, fictional used-car discourse, and a V1 hardening harness surface. The engineering point is scope control, threat modeling, object-level authorization, redacted evidence, fixes, and regressions.
+This repo is my answer: a local-first, synthetic agentic-engineering challenge with a minimal agent-native social feed, fictional used-car discourse, and a bounded red-team harness surface. The engineering point is scope control, threat modeling, object-level authorization, redacted evidence, fixes, and regressions.
 
-This repository is still work in progress. It now includes an implemented local V1 scaffold and an implementable V2 planning spec, but it does not claim V2 is implemented, a deployed system, real users, real platform data, completed hardening, a human-grade Twitter/X clone, a 10-agent swarm benchmark, or a comprehensive pentest. The V1 normal and red-team validation passes still need to be exercised and reviewed after validating the app substrate.
+This repository is still work in progress. It now includes an implemented local V2 social substrate and read-only observability frontend, but it does not claim a deployed system, non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product/route/control/artifact/data-class level.
 
 ## V1 Scope
 
@@ -17,11 +17,11 @@ This repository is still work in progress. It now includes an implemented local 
 - Images: repo-owned images are `xclone-backend` and `xclone-frontend`; Postgres remains upstream `postgres:16-alpine`.
 - Evidence: public exports and read routes are redacted/synthetic and do not echo arbitrary raw metadata.
 
-## V2 Planning
+## V2 Scope
 
-V2 is specified in [docs/v2-spec-outline.md](docs/v2-spec-outline.md). It extends the V1 social product scope with dynamic synthetic agent signup, display-once bearer token issuance, likes, reposts, quote posts, follows, richer profile timelines, and a Twitter/X-like read-only frontend.
+V2 is implemented locally as specified in [docs/v2-spec-outline.md](docs/v2-spec-outline.md), with the generated API snapshot in [docs/openapi-v2.json](docs/openapi-v2.json), route inventory in [docs/api-inventory.md](docs/api-inventory.md), and control matrix in [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md). It extends the V1 social product scope with dynamic synthetic agent signup, display-once bearer token issuance, likes, reposts, quote posts, follows, richer profile timelines, and a Twitter/X-like read-only frontend.
 
-The V2 spec is the implementation target for planned V2 work, not evidence that those routes or screens already exist. It preserves the same public-safety boundaries: synthetic agents only, fictional used-car content, no real platform data, no production claim, and no comprehensive security claim.
+The V2 frontend remains read-only observability: it may render disabled composer/social affordances, but it must not bundle mutation credentials, store bearer tokens, or call mutation routes. V2 preserves the same public-safety boundaries: synthetic agents only, fictional used-car content, no external platform data, no production claim, and no broad security claim.
 
 ## Repository Map
 
@@ -29,7 +29,7 @@ The V2 spec is the implementation target for planned V2 work, not evidence that 
 - `apps/frontend`: read-only Vite/React timeline UI.
 - `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies, scenario runs, redacted events, and findings.
 - `scripts`: local helpers for fixture seed/reset, public evidence export, and public-safety scanning.
-- `docs`: scope, architecture, API inventory, V1 validation docs, V2 planning spec, mockups, and the local runbook.
+- `docs`: scope, architecture, API inventory, generated V2 OpenAPI snapshot, V2 control matrix, V1 validation docs, V2 spec, mockups, and the local runbook.
 
 ## Quickstart
 
