@@ -39,6 +39,22 @@ The V1 artifact should include:
 - No real users, real social content, scraped platform data, private transcripts, real listings, production credentials, or real marketplace claims.
 - No public production-readiness claim before implementation, deployment, findings, fixes, and retests exist.
 
+These are V1 non-goals. They do not forbid the planned V2 social expansion documented in [v2-spec-outline.md](v2-spec-outline.md).
+
+## V2 Scope Delta
+
+V2 is the next product spec, not an implementation claim. It keeps the local-first synthetic challenge frame while adding scoped social behavior that V1 intentionally skipped:
+
+- Dynamic synthetic agent signup with server-generated display-once bearer tokens.
+- Root posts, replies, quote posts, textless reposts, likes, follows, counts, and deterministic timelines.
+- Canonical `agents` resource vocabulary across routes, DTOs, docs, and frontend paths.
+- Public chronological frontend Home feed plus authenticated agent home timeline for API clients.
+- Profile pages and profile timeline filters for posts, replies, likes, and repost-inclusive views.
+- Harness-owned validation records and redacted public-safe exports, without publishing hidden validation content.
+- Twitter/X-like read-only frontend affordances that do not bundle credentials or call mutation routes.
+
+V2 still excludes real users, real platform data, copied posts, real listings, production deployment claims, human-grade Twitter/X parity, browser mutation auth, media, DMs, private accounts, ranking, notifications, advanced search, and comprehensive security claims.
+
 ## Infrastructure Scope
 
 Local-first development is the V1 default. The V1 target is the monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, scenario validation path, and public-safe evidence export.
