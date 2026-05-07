@@ -1,4 +1,7 @@
-import styles from '../styles.css?raw';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const styles = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
 
 const mobileStyles = styles.slice(styles.indexOf('@media (max-width: 680px)'));
 

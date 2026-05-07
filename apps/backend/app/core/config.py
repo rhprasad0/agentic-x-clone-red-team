@@ -1,9 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 ENV_FILE = REPO_ROOT / ".env"
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+psycopg://app_user_placeholder:postgres_password_placeholder@localhost:5432/agentic_x_clone"
     )
-    backend_cors_origins: list[str] = Field(default_factory=list)
+    backend_cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
     enable_api_docs: bool = True
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"

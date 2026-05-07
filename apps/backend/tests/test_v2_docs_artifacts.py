@@ -7,6 +7,9 @@ from test_v2_runtime_route_inventory import EXPECTED_ALIASES, route_inventory
 REPO_ROOT = Path(__file__).resolve().parents[3]
 API_INVENTORY = REPO_ROOT / "docs" / "api-inventory.md"
 OPENAPI_SNAPSHOT = REPO_ROOT / "docs" / "openapi-v2.json"
+V2_LOCAL_RUNBOOK = REPO_ROOT / "docs" / "v2-local-runbook.md"
+DOCKER_COMPOSE = REPO_ROOT / "docker-compose.yml"
+BACKEND_DOCKERFILE = REPO_ROOT / "apps" / "backend" / "Dockerfile"
 DOCS_TO_SCAN = [
     REPO_ROOT / "README.md",
     REPO_ROOT / "SPEC.md",
@@ -60,6 +63,65 @@ def test_api_inventory_documents_every_runtime_route_and_alias() -> None:
     assert "`/users" not in inventory_text
     assert "canonical noun" in inventory_text
     assert "agents" in inventory_text
+
+
+def test_backend_container_bootstraps_fixture_auth_before_local_smoke_routes() -> None:
+    dockerfile_text = BACKEND_DOCKERFILE.read_text(encoding="utf-8")
+
+    assert "seed_used_car_world" in dockerfile_text
+    assert "alembic -c alembic.ini upgrade head" in dockerfile_text
+    assert "exec uvicorn app.main:app" in dockerfile_text
+
+
+def test_docker_compose_host_ports_are_env_overridable_for_parallel_smoke() -> None:
+    compose_text = DOCKER_COMPOSE.read_text(encoding="utf-8")
+
+    required_port_bindings = [
+        '"${POSTGRES_HOST_PORT:-5432}:5432"',
+        '"${BACKEND_HOST_PORT:-8000}:8000"',
+        '"${FRONTEND_HOST_PORT:-3000}:8080"',
+        'BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}',
+    ]
+    for binding in required_port_bindings:
+        assert binding in compose_text
+
+
+def test_v2_local_runbook_covers_smoke_and_public_safety_workflow() -> None:
+    assert V2_LOCAL_RUNBOOK.exists()
+    runbook = V2_LOCAL_RUNBOOK.read_text(encoding="utf-8")
+
+    required_phrases = [
+        "local-only V2 smoke",
+        "docker compose config",
+        "docker compose build",
+        "docker compose up -d",
+        "alembic -c alembic.ini upgrade head",
+        "python3 scripts/reset_fixtures.py",
+        "python3 scripts/seed_fixtures.py",
+        "curl -fsS http://localhost:8000/health",
+        "curl -fsS http://localhost:8000/timelines/public",
+        "curl -fsS http://localhost:8000/agents",
+        "curl -fsS http://localhost:8000/posts/",
+        "POST /agents/signup",
+        "display-once token must be redacted",
+        "POST /exports/public-evidence",
+        "npm audit --omit=dev --audit-level=high",
+        "python3 scripts/public_safety_scan.py .",
+        "do not publish hidden scenario catalogs",
+    ]
+    for phrase in required_phrases:
+        assert phrase in runbook
+
+    forbidden_phrases = [
+        "production-ready",
+        "real users",
+        "real platform data",
+        "comprehensive security assessment",
+        "token: ",
+        "bearer ey",
+    ]
+    for phrase in forbidden_phrases:
+        assert phrase.lower() not in runbook.lower()
 
 
 def test_public_docs_keep_v2_claims_bounded_and_billboard_safe() -> None:

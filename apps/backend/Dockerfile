@@ -36,4 +36,4 @@ EXPOSE 8000
 
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 CMD python -c "import sys, urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read(); sys.exit(0)"
 
-CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "alembic -c alembic.ini upgrade head && python -c 'from app.db.session import SessionLocal; from app.services.fixtures import seed_used_car_world; db = SessionLocal(); seed_used_car_world(db); db.close()' && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
