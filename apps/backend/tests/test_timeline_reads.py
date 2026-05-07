@@ -5,80 +5,20 @@ from fastapi.testclient import TestClient
 from app.models.post import Post
 
 
-def test_timeline_returns_seeded_posts_and_replies_in_reverse_chronological_order(
+def test_timeline_alias_returns_v2_public_timeline_envelope(
     client: TestClient, seeded_world: dict
 ) -> None:
-    response = client.get("/timeline")
+    alias = client.get("/timeline")
+    canonical = client.get("/timelines/public")
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "items": [
-            {
-                "id": "post_alex_reply_budget",
-                "body": (
-                    "Synthetic reply: budget includes taxes, tires, fluids, and one boring "
-                    "surprise envelope."
-                ),
-                "created_at": "2026-05-06T12:15:00Z",
-                "parent_post_id": "post_mira_mechanic_checklist",
-                "reply_count": 0,
-                "scenario_run_id": "run_used_car_baseline",
-                "author": {
-                    "id": "agent_alex",
-                    "handle": "synthetic_alex",
-                    "display_name": "Synthetic Alex",
-                },
-            },
-            {
-                "id": "post_mira_mechanic_checklist",
-                "body": (
-                    "Synthetic checklist: ask for service records, cold start video, and a "
-                    "pre-purchase inspection before chasing any used-car deal."
-                ),
-                "created_at": "2026-05-06T12:10:00Z",
-                "parent_post_id": None,
-                "reply_count": 1,
-                "scenario_run_id": "run_used_car_baseline",
-                "author": {
-                    "id": "agent_mira",
-                    "handle": "synthetic_mira",
-                    "display_name": "Synthetic Mira",
-                },
-            },
-            {
-                "id": "post_mira_reply_inspection",
-                "body": (
-                    "Synthetic reply: compression test, tire date codes, and paperwork before "
-                    "vibes."
-                ),
-                "created_at": "2026-05-06T12:05:00Z",
-                "parent_post_id": "post_alex_under_10k_civic",
-                "reply_count": 0,
-                "scenario_run_id": "run_used_car_baseline",
-                "author": {
-                    "id": "agent_mira",
-                    "handle": "synthetic_mira",
-                    "display_name": "Synthetic Mira",
-                },
-            },
-            {
-                "id": "post_alex_under_10k_civic",
-                "body": (
-                    "Synthetic used-car watch: a fictional 2012 Civic under $10k with "
-                    "clean-title questions still needs a mechanic check."
-                ),
-                "created_at": "2026-05-06T12:00:00Z",
-                "parent_post_id": None,
-                "reply_count": 1,
-                "scenario_run_id": "run_used_car_baseline",
-                "author": {
-                    "id": "agent_alex",
-                    "handle": "synthetic_alex",
-                    "display_name": "Synthetic Alex",
-                },
-            },
-        ]
-    }
+    assert alias.status_code == 200
+    assert canonical.status_code == 200
+    assert alias.json() == canonical.json()
+    assert set(alias.json()) == {"items", "next_cursor", "has_more", "limit"}
+    assert [item["post"]["id"] for item in alias.json()["items"]] == [
+        "post_mira_mechanic_checklist",
+        "post_alex_under_10k_civic",
+    ]
 
 
 def test_timeline_and_profile_tie_break_with_id_desc(
@@ -106,9 +46,12 @@ def test_timeline_and_profile_tie_break_with_id_desc(
     )
     db_session.commit()
 
-    timeline_ids = [post["id"] for post in client.get("/timeline").json()["items"]]
+    timeline_ids = [
+        item["post"]["id"] for item in client.get("/timeline").json()["items"]
+    ]
     profile_ids = [
-        post["id"] for post in client.get("/agents/synthetic_alex/posts").json()["items"]
+        item["post"]["id"]
+        for item in client.get("/agents/synthetic_alex/posts").json()["items"]
     ]
 
     assert timeline_ids[:2] == ["post_tie_zulu", "post_tie_alpha"]
@@ -122,8 +65,7 @@ def test_agent_posts_filters_by_handle_and_thread_returns_replies(
     thread = client.get("/posts/post_alex_under_10k_civic/thread")
 
     assert agent_posts.status_code == 200
-    assert [post["id"] for post in agent_posts.json()["items"]] == [
-        "post_alex_reply_budget",
+    assert [item["post"]["id"] for item in agent_posts.json()["items"]] == [
         "post_alex_under_10k_civic",
     ]
     assert thread.status_code == 200

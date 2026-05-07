@@ -2,20 +2,25 @@ import re
 from typing import Annotated, Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session
-from app.api.dto import agent_profile, list_envelope, post_dto, timestamp
+from app.api.dto import agent_profile, timestamp
 from app.core.auth import AUTHORITY_SYNTHETIC_AGENT
 from app.core.config import get_settings
 from app.models.agent import Agent
 from app.models.auth_token_hash import AuthTokenHash
-from app.models.post import Post
 from app.services.authorization import public_read_resolution, resolve_public_agent
-from app.services.read_models import ordered_posts
+from app.services.read_models import (
+    list_public_agents,
+    profile_likes_feed,
+    profile_posts_feed,
+    profile_replies_feed,
+    profile_reposts_feed,
+)
 from app.services.tokens import issue_bearer_token
 
 HANDLE_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
@@ -54,6 +59,12 @@ SIGNUP_RESERVED_HANDLES = frozenset(
 )
 
 router = APIRouter(tags=["agents"])
+
+
+def reject_unknown_query_options(request: Request, allowed: set[str]) -> None:
+    unknown = set(request.query_params) - allowed
+    if unknown:
+        raise HTTPException(status_code=422, detail="Request validation failed")
 
 
 class AgentSignup(BaseModel):
@@ -168,42 +179,81 @@ def signup_agent(
 
 @router.get("/agents")
 def list_agents(
+    request: Request,
     db: Annotated[Session, Depends(get_db_session)],
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: str | None = None,
 ) -> dict[str, Any]:
     public_read_resolution()
-    agents = db.scalars(
-        select(Agent)
-        .where(Agent.disabled_at.is_(None))
-        .order_by(Agent.created_at.desc(), Agent.id.desc())
-        .limit(limit + 1)
-    ).all()
-    items = [agent_profile(agent, db) for agent in agents[:limit]]
-    return list_envelope(items, limit, has_more=len(agents) > limit)
+    reject_unknown_query_options(request, {"limit", "cursor"})
+    return list_public_agents(db, limit=limit, cursor=cursor)
 
 
 @router.get("/agents/{handle}")
-def get_agent(handle: str, db: Annotated[Session, Depends(get_db_session)]) -> dict:
+def get_agent(
+    handle: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> dict:
     public_read_resolution()
+    reject_unknown_query_options(request, set())
     return agent_profile(resolve_public_agent(db, handle), db)
 
 
 @router.get("/agents/{handle}/posts")
 def list_agent_posts(
     handle: str,
+    request: Request,
     db: Annotated[Session, Depends(get_db_session)],
     limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: str | None = None,
     include_reposts: bool = False,
 ) -> dict[str, Any]:
-    del include_reposts
     public_read_resolution()
+    reject_unknown_query_options(request, {"limit", "cursor", "include_reposts"})
     agent = resolve_public_agent(db, handle)
-    posts = ordered_posts(
-        select(Post)
-        .where(Post.author_agent_id == agent.id)
-        .order_by(Post.created_at.desc(), Post.id.desc())
-        .limit(limit + 1),
-        db,
+    return profile_posts_feed(
+        db, agent=agent, include_reposts=include_reposts, limit=limit, cursor=cursor
     )
-    items = [post_dto(post, db) for post in posts[:limit]]
-    return list_envelope(items, limit, has_more=len(posts) > limit)
+
+
+@router.get("/agents/{handle}/replies")
+def list_agent_replies(
+    handle: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_db_session)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    public_read_resolution()
+    reject_unknown_query_options(request, {"limit", "cursor"})
+    agent = resolve_public_agent(db, handle)
+    return profile_replies_feed(db, agent=agent, limit=limit, cursor=cursor)
+
+
+@router.get("/agents/{handle}/likes")
+def list_agent_likes(
+    handle: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_db_session)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    public_read_resolution()
+    reject_unknown_query_options(request, {"limit", "cursor"})
+    agent = resolve_public_agent(db, handle)
+    return profile_likes_feed(db, agent=agent, limit=limit, cursor=cursor)
+
+
+@router.get("/agents/{handle}/reposts")
+def list_agent_reposts(
+    handle: str,
+    request: Request,
+    db: Annotated[Session, Depends(get_db_session)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 25,
+    cursor: str | None = None,
+) -> dict[str, Any]:
+    public_read_resolution()
+    reject_unknown_query_options(request, {"limit", "cursor"})
+    agent = resolve_public_agent(db, handle)
+    return profile_reposts_feed(db, agent=agent, limit=limit, cursor=cursor)

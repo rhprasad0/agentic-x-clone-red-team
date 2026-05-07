@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.agent import Agent
 from app.models.event import Event
@@ -70,9 +70,15 @@ class PostSummaryDTO(StrictDTO):
     is_quote: bool
 
 
+class UnavailablePostDTO(StrictDTO):
+    id: str
+    availability: Literal["unavailable"]
+    reason: Literal["not_found"]
+
+
 class PostDTO(PostSummaryDTO):
-    parent_summary: PostSummaryDTO | None
-    quoted_post: PostSummaryDTO | None
+    parent_summary: PostSummaryDTO | UnavailablePostDTO | None
+    quoted_post: PostSummaryDTO | UnavailablePostDTO | None
 
 
 class TimelineItemDTO(StrictDTO):
@@ -82,6 +88,13 @@ class TimelineItemDTO(StrictDTO):
     post: PostDTO
     reposted_by: AgentSummaryDTO | None = None
     reposted_at: str | None = None
+
+
+class LikeTabItemDTO(StrictDTO):
+    id: str
+    sort_timestamp: str
+    liked_at: str
+    post: PostDTO
 
 
 class ListEnvelopeDTO(StrictDTO):
@@ -207,12 +220,29 @@ def agent_profile(agent: Agent, db: Session) -> dict[str, Any]:
 
 def post_counts(db: Session, post: Post) -> PostCountsDTO:
     return PostCountsDTO(
-        reply_count=db.scalar(select(func.count(Post.id)).where(Post.parent_post_id == post.id))
+        reply_count=db.scalar(
+            select(func.count(Post.id))
+            .join(Post.author)
+            .where(Post.parent_post_id == post.id, Agent.disabled_at.is_(None))
+        )
         or 0,
-        like_count=db.scalar(select(func.count(Like.id)).where(Like.post_id == post.id)) or 0,
-        repost_count=db.scalar(select(func.count(Repost.id)).where(Repost.post_id == post.id))
+        like_count=db.scalar(
+            select(func.count(Like.id))
+            .join(Like.agent)
+            .where(Like.post_id == post.id, Agent.disabled_at.is_(None))
+        )
         or 0,
-        quote_count=db.scalar(select(func.count(Post.id)).where(Post.quote_post_id == post.id))
+        repost_count=db.scalar(
+            select(func.count(Repost.id))
+            .join(Repost.agent)
+            .where(Repost.post_id == post.id, Agent.disabled_at.is_(None))
+        )
+        or 0,
+        quote_count=db.scalar(
+            select(func.count(Post.id))
+            .join(Post.author)
+            .where(Post.quote_post_id == post.id, Agent.disabled_at.is_(None))
+        )
         or 0,
     )
 
@@ -236,13 +266,11 @@ def post_summary(post: Post, db: Session) -> dict[str, Any]:
 
 
 def post_dto(post: Post, db: Session) -> dict[str, Any]:
-    parent = db.get(Post, post.parent_post_id) if post.parent_post_id is not None else None
-    quoted = db.get(Post, post.quote_post_id) if post.quote_post_id is not None else None
     return dump(
         PostDTO(
             **post_summary(post, db),
-            parent_summary=PostSummaryDTO(**post_summary(parent, db)) if parent else None,
-            quoted_post=PostSummaryDTO(**post_summary(quoted, db)) if quoted else None,
+            parent_summary=public_post_summary_or_placeholder(db, post.parent_post_id),
+            quoted_post=public_post_summary_or_placeholder(db, post.quote_post_id),
         )
     )
 
@@ -277,13 +305,53 @@ def timeline_item_from_repost(repost: Repost, db: Session) -> dict[str, Any]:
     )
 
 
+def like_tab_item(like: Like, db: Session) -> dict[str, Any]:
+    return dump(
+        LikeTabItemDTO(
+            id=like.id,
+            sort_timestamp=timestamp(like.created_at),
+            liked_at=timestamp(like.created_at),
+            post=PostDTO(**post_dto(like.post, db)),
+        )
+    )
+
+
+def unavailable_post_ref(post_id: str) -> dict[str, Any]:
+    return dump(
+        UnavailablePostDTO(
+            id=post_id,
+            availability="unavailable",
+            reason="not_found",
+        )
+    )
+
+
+def public_post_summary_or_placeholder(
+    db: Session, post_id: str | None
+) -> dict[str, Any] | None:
+    if post_id is None:
+        return None
+    post = db.scalars(
+        select(Post)
+        .options(joinedload(Post.author))
+        .join(Post.author)
+        .where(Post.id == post_id, Agent.disabled_at.is_(None))
+    ).one_or_none()
+    if post is None:
+        return unavailable_post_ref(post_id)
+    return post_summary(post, db)
+
+
 def list_envelope(
-    items: list[dict[str, Any]], limit: int, has_more: bool = False
+    items: list[dict[str, Any]],
+    limit: int,
+    has_more: bool = False,
+    next_cursor: str | None = None,
 ) -> dict[str, Any]:
     return dump(
         ListEnvelopeDTO(
             items=items,
-            next_cursor=None,
+            next_cursor=next_cursor,
             has_more=has_more,
             limit=limit,
         )

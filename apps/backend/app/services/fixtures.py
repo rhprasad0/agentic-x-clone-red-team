@@ -263,5 +263,6 @@ def reset_used_car_world(db: Session) -> dict[str, int | str]:
     for model in DELETE_ORDER:
         db.execute(delete(model))
     db.commit()
+    db.expire_all()
     counts = _seed_fixture_rows(db)
     return {"status": "ok", **counts}

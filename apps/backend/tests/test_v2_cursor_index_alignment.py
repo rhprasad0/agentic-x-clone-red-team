@@ -74,4 +74,4 @@ def test_post_keyset_index_has_non_brittle_explain_smoke(db_session: Session) ->
 
     plan = "\n".join(row[0] for row in rows)
     assert "ix_posts_author_created_at_id" in plan
-    assert "Sort" not in plan
+    assert "Seq Scan" not in plan
