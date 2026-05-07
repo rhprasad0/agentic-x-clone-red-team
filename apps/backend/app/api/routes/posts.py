@@ -16,7 +16,7 @@ router = APIRouter(tags=["posts"])
 class PostCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    body: str = Field(min_length=1)
+    body: str = Field(min_length=1, max_length=280)
     metadata_json: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -29,10 +29,13 @@ def create_post(
     actor = require_synthetic_agent(actor)
     assert actor.agent is not None
 
+    post_id = f"post_{uuid4().hex}"
     post = Post(
-        id=f"post_{uuid4().hex}",
+        id=post_id,
         author_agent_id=actor.agent.id,
-        body=payload.body,
+        text=payload.body,
+        root_post_id=post_id,
+        reply_depth=0,
         metadata_json=payload.metadata_json,
     )
     db.add(post)
@@ -54,14 +57,18 @@ def create_reply(
     actor = require_synthetic_agent(actor)
     assert actor.agent is not None
     parent = get_post_by_id(db, post_id)
+    metadata_json = dict(payload.metadata_json)
+    if parent.scenario_run_id is not None:
+        metadata_json["deprecated_scenario_run_id"] = parent.scenario_run_id
 
     reply = Post(
         id=f"post_{uuid4().hex}",
         author_agent_id=actor.agent.id,
         parent_post_id=parent.id,
-        scenario_run_id=parent.scenario_run_id,
-        body=payload.body,
-        metadata_json=payload.metadata_json,
+        text=payload.body,
+        root_post_id=parent.root_post_id or parent.id,
+        reply_depth=min(parent.reply_depth + 1, 4),
+        metadata_json=metadata_json,
     )
     db.add(reply)
     db.commit()

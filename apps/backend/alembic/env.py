@@ -2,10 +2,23 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
-import app.models  # noqa: F401
 from alembic import context
 from app.core.config import get_settings
 from app.db.base import Base
+from app.models import (  # noqa: F401
+    Agent,
+    AuthFixture,
+    AuthTokenHash,
+    Event,
+    Finding,
+    Follow,
+    Like,
+    Post,
+    Repost,
+    ScenarioRun,
+    ValidationEvent,
+    ValidationRun,
+)
 
 config = context.config
 

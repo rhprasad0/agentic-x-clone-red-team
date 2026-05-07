@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models.event import Event
 from app.models.finding import Finding
 from app.models.scenario_run import ScenarioRun
+from app.models.validation_run import ValidationRun
 from app.services.read_models import timestamp
 
 
@@ -59,7 +60,8 @@ def build_public_evidence_export(db: Session) -> dict[str, Any]:
         ).all()
         findings = db.scalars(
             select(Finding)
-            .where(Finding.scenario_run_id == run.id)
+            .join(ValidationRun)
+            .where(ValidationRun.scenario_run_id == run.id)
             .order_by(Finding.created_at.asc(), Finding.id.asc())
         ).all()
         exported_runs.append(

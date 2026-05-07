@@ -10,6 +10,7 @@ from app.models.event import Event
 from app.models.finding import Finding
 from app.models.post import Post
 from app.models.scenario_run import ScenarioRun
+from app.models.validation_run import ValidationRun
 
 
 def timestamp(value: datetime) -> str:
@@ -34,7 +35,7 @@ def post_payload(db: Session, post: Post) -> dict[str, Any]:
     )
     return {
         "id": post.id,
-        "body": post.body,
+        "body": post.text,
         "created_at": timestamp(post.created_at),
         "parent_post_id": post.parent_post_id,
         "reply_count": reply_count,
@@ -80,7 +81,9 @@ def finding_payload(finding: Finding) -> dict[str, Any]:
 
 
 def get_agent_by_handle(db: Session, handle: str) -> Agent:
-    agent = db.scalars(select(Agent).where(Agent.handle == handle)).one_or_none()
+    agent = db.scalars(
+        select(Agent).where(Agent.handle_normalized == handle.lower())
+    ).one_or_none()
     if agent is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
     return agent
@@ -100,6 +103,18 @@ def get_scenario_run_by_id(db: Session, run_id: str) -> ScenarioRun:
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scenario run not found")
     return run
+
+
+def get_validation_run_for_scenario(db: Session, run_id: str) -> ValidationRun:
+    validation_run = db.scalars(
+        select(ValidationRun).where(ValidationRun.scenario_run_id == run_id)
+    ).one_or_none()
+    if validation_run is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Validation run not found",
+        )
+    return validation_run
 
 
 def ordered_posts(statement: Select[tuple[Post]], db: Session) -> list[Post]:

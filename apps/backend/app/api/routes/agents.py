@@ -14,7 +14,7 @@ router = APIRouter(tags=["agents"])
 
 @router.get("/agents")
 def list_agents(db: Annotated[Session, Depends(get_db_session)]) -> dict[str, list[dict]]:
-    agents = db.scalars(select(Agent).order_by(Agent.handle.asc())).all()
+    agents = db.scalars(select(Agent).order_by(Agent.handle_normalized.asc(), Agent.id.asc())).all()
     return {"items": [agent_payload(agent) for agent in agents]}
 
 

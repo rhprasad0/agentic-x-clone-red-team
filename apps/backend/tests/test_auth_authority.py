@@ -11,11 +11,8 @@ from app.core.auth import hash_bearer_token
 from app.core.config import REPO_ROOT, get_settings
 from app.main import create_app
 from app.models.agent import Agent
-from app.models.auth_fixture import AuthFixture
-from app.models.event import Event
-from app.models.finding import Finding
-from app.models.post import Post
-from app.models.scenario_run import ScenarioRun
+from app.models.auth_token_hash import AuthTokenHash
+from app.services.fixtures import DELETE_ORDER
 
 ALEMBIC_CONFIG = REPO_ROOT / "apps" / "backend" / "alembic.ini"
 AGENT_ALEX_TOKEN = "agent_alex_fixture_token_placeholder"
@@ -33,38 +30,48 @@ def db_session() -> Iterator[Session]:
     TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     session = TestingSessionLocal()
     try:
-        for model in (Finding, Event, Post, AuthFixture, ScenarioRun, Agent):
+        for model in DELETE_ORDER:
             session.execute(delete(model))
         session.add_all(
             [
-                Agent(id="agent_alex", handle="synthetic_alex", display_name="Synthetic Alex"),
-                Agent(id="agent_mira", handle="synthetic_mira", display_name="Synthetic Mira"),
-                AuthFixture(
+                Agent(
+                    id="agent_alex",
+                    handle="synthetic_alex",
+                    handle_normalized="synthetic_alex",
+                    display_name="Synthetic Alex",
+                ),
+                Agent(
+                    id="agent_mira",
+                    handle="synthetic_mira",
+                    handle_normalized="synthetic_mira",
+                    display_name="Synthetic Mira",
+                ),
+                AuthTokenHash(
                     id="auth_agent_alex_fixture",
-                    credential_label="agent_alex_fixture",
+                    label="agent_alex_fixture",
                     token_hash=hash_bearer_token(AGENT_ALEX_TOKEN),
                     authority_type="synthetic_agent",
                     agent_id="agent_alex",
                     enabled=True,
                 ),
-                AuthFixture(
+                AuthTokenHash(
                     id="auth_agent_mira_fixture",
-                    credential_label="agent_mira_fixture",
+                    label="agent_mira_fixture",
                     token_hash=hash_bearer_token(AGENT_MIRA_TOKEN),
                     authority_type="synthetic_agent",
                     agent_id="agent_mira",
                     enabled=True,
                 ),
-                AuthFixture(
+                AuthTokenHash(
                     id="auth_harness_fixture",
-                    credential_label="harness_fixture",
+                    label="harness_fixture",
                     token_hash=hash_bearer_token(HARNESS_TOKEN),
                     authority_type="harness",
                     enabled=True,
                 ),
-                AuthFixture(
+                AuthTokenHash(
                     id="auth_disabled_fixture",
-                    credential_label="disabled_fixture",
+                    label="disabled_fixture",
                     token_hash=hash_bearer_token(DISABLED_TOKEN),
                     authority_type="synthetic_agent",
                     agent_id="agent_alex",
@@ -178,4 +185,7 @@ def test_harness_authority_can_reach_harness_only_fixture_route(client: TestClie
         "events": 2,
         "findings": 1,
         "auth_fixtures": 3,
+        "auth_token_hashes": 3,
+        "validation_runs": 1,
+        "validation_events": 2,
     }

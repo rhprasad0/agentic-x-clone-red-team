@@ -44,6 +44,9 @@ def test_reset_is_harness_only_and_loads_deterministic_world(
             "events": 2,
             "findings": 1,
             "auth_fixtures": 3,
+            "auth_token_hashes": 3,
+            "validation_runs": 1,
+            "validation_events": 2,
         }
     )
 

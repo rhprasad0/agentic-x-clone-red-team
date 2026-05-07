@@ -23,6 +23,5 @@ class ScenarioRun(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
-    posts = relationship("Post", back_populates="scenario_run")
     events = relationship("Event", back_populates="scenario_run")
-    findings = relationship("Finding", back_populates="scenario_run")
+    validation_run = relationship("ValidationRun", back_populates="scenario_run", uselist=False)

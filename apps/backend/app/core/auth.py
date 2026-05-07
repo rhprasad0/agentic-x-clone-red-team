@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.agent import Agent
-from app.models.auth_fixture import AuthFixture
+from app.models.auth_token_hash import AuthTokenHash
 
 AUTHORITY_SYNTHETIC_AGENT = "synthetic_agent"
 AUTHORITY_HARNESS = "harness"
@@ -45,27 +45,27 @@ def parse_bearer_token(authorization: str | None) -> str:
 
 def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
     token_hash = hash_bearer_token(token)
-    fixture = db.scalars(
-        select(AuthFixture)
-        .options(joinedload(AuthFixture.agent))
-        .where(AuthFixture.token_hash == token_hash)
+    stored_token = db.scalars(
+        select(AuthTokenHash)
+        .options(joinedload(AuthTokenHash.agent))
+        .where(AuthTokenHash.token_hash == token_hash)
     ).one_or_none()
 
-    if fixture is None or not fixture.enabled:
+    if stored_token is None or not stored_token.enabled or stored_token.revoked_at is not None:
         raise_unauthorized()
 
-    if fixture.authority_type == AUTHORITY_SYNTHETIC_AGENT:
-        if fixture.agent is None:
+    if stored_token.authority_type == AUTHORITY_SYNTHETIC_AGENT:
+        if stored_token.agent is None:
             raise_unauthorized()
         return ActorContext(
-            credential_label=fixture.credential_label,
+            credential_label=stored_token.label,
             authority_type=AUTHORITY_SYNTHETIC_AGENT,
-            agent=fixture.agent,
+            agent=stored_token.agent,
         )
 
-    if fixture.authority_type == AUTHORITY_HARNESS:
+    if stored_token.authority_type == AUTHORITY_HARNESS:
         return ActorContext(
-            credential_label=fixture.credential_label,
+            credential_label=stored_token.label,
             authority_type=AUTHORITY_HARNESS,
             agent=None,
         )

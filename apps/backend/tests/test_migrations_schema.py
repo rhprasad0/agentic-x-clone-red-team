@@ -16,6 +16,23 @@ EXPECTED_TABLES = {
     "events",
     "findings",
     "auth_fixtures",
+    "auth_token_hashes",
+    "likes",
+    "reposts",
+    "follows",
+    "validation_runs",
+    "validation_events",
+}
+V2_MODEL_TABLES = {
+    "agents",
+    "posts",
+    "findings",
+    "auth_token_hashes",
+    "likes",
+    "reposts",
+    "follows",
+    "validation_runs",
+    "validation_events",
 }
 
 
@@ -24,7 +41,7 @@ def _upgrade_to_head() -> None:
     command.upgrade(alembic_cfg, "head")
 
 
-def test_alembic_upgrade_head_creates_expected_v1_tables() -> None:
+def test_alembic_upgrade_head_creates_expected_tables() -> None:
     _upgrade_to_head()
     engine = create_engine(get_settings().database_url)
 
@@ -38,7 +55,7 @@ def test_alembic_upgrade_head_creates_expected_v1_tables() -> None:
         engine.dispose()
 
 
-def test_v1_schema_uses_jsonb_metadata_and_timezone_timestamps() -> None:
+def test_schema_uses_jsonb_metadata_and_timezone_timestamps() -> None:
     _upgrade_to_head()
     engine = create_engine(get_settings().database_url)
 
@@ -57,7 +74,7 @@ def test_v1_schema_uses_jsonb_metadata_and_timezone_timestamps() -> None:
         engine.dispose()
 
 
-def test_v1_schema_enforces_public_ids_and_auth_hash_boundaries() -> None:
+def test_schema_enforces_public_ids_and_auth_hash_boundaries() -> None:
     _upgrade_to_head()
     engine = create_engine(get_settings().database_url)
 
@@ -69,6 +86,23 @@ def test_v1_schema_enforces_public_ids_and_auth_hash_boundaries() -> None:
         )
         assert "token" not in auth_columns
         assert "token_plaintext" not in auth_columns
+
+        token_hash_columns = {
+            column["name"]: column for column in inspector.get_columns("auth_token_hashes")
+        }
+        assert {
+            "token_hash",
+            "token_prefix",
+            "authority_type",
+            "agent_id",
+            "label",
+            "enabled",
+            "revoked_at",
+            "created_at",
+            "last_used_at",
+        }.issubset(token_hash_columns)
+        assert "token" not in token_hash_columns
+        assert "token_plaintext" not in token_hash_columns
 
         for table_name in EXPECTED_TABLES:
             id_column = next(
@@ -84,5 +118,52 @@ def test_v1_schema_enforces_public_ids_and_auth_hash_boundaries() -> None:
                 )
             ).scalar_one()
             assert agent_id is None
+    finally:
+        engine.dispose()
+
+
+def test_v2_owned_metadata_tables_match_migration_tables() -> None:
+    _upgrade_to_head()
+
+    import app.models  # noqa: F401
+    from app.db.base import Base
+
+    engine = create_engine(get_settings().database_url)
+
+    try:
+        inspector = inspect(engine)
+        migration_tables = set(inspector.get_table_names())
+        metadata_tables = set(Base.metadata.tables)
+
+        assert V2_MODEL_TABLES.issubset(metadata_tables)
+        assert V2_MODEL_TABLES.issubset(migration_tables)
+        assert V2_MODEL_TABLES == (metadata_tables & V2_MODEL_TABLES)
+        assert V2_MODEL_TABLES == (migration_tables & V2_MODEL_TABLES)
+    finally:
+        engine.dispose()
+
+
+def test_v2_posts_and_findings_are_canonicalized_without_v1_columns() -> None:
+    _upgrade_to_head()
+    engine = create_engine(get_settings().database_url)
+
+    try:
+        inspector = inspect(engine)
+        post_columns = {column["name"] for column in inspector.get_columns("posts")}
+        finding_columns = {column["name"] for column in inspector.get_columns("findings")}
+
+        assert {"text", "root_post_id", "reply_depth", "quote_post_id"}.issubset(post_columns)
+        assert "body" not in post_columns
+        assert "scenario_run_id" not in post_columns
+
+        assert {
+            "validation_run_id",
+            "affected_route_class",
+            "affected_object_class",
+            "fix_ref",
+            "regression_ref",
+            "residual_risk",
+        }.issubset(finding_columns)
+        assert "scenario_run_id" not in finding_columns
     finally:
         engine.dispose()

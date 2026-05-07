@@ -1,3 +1,4 @@
+import sys
 from collections.abc import Iterator
 
 import pytest
@@ -9,14 +10,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from alembic import command
 from app.core.config import REPO_ROOT, get_settings
 from app.main import create_app
-from app.models.agent import Agent
-from app.models.auth_fixture import AuthFixture
-from app.models.event import Event
-from app.models.finding import Finding
-from app.models.post import Post
-from app.models.scenario_run import ScenarioRun
+from app.services.fixtures import DELETE_ORDER
 
 ALEMBIC_CONFIG = REPO_ROOT / "apps" / "backend" / "alembic.ini"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 FIXTURE_CREDENTIAL_VALUES = {
     "agent_alex_fixture": "agent_alex_fixture_token_placeholder",
@@ -34,7 +32,7 @@ def db_session() -> Iterator[Session]:
     TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     session = TestingSessionLocal()
     try:
-        for model in (Finding, Event, Post, AuthFixture, ScenarioRun, Agent):
+        for model in DELETE_ORDER:
             session.execute(delete(model))
         session.commit()
         yield session
