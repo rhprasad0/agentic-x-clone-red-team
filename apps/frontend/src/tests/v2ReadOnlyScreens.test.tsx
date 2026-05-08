@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import App from '../App';
 import { fetchAgent, fetchAgentFeed, fetchPublicTimeline, fetchThread } from '../api/client';
 
@@ -139,7 +139,8 @@ const threadPayload = {
   limit: 20,
 };
 
-const profilePosts = { items: [{ id: rootPost.id, item_type: 'post', sort_timestamp: rootPost.created_at, post: rootPost, reposted_by: null, reposted_at: null }], next_cursor: null, has_more: false, limit: 20 };
+const profilePosts = { items: [{ id: rootPost.id, item_type: 'post', sort_timestamp: rootPost.created_at, post: rootPost, reposted_by: null, reposted_at: null }], next_cursor: 'cursor_profile_posts_next', has_more: true, limit: 20 };
+const profilePostsSecondPage = { items: [{ id: quotePost.id, item_type: 'quote_post', sort_timestamp: quotePost.created_at, post: quotePost, reposted_by: null, reposted_at: null }], next_cursor: null, has_more: false, limit: 20 };
 const profileReplies = { items: [{ id: replyPost.id, item_type: 'reply', sort_timestamp: replyPost.created_at, post: replyPost, reposted_by: null, reposted_at: null }], next_cursor: null, has_more: false, limit: 20 };
 const profileLikes = { items: [{ id: 'like_alex_mira_checklist', sort_timestamp: '2026-05-07T10:17:00Z', liked_at: '2026-05-07T10:17:00Z', post: quoteTarget }], next_cursor: null, has_more: false, limit: 20 };
 const profileReposts = { items: [{ id: 'repost_alex_civic', item_type: 'repost', sort_timestamp: '2026-05-07T10:18:00Z', post: quoteTarget, reposted_by: agentAlex, reposted_at: '2026-05-07T10:18:00Z' }], next_cursor: null, has_more: false, limit: 20 };
@@ -242,6 +243,38 @@ it('renders thread route loading, replies, unavailable quotes, and not-found ret
   expect(screen.getByRole('button', { name: /retry thread/i })).toBeDisabled();
 });
 
+it('navigates read-only from Home author identity and View thread affordances while disabled reply controls stay inert', async () => {
+  const fetchMock = stubFetch({
+    '/timelines/public': () => jsonResponse({ ...publicTimeline, has_more: false, next_cursor: null }),
+    '/agents/synthetic_alex': () => jsonResponse(profileAlex),
+    '/agents/synthetic_alex/posts': () => jsonResponse(profilePosts),
+    [`/posts/${rootPost.id}/thread`]: () => jsonResponse(threadPayload),
+  });
+
+  render(<App />);
+
+  await screen.findByRole('feed', { name: /public timeline/i });
+  const rootArticle = screen.getByRole('article', { name: /^post post_alex_under_10k_civic by synthetic_alex$/i });
+  const disabledReplyControls = within(rootArticle).getAllByRole('button', { name: /reply 2/i });
+  expect(disabledReplyControls.length).toBeGreaterThan(0);
+  for (const control of disabledReplyControls) {
+    expect(control).toBeDisabled();
+  }
+
+  fireEvent.click(within(rootArticle).getByRole('button', { name: /view thread with 2 replies for post_alex_under_10k_civic/i }));
+  expect(await screen.findByRole('feed', { name: /thread replies/i })).toBeInTheDocument();
+  expect(window.location.pathname).toBe(`/posts/${rootPost.id}`);
+  expect(fetchMock).toHaveBeenCalledWith(`http://localhost:8000/posts/${rootPost.id}/thread`, expect.objectContaining({ method: 'GET' }));
+
+  fireEvent.click(screen.getByRole('button', { name: /Home/i }));
+  const homeRootArticle = await screen.findByRole('article', { name: /^post post_alex_under_10k_civic by synthetic_alex$/i });
+  fireEvent.click(within(homeRootArticle).getByRole('button', { name: /view profile for Synthetic Alex @synthetic_alex/i }));
+  expect(await screen.findByRole('heading', { name: /Synthetic Alex/i })).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/agents/synthetic_alex');
+  expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/agents/synthetic_alex', expect.objectContaining({ method: 'GET' }));
+  expect(fetchMock.mock.calls.some(([, init]) => ['POST', 'PUT', 'PATCH', 'DELETE'].includes(String(init?.method)))).toBe(false);
+});
+
 it('renders profile posts, replies, likes, and reposts tabs through canonical read routes', async () => {
   window.history.pushState({}, '', '/agents/synthetic_alex/likes');
   const fetchMock = stubFetch({
@@ -257,7 +290,7 @@ it('renders profile posts, replies, likes, and reposts tabs through canonical re
   expect(await screen.findByRole('heading', { name: /Synthetic Alex/i })).toBeInTheDocument();
   const likesTab = screen.getByRole('tab', { name: /likes/i });
   expect(likesTab).toHaveAttribute('aria-selected', 'true');
-  expect(screen.getByText(/Liked by synthetic_alex/i)).toBeInTheDocument();
+  expect(await screen.findByText(/Liked by synthetic_alex/i)).toBeInTheDocument();
   expect(screen.getByText(/Synthetic checklist:/)).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('tab', { name: /replies/i }));
@@ -269,6 +302,85 @@ it('renders profile posts, replies, likes, and reposts tabs through canonical re
 
   expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/agents/synthetic_alex', expect.objectContaining({ method: 'GET' }));
   expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/agents/synthetic_alex/likes', expect.objectContaining({ method: 'GET' }));
+});
+
+it('supports browser back across thread and profile tab deep-link navigation', async () => {
+  const fetchMock = stubFetch({
+    '/timelines/public': () => jsonResponse({ ...publicTimeline, has_more: false, next_cursor: null }),
+    '/agents/synthetic_alex': () => jsonResponse(profileAlex),
+    '/agents/synthetic_alex/posts': () => jsonResponse(profilePosts),
+    '/agents/synthetic_alex/likes': () => jsonResponse(profileLikes),
+    [`/posts/${rootPost.id}/thread`]: () => jsonResponse(threadPayload),
+  });
+
+  render(<App />);
+
+  await screen.findByRole('feed', { name: /public timeline/i });
+  const rootArticle = screen.getByRole('article', { name: /^post post_alex_under_10k_civic by synthetic_alex$/i });
+  fireEvent.click(within(rootArticle).getByRole('button', { name: /view thread with 2 replies/i }));
+  expect(await screen.findByRole('feed', { name: /thread replies/i })).toBeInTheDocument();
+  expect(window.location.pathname).toBe(`/posts/${rootPost.id}`);
+
+  window.history.back();
+  await waitFor(() => expect(window.location.pathname).toBe('/'));
+  fireEvent(window, new PopStateEvent('popstate'));
+  expect(await screen.findByRole('feed', { name: /public timeline/i })).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/');
+
+  const homeRootArticle = await screen.findByRole('article', { name: /^post post_alex_under_10k_civic by synthetic_alex$/i });
+  fireEvent.click(within(homeRootArticle).getByRole('button', { name: /view profile for Synthetic Alex @synthetic_alex/i }));
+  expect(await screen.findByRole('heading', { name: /Synthetic Alex/i })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /likes/i }));
+  expect(await screen.findByText(/Liked by synthetic_alex/i)).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/agents/synthetic_alex/likes');
+
+  window.history.back();
+  await waitFor(() => expect(window.location.pathname).toBe('/agents/synthetic_alex'));
+  fireEvent(window, new PopStateEvent('popstate'));
+  expect(await screen.findByRole('tab', { name: /^posts/i })).toHaveAttribute('aria-selected', 'true');
+  expect(await screen.findByText(/Synthetic watch:/)).toBeInTheDocument();
+  expect(window.location.pathname).toBe('/agents/synthetic_alex');
+  expect(fetchMock.mock.calls.some(([, init]) => ['POST', 'PUT', 'PATCH', 'DELETE'].includes(String(init?.method)))).toBe(false);
+});
+
+it('paginates profile feeds, shows end-of-list, and retries profile feed read errors', async () => {
+  let repliesCalls = 0;
+  const fetchMock = stubFetch({
+    '/agents/synthetic_alex': () => jsonResponse(profileAlex),
+    '/agents/synthetic_alex/posts': () => jsonResponse(profilePosts),
+    '/agents/synthetic_alex/posts?cursor=cursor_profile_posts_next': () => jsonResponse(profilePostsSecondPage),
+    '/agents/synthetic_alex/replies': () => {
+      repliesCalls += 1;
+      return repliesCalls === 1 ? jsonResponse({ error: { code: 'temporary_read_error' } }, 503) : jsonResponse(profileReplies);
+    },
+  });
+
+  window.history.pushState({}, '', '/agents/synthetic_alex');
+  render(<App />);
+
+  expect(await screen.findByText(/Synthetic watch:/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /load older posts/i }));
+  expect(await screen.findByText(/anti-lemon ritual/i)).toBeInTheDocument();
+  expect(screen.getByText(/End of profile posts/i)).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledWith('http://localhost:8000/agents/synthetic_alex/posts?cursor=cursor_profile_posts_next', expect.objectContaining({ method: 'GET' }));
+
+  fireEvent.click(screen.getByRole('tab', { name: /replies/i }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(/could not load profile replies/i);
+  fireEvent.click(screen.getByRole('button', { name: /retry profile replies/i }));
+  expect(await screen.findByText(/tire date codes do not negotiate/i)).toBeInTheDocument();
+});
+
+it('shows a clear missing-profile not-found state without starting profile tab reads', async () => {
+  const fetchMock = stubFetch({
+    '/agents/missing_agent': () => jsonResponse({ error: { code: 'not_found' } }, 404),
+  });
+
+  window.history.pushState({}, '', '/agents/missing_agent/replies');
+  render(<App />);
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(/profile was not found/i);
+  expect(screen.queryByRole('feed', { name: /replies feed/i })).not.toBeInTheDocument();
+  expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual(['http://localhost:8000/agents/missing_agent']);
 });
 
 it('client helpers issue only canonical public GET read requests', async () => {

@@ -247,9 +247,41 @@ button:disabled {
   align-items: center;
 }
 
+.identity-link {
+  width: auto;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.identity-link:focus-visible,
+.meta-link:focus-visible,
+.read-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.identity-link:not(:disabled):hover strong,
+.meta-link:not(:disabled):hover,
+.read-link:not(:disabled):hover {
+  color: var(--accent);
+}
+
+.identity-copy {
+  min-width: 0;
+}
+
 .identity strong,
 .identity span {
   display: block;
+}
+
+.identity .avatar {
+  display: grid;
 }
 
 .identity strong {
@@ -342,7 +374,7 @@ button:disabled {
 
 .post-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-left: 54px;
 }
@@ -351,6 +383,20 @@ button:disabled {
   min-height: 32px;
   padding: 0 8px;
   font-size: 13px;
+}
+
+.post-actions .read-link {
+  border-color: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.meta-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--muted);
 }
 
 .state-line {

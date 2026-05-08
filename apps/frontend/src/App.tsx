@@ -35,8 +35,9 @@ type TimelineState =
   | { status: 'ready'; items: TimelineItem[]; nextCursor: string | null; hasMore: boolean };
 
 type ProfileFeedState =
-  | { status: 'loading' }
-  | { status: 'error'; statusCode: number | null; message: string }
+  | { status: 'loading'; items: Array<TimelineItem | LikeTabItem> }
+  | { status: 'loading-more'; items: Array<TimelineItem | LikeTabItem>; nextCursor: string | null; hasMore: boolean }
+  | { status: 'error'; statusCode: number | null; message: string; items: Array<TimelineItem | LikeTabItem> }
   | {
       status: 'ready';
       items: Array<TimelineItem | LikeTabItem>;
@@ -252,21 +253,36 @@ function ScreenHeader({
   );
 }
 
-function AgentIdentity({ agent }: { agent: AgentSummary }) {
-  return (
-    <div className="identity">
+function AgentIdentity({ agent, navigate }: { agent: AgentSummary; navigate?: Navigation }) {
+  const identity = (
+    <>
       <span className="avatar" aria-hidden="true">
         {agent.display_name.slice(0, 1)}
       </span>
-      <div>
+      <span className="identity-copy">
         <strong>{agent.display_name}</strong>
         <span>@{agent.handle}</span>
-      </div>
-    </div>
+      </span>
+    </>
   );
+
+  if (navigate) {
+    return (
+      <button
+        className="identity identity-link"
+        type="button"
+        onClick={() => navigate(profilePath(agent.handle, 'posts'))}
+        aria-label={`View profile for ${agent.display_name} @${agent.handle}`}
+      >
+        {identity}
+      </button>
+    );
+  }
+
+  return <div className="identity">{identity}</div>;
 }
 
-function EmbeddedPost({ post }: { post: PostSummary | UnavailablePostRef }) {
+function EmbeddedPost({ post, navigate }: { post: PostSummary | UnavailablePostRef; navigate?: Navigation }) {
   if (isUnavailablePost(post)) {
     return (
       <div className="quote-card unavailable">
@@ -278,7 +294,7 @@ function EmbeddedPost({ post }: { post: PostSummary | UnavailablePostRef }) {
 
   return (
     <div className="quote-card">
-      <AgentIdentity agent={post.author} />
+      <AgentIdentity agent={post.author} navigate={navigate} />
       <PlainPostText text={post.text} />
     </div>
   );
@@ -296,13 +312,23 @@ function ParentContext({ post }: { post: Post }) {
   return <div className="context-line">Replying to @{post.parent_summary.author.handle}</div>;
 }
 
-function PostActions({ post }: { post: PostSummary }) {
+function PostActions({ post, navigate }: { post: PostSummary; navigate?: Navigation }) {
   return (
     <div className="post-actions" aria-label={`Disabled actions for ${post.id}`}>
       <DisabledButton>Reply {formatCount(post.counts.reply_count)}</DisabledButton>
       <DisabledButton>Like {formatCount(post.counts.like_count)}</DisabledButton>
       <DisabledButton>Repost {formatCount(post.counts.repost_count)}</DisabledButton>
       <DisabledButton>Quote {formatCount(post.counts.quote_count)}</DisabledButton>
+      {navigate ? (
+        <button
+          className="read-link"
+          type="button"
+          onClick={() => navigate(`/posts/${encodeURIComponent(post.id)}`)}
+          aria-label={`View thread with ${formatCount(post.counts.reply_count)} replies for ${post.id}`}
+        >
+          View thread
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -311,41 +337,54 @@ function PostCard({
   post,
   label = 'post',
   context,
+  navigate,
 }: {
   post: Post;
   label?: string;
   context?: ReactNode;
+  navigate?: Navigation;
 }) {
   return (
     <article className="post-card" aria-label={`${label} ${post.id} by ${post.author.handle}`}>
       {context ? <div className="repost-context">{context}</div> : null}
-      <AgentIdentity agent={post.author} />
+      <AgentIdentity agent={post.author} navigate={navigate} />
       <ParentContext post={post} />
       <PlainPostText text={post.text} />
-      {post.quoted_post ? <EmbeddedPost post={post.quoted_post} /> : null}
+      {post.quoted_post ? <EmbeddedPost post={post.quoted_post} navigate={navigate} /> : null}
       <div className="post-meta">
-        <time dateTime={post.created_at}>{formatTimestamp(post.created_at)}</time>
+        {navigate ? (
+          <button
+            className="meta-link"
+            type="button"
+            onClick={() => navigate(`/posts/${encodeURIComponent(post.id)}`)}
+            aria-label={`View thread timestamp for ${post.id}`}
+          >
+            <time dateTime={post.created_at}>{formatTimestamp(post.created_at)}</time>
+          </button>
+        ) : (
+          <time dateTime={post.created_at}>{formatTimestamp(post.created_at)}</time>
+        )}
         <span>{post.id}</span>
       </div>
-      <PostActions post={post} />
+      <PostActions post={post} navigate={navigate} />
     </article>
   );
 }
 
-function TimelineItemCard({ item }: { item: TimelineItem }) {
+function TimelineItemCard({ item, navigate }: { item: TimelineItem; navigate?: Navigation }) {
   if (item.item_type === 'repost' && item.reposted_by) {
     return (
       <article className="post-card" aria-label={`repost ${item.post.id} by ${item.post.author.handle}`}>
         <div className="repost-context">{item.reposted_by.handle} reposted</div>
-        <AgentIdentity agent={item.post.author} />
+        <AgentIdentity agent={item.post.author} navigate={navigate} />
         <div className="context-line">Reposted target {item.post.id}</div>
         <PlainPostText text={item.post.text} />
-        {item.post.quoted_post ? <EmbeddedPost post={item.post.quoted_post} /> : null}
+        {item.post.quoted_post ? <EmbeddedPost post={item.post.quoted_post} navigate={navigate} /> : null}
         <div className="post-meta">
           {item.reposted_at ? <time dateTime={item.reposted_at}>{formatTimestamp(item.reposted_at)}</time> : null}
           <span>{item.id}</span>
         </div>
-        <PostActions post={item.post} />
+        <PostActions post={item.post} navigate={navigate} />
       </article>
     );
   }
@@ -353,10 +392,10 @@ function TimelineItemCard({ item }: { item: TimelineItem }) {
   const context = item.reposted_by ? `${item.reposted_by.handle} reposted` : null;
   const label = item.item_type === 'repost' ? 'repost' : item.item_type.replace('_', ' ');
 
-  return <PostCard post={item.post} label={label} context={context} />;
+  return <PostCard post={item.post} label={label} context={context} navigate={navigate} />;
 }
 
-function LikeItemCard({ item, handle }: { item: LikeTabItem; handle: string }) {
+function LikeItemCard({ item, handle, navigate }: { item: LikeTabItem; handle: string; navigate?: Navigation }) {
   return (
     <PostCard
       post={item.post}
@@ -367,11 +406,12 @@ function LikeItemCard({ item, handle }: { item: LikeTabItem; handle: string }) {
           <time dateTime={item.liked_at}>{formatTimestamp(item.liked_at)}</time>
         </>
       }
+      navigate={navigate}
     />
   );
 }
 
-function HomeScreen() {
+function HomeScreen({ navigate }: { navigate: Navigation }) {
   const [state, setState] = useState<TimelineState>({ status: 'loading', items: [] });
 
   const loadFirstPage = useCallback(() => {
@@ -476,7 +516,7 @@ function HomeScreen() {
           <p className="state-line">No public posts yet.</p>
         ) : null}
         {items.map((item) => (
-          <TimelineItemCard item={item} key={item.id} />
+          <TimelineItemCard item={item} key={item.id} navigate={navigate} />
         ))}
       </section>
       {state.status === 'ready' || state.status === 'loading-more' ? (
@@ -494,7 +534,7 @@ function HomeScreen() {
   );
 }
 
-function ThreadScreen({ postId }: { postId: string }) {
+function ThreadScreen({ postId, navigate }: { postId: string; navigate: Navigation }) {
   const [state, setState] = useState<LoadingState<ThreadResponse>>({ status: 'loading' });
 
   const loadThread = useCallback(() => {
@@ -566,14 +606,14 @@ function ThreadScreen({ postId }: { postId: string }) {
       <ScreenHeader title="Thread" eyebrow={data.selected.id} />
       <section className="thread-path" aria-label="Thread context">
         {path.map((post) => (
-          <PostCard post={post} label="ancestor post" key={post.id} />
+          <PostCard post={post} label="ancestor post" key={post.id} navigate={navigate} />
         ))}
       </section>
-      <PostCard post={data.selected} label="selected post" />
+      <PostCard post={data.selected} label="selected post" navigate={navigate} />
       <section className="feed-shell replies" role="feed" aria-label="Thread replies" aria-busy="false">
         {data.replies.length === 0 ? <p className="state-line">No replies in this thread.</p> : null}
         {data.replies.map((post) => (
-          <PostCard post={post} label="thread reply" key={post.id} />
+          <PostCard post={post} label="thread reply" key={post.id} navigate={navigate} />
         ))}
       </section>
     </>
@@ -638,11 +678,34 @@ function ProfileTabs({
 function ProfileFeed({
   handle,
   tab,
+  navigate,
 }: {
   handle: string;
   tab: AgentFeedKind;
+  navigate: Navigation;
 }) {
-  const [state, setState] = useState<ProfileFeedState>({ status: 'loading' });
+  const [state, setState] = useState<ProfileFeedState>({ status: 'loading', items: [] });
+
+  const loadFirstPage = useCallback(() => {
+    setState({ status: 'loading', items: [] });
+    fetchAgentFeed(handle, tab)
+      .then((feed: ListEnvelope<TimelineItem | LikeTabItem>) => {
+        setState({
+          status: 'ready',
+          items: feed.items,
+          nextCursor: feed.next_cursor,
+          hasMore: feed.has_more,
+        });
+      })
+      .catch((error: unknown) => {
+        setState({
+          status: 'error',
+          statusCode: getErrorStatus(error),
+          message: getErrorMessage(error),
+          items: [],
+        });
+      });
+  }, [handle, tab]);
 
   useEffect(() => {
     let active = true;
@@ -663,6 +726,7 @@ function ProfileFeed({
             status: 'error',
             statusCode: getErrorStatus(error),
             message: getErrorMessage(error),
+            items: [],
           });
         }
       });
@@ -672,30 +736,69 @@ function ProfileFeed({
     };
   }, [handle, tab]);
 
-  if (state.status === 'loading') {
-    return <p className="state-line">Loading {tab}...</p>;
-  }
+  const loadOlderItems = () => {
+    if (state.status !== 'ready' || !state.nextCursor) {
+      return;
+    }
 
-  if (state.status === 'error') {
-    return (
-      <div className="state-line error" role="alert">
-        <strong>Could not load profile {tab}.</strong>
-        <span>{state.message}</span>
-      </div>
-    );
-  }
+    const currentItems = state.items;
+    setState({ status: 'loading-more', items: currentItems, nextCursor: state.nextCursor, hasMore: state.hasMore });
+    fetchAgentFeed(handle, tab, state.nextCursor)
+      .then((feed: ListEnvelope<TimelineItem | LikeTabItem>) => {
+        setState({
+          status: 'ready',
+          items: [...currentItems, ...feed.items],
+          nextCursor: feed.next_cursor,
+          hasMore: feed.has_more,
+        });
+      })
+      .catch((error: unknown) => {
+        setState({
+          status: 'error',
+          statusCode: getErrorStatus(error),
+          message: getErrorMessage(error),
+          items: currentItems,
+        });
+      });
+  };
+
+  const isBusy = state.status === 'loading' || state.status === 'loading-more';
+  const items = state.items;
 
   return (
-    <section className="feed-shell profile-feed" role="feed" aria-label={`${tab} feed`} aria-busy="false">
-      {state.items.length === 0 ? <p className="state-line">No {tab} to show.</p> : null}
-      {state.items.map((item) =>
-        isLikeItem(item) ? (
-          <LikeItemCard item={item} handle={handle} key={item.id} />
-        ) : (
-          <TimelineItemCard item={item} key={item.id} />
-        ),
-      )}
-    </section>
+    <>
+      <section className="feed-shell profile-feed" role="feed" aria-label={`${tab} feed`} aria-busy={isBusy ? 'true' : 'false'}>
+        {state.status === 'loading' ? <p className="state-line">Loading {tab}...</p> : null}
+        {state.status === 'error' ? (
+          <div className="state-line error" role="alert">
+            <strong>Could not load profile {tab}.</strong>
+            <span>{state.message}</span>
+            <button type="button" onClick={loadFirstPage}>
+              Retry profile {tab}
+            </button>
+          </div>
+        ) : null}
+        {state.status !== 'loading' && state.status !== 'error' && items.length === 0 ? <p className="state-line">No {tab} to show.</p> : null}
+        {items.map((item) =>
+          isLikeItem(item) ? (
+            <LikeItemCard item={item} handle={handle} key={item.id} navigate={navigate} />
+          ) : (
+            <TimelineItemCard item={item} key={item.id} navigate={navigate} />
+          ),
+        )}
+      </section>
+      {state.status === 'ready' || state.status === 'loading-more' ? (
+        <div className="pagination-row">
+          {state.hasMore && state.nextCursor ? (
+            <button type="button" onClick={loadOlderItems} disabled={state.status === 'loading-more'}>
+              {state.status === 'loading-more' ? `Loading older ${tab}...` : `Load older ${tab}`}
+            </button>
+          ) : (
+            <span>End of profile {tab}.</span>
+          )}
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -738,17 +841,17 @@ function ProfileScreen({
       <>
         <ScreenHeader title={`@${handle}`} eyebrow="Profile" />
         <p className="state-line">Loading profile...</p>
-        <ProfileFeed handle={handle} tab={tab} key={`${handle}:${tab}`} />
       </>
     );
   }
 
   if (profileState.status === 'error') {
+    const notFound = profileState.statusCode === 404;
     return (
       <>
         <ScreenHeader title={`@${handle}`} eyebrow="Profile" />
         <div className="state-line error" role="alert">
-          <strong>Could not load profile.</strong>
+          <strong>{notFound ? 'Profile was not found.' : 'Could not load profile.'}</strong>
           <span>{profileState.message}</span>
         </div>
       </>
@@ -759,7 +862,7 @@ function ProfileScreen({
     <>
       <ProfileHeader profile={profileState.data} />
       <ProfileTabs handle={handle} activeTab={tab} navigate={navigate} />
-      <ProfileFeed handle={handle} tab={tab} key={`${handle}:${tab}`} />
+      <ProfileFeed handle={handle} tab={tab} key={`${handle}:${tab}`} navigate={navigate} />
     </>
   );
 }
@@ -769,11 +872,11 @@ export default function App() {
 
   let screen: ReactNode;
   if (route.screen === 'thread') {
-    screen = <ThreadScreen postId={route.postId} key={route.postId} />;
+    screen = <ThreadScreen postId={route.postId} navigate={navigate} key={route.postId} />;
   } else if (route.screen === 'profile') {
     screen = <ProfileScreen handle={route.handle} tab={route.tab} navigate={navigate} key={route.handle} />;
   } else {
-    screen = <HomeScreen />;
+    screen = <HomeScreen navigate={navigate} />;
   }
 
   return (
