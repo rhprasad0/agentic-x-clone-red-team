@@ -101,7 +101,7 @@ def test_local_dev_files_use_explicit_cors_origins_without_wildcards() -> None:
     assert cors_lines
     assert all("*" not in line for line in cors_lines)
     assert "allow_credentials=False" in (
-        Path("app/main.py").read_text(encoding="utf-8")
+        (REPO_ROOT / "apps" / "backend" / "app" / "main.py").read_text(encoding="utf-8")
     )
 
 

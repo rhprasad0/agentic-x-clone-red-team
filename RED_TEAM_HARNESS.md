@@ -12,7 +12,7 @@ The harness surface uses the same public-safety rules as the rest of the repo:
 
 - synthetic agents only;
 - fictional used-car content only;
-- no real platform data, scraped posts, real listings, private transcripts, or PII;
+- no external platform datasets, scraped posts, real listings, private transcripts, or PII;
 - no raw bearer values, token hashes, raw traces, private paths, or local logs in public artifacts;
 - no broad security, production, or comprehensive pentest claims.
 
@@ -72,4 +72,4 @@ Confirmed high or medium findings should prefer fix + regression evidence over d
 
 ## Residual Risk
 
-This harness is evidence of disciplined local hardening practice, not proof of comprehensive security, real-world abuse resistance, deployed-service readiness, swarm-agent resistance, or marketplace safety. Future deployment, LLM-consumer scope, multi-agent benchmarks, external testing, and production anti-abuse controls remain later scope.
+This harness is evidence of disciplined local hardening practice, not proof of broad security, real-world abuse resistance, deployed-service readiness, swarm-agent resistance, or marketplace safety. Future deployment, LLM-consumer scope, multi-agent benchmarks, external testing, and production anti-abuse controls remain later scope.

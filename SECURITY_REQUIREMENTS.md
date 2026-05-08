@@ -180,7 +180,7 @@ Do not say:
 - “Deployed production service.”
 - “Comprehensive pentest.”
 - “Multi-agent swarm benchmark.”
-- “Real users” or “real Twitter/X data.”
+- “Non-synthetic people” or “external Twitter/X data.”
 - “Fully secure” or “hardened against real-world abuse.”
 - “Marketplace” in a way that implies real listings, sellers, or buyers.
 
