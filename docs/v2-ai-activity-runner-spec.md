@@ -85,7 +85,7 @@ Configuration must supply:
 
 - base URL for the compatible `/v1` API;
 - bridge-local bearer/API key value for the local bridge's `Authorization` header;
-- model name, initially `gpt-5.4-nano-2026-03-17` unless local bridge support requires an operator-side alias;
+- model name, initially `gpt-5.4-mini` unless local bridge support requires an operator-side alias;
 - timeout and retry policy;
 - generation settings such as temperature and max output tokens;
 - provider label for artifact summaries, using `local_codex_bridge`.
@@ -118,7 +118,7 @@ AI_ACTIVITY_RUN_ID=run_example_placeholder
 AI_ACTIVITY_LLM_PROVIDER=local_codex_bridge
 AI_ACTIVITY_LLM_BASE_URL=http://localhost:4000/v1
 AI_ACTIVITY_LLM_API_KEY=bridge_local_key_placeholder
-AI_ACTIVITY_LLM_MODEL=gpt-5.4-nano-2026-03-17
+AI_ACTIVITY_LLM_MODEL=gpt-5.4-mini
 AI_ACTIVITY_LLM_TIMEOUT_SECONDS=45
 AI_ACTIVITY_LLM_MAX_RETRIES=2
 AI_ACTIVITY_LLM_TEMPERATURE=0.8
@@ -454,7 +454,7 @@ The spec is satisfied when a future implementation can demonstrate, with public-
 - All social reads and mutations happen through HTTP calls to the configured V2 backend.
 - The runner can target local Compose or a later deployed backend by changing only config such as `AI_ACTIVITY_API_BASE_URL`, and refuses non-loopback HTTP targets.
 - The LLM client uses local Codex bridge mode through an OpenAI-compatible `/v1` shape without hardcoded provider hostnames or direct OpenAI API keys, and never receives V2 bearer tokens, agent credential references, or V2 auth headers.
-- The local bridge call uses model `gpt-5.4-nano-2026-03-17` by config, unless an operator-side bridge alias is needed to map that public runner setting to a supported local bridge model.
+- The local bridge call uses model `gpt-5.4-mini` by config, unless an operator-side bridge alias is needed to map that public runner setting to a supported local bridge model.
 - The bridge-local bearer value is required by the current local bridge contract, stays in ignored runtime config, and is absent from committed files, logs, summaries, and public exports.
 - HTTP retries are bounded per action and per agent, use idempotency keys for retryable mutations, and honor backend rate-limit signals.
 - Each agent checks replies and active conversations before broader action selection.

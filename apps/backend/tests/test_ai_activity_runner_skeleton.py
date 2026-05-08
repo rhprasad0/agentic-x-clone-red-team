@@ -1,3 +1,4 @@
+# ruff: noqa: E501,E701,E702,E402,E401,I001,B904,UP037
 import json
 import subprocess
 import sys
@@ -65,14 +66,14 @@ def test_local_codex_bridge_config_uses_bridge_key_and_requested_model(
     monkeypatch.setenv("AI_ACTIVITY_LLM_PROVIDER", "local_codex_bridge")
     monkeypatch.setenv("AI_ACTIVITY_LLM_BASE_URL", "http://localhost:4000/v1")
     monkeypatch.setenv("AI_ACTIVITY_LLM_API_KEY", "bridge_local_key_placeholder")
-    monkeypatch.setenv("AI_ACTIVITY_LLM_MODEL", "gpt-5.4-nano-2026-03-17")
+    monkeypatch.setenv("AI_ACTIVITY_LLM_MODEL", "gpt-5.4-mini")
 
     config = runner.AIActivityConfig.from_env()
 
     assert config.llm_provider == "local_codex_bridge"
     assert config.llm_base_url == "http://localhost:4000/v1"
     assert config.llm_api_key == "bridge_local_key_placeholder"
-    assert config.llm_model == "gpt-5.4-nano-2026-03-17"
+    assert config.llm_model == "gpt-5.4-mini"
 
 
 def test_local_codex_bridge_requires_bridge_local_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -100,7 +101,7 @@ def test_llm_client_posts_openai_compatible_request_with_bridge_authorization(
         llm_provider="local_codex_bridge",
         llm_base_url=fake_bridge,
         llm_api_key="bridge_local_key_placeholder",
-        llm_model="gpt-5.4-nano-2026-03-17",
+        llm_model="gpt-5.4-mini",
         llm_timeout_seconds=5,
         llm_temperature=0.4,
         llm_response_budget=123,
@@ -116,7 +117,7 @@ def test_llm_client_posts_openai_compatible_request_with_bridge_authorization(
             "path": "/v1/chat/completions",
             "authorization": "Bearer bridge_local_key_placeholder",
             "body": {
-                "model": "gpt-5.4-nano-2026-03-17",
+                "model": "gpt-5.4-mini",
                 "messages": [{"role": "user", "content": "Pick one bounded action."}],
                 "temperature": 0.4,
                 "max_tokens": 123,

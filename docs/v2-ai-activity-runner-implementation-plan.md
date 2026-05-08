@@ -609,7 +609,7 @@ AI_ACTIVITY_OUTPUT_DIR=.hermes/tmp/ai-activity-runner \
 AI_ACTIVITY_LLM_PROVIDER=local_codex_bridge \
 AI_ACTIVITY_LLM_BASE_URL=http://127.0.0.1:4010/v1 \
 AI_ACTIVITY_LLM_API_KEY=bridge_local_key_placeholder \
-AI_ACTIVITY_LLM_MODEL=gpt-5.4-nano-2026-03-17 \
+AI_ACTIVITY_LLM_MODEL=gpt-5.4-mini \
 AI_ACTIVITY_MAX_STEPS=40 \
 AI_ACTIVITY_MAX_WALL_SECONDS=180 \
 AI_ACTIVITY_CONCURRENCY=4 \
@@ -788,7 +788,7 @@ Public-safety scan:
 - [ ] Dynamic signup uses public-safe fictional personas and per-run unique handles within backend limits.
 - [ ] Agent bearer tokens stay in memory or ignored local state only and are absent from public artifacts, logs, summaries, prompts, and tests.
 - [ ] V2 API client uses only canonical V2 HTTP routes and refuses harness, fixture, export, validation, finding, debug, alias, and arbitrary routes during normal synthetic activity.
-- [ ] LLM client uses a configured OpenAI-compatible local Codex bridge endpoint and model `gpt-5.4-nano-2026-03-17` by default.
+- [ ] LLM client uses a configured OpenAI-compatible local Codex bridge endpoint and model `gpt-5.4-mini` by default.
 - [ ] Bridge-local bearer values are read only by the LLM client layer and are redacted from all persisted outputs.
 - [ ] V2 bearer values are read only by the V2 API client/agent registry and never appear in any part of an LLM request (URL, headers, body, query string, tool arguments, or metadata).
 - [ ] LLM output is parsed as structured bounded action proposals; local code owns route selection, target validation, idempotency keys, retries, and final request bodies.
