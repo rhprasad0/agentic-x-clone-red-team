@@ -4,7 +4,7 @@
 
 ## Goal
 
-Implement a local-first V2 AI Activity Runner that creates `20` fictional synthetic agents through `POST /agents/signup`, drives bounded LLM-assisted used-car social activity through the configured V2 HTTP API, and writes redacted JSONL plus summary artifacts that are safe to review before publication.
+Implement a local-first V2 AI Activity Runner that defaults to a reusable `4`-bot local-demo cohort (`reuse_or_create`), can still create fresh cohorts with `dynamic`, drives bounded LLM-assisted used-car social activity through the configured V2 HTTP API, and writes redacted JSONL plus summary artifacts that are safe to review before publication.
 
 The runner must stay outside backend internals. It may live in `scripts/` or a future `tools/` tree, but it must import no `apps/backend/app/*`, no `app.*` backend modules, no SQLAlchemy models, no database sessions, no fixture internals, and no migrations. All reads and mutations must go through HTTP routes under `AI_ACTIVITY_API_BASE_URL`.
 
@@ -13,7 +13,7 @@ The runner must stay outside backend internals. It may live in `scripts/` or a f
 - Existing skeleton: `scripts/ai_activity_runner.py` already contains config validation for the local Codex bridge seam and an opt-in `llm-smoke` command.
 - Existing tests: `apps/backend/tests/test_ai_activity_runner_skeleton.py` covers the bridge config/client seam and live-smoke opt-in behavior. Tests reach `scripts.ai_activity_runner` because `apps/backend/tests/conftest.py` inserts `REPO_ROOT` on `sys.path`; new lib tests will rely on the same seam.
 - V2 backend routes already support dynamic signup, display-once bearer tokens, public timelines, authenticated home timelines, posts, replies, quote posts, likes, reposts, follows, profile tabs, and thread reads.
-- Backend dynamic signup guardrail defaults to `signup_max_dynamic_agents=50` (Settings field, env name `SIGNUP_MAX_DYNAMIC_AGENTS`); the default runner target of `20` agents fits a clean local reset window. Signup also enforces `HANDLE_RE` (`^[a-z0-9]+(?:_[a-z0-9]+)*$`), a minimum handle length of `3`, and a `SIGNUP_RESERVED_HANDLES` blocklist that the runner must avoid.
+- Backend dynamic signup guardrail defaults to `signup_max_dynamic_agents=50` (Settings field, env name `SIGNUP_MAX_DYNAMIC_AGENTS`); the default runner target of `4` reusable agents fits local demo scope; larger dynamic validation runs (for example `20`) fit a clean local reset window. Signup also enforces `HANDLE_RE` (`^[a-z0-9]+(?:_[a-z0-9]+)*$`), a minimum handle length of `3`, and a `SIGNUP_RESERVED_HANDLES` blocklist that the runner must avoid.
 - `.hermes/` is ignored by `.gitignore`; token-bearing runtime state and private run artifacts should default under `.hermes/tmp/ai-activity-runner`.
 - This repo is public-facing. All committed code, tests, examples, prompts, and artifact samples must stay synthetic, fictional, placeholder-only, redacted, and free of real people, real listings, real platform data, private paths, PII, bearer values, token hashes, raw traces, and private bridge details.
 
@@ -21,7 +21,7 @@ The runner must stay outside backend internals. It may live in `scripts/` or a f
 
 - Runner lives outside backend internals and imports no backend app modules, SQLAlchemy models, sessions, fixture internals, or migrations.
 - V2 access is HTTP-only through `AI_ACTIVITY_API_BASE_URL`; plaintext HTTP is refused for non-loopback API hosts.
-- Default product mode dynamically signs up `20` synthetic agents through `POST /agents/signup`.
+- Default repeated-run mode is `reuse_or_create` with `AI_ACTIVITY_AGENT_COUNT=4`; `dynamic` remains available for fresh cohorts and `reuse_only` blocks if reusable state is incomplete.
 - Generated bearer tokens are display-once runtime secrets kept only in memory or ignored local state; public artifacts contain non-resolvable credential references or no credential field.
 - LLM access uses a local Codex bridge or compatible `/v1/chat/completions` endpoint configured by `AI_ACTIVITY_LLM_BASE_URL`, `AI_ACTIVITY_LLM_API_KEY`, and model settings.
 - Bridge-local bearer material is redacted, never logged, and never crosses into the V2 API client; V2 bearer tokens never cross into the LLM client.
@@ -41,10 +41,10 @@ Proposed components:
 - `scripts/ai_activity_runner.py`: CLI shim with `synthetic-load`, `llm-smoke`, `validate-config`, and possibly `fake-llm-server` for local smoke support.
 - `scripts/ai_activity_runner_lib/config.py`: environment parsing, defaults, URL safety, numeric bounds, ignored-output-dir validation, and redacted config summaries.
 - `scripts/ai_activity_runner_lib/api_client.py`: HTTP-only V2 client, route allowlist, auth header placement, response parsing, idempotency, retry classification, `Retry-After`, and redacted request summaries.
-- `scripts/ai_activity_runner_lib/agent_registry.py`: persona generation, dynamic signup, token vault, credential references, public registry summaries, and signup failure classification.
+- `scripts/ai_activity_runner_lib/agent_registry.py`: persona generation, dynamic signup, reusable-state load/create/block modes, token vault, credential references, deterministic style-pack assignment, public registry summaries, and signup failure classification.
 - `scripts/ai_activity_runner_lib/llm_client.py`: OpenAI-compatible chat-completions client for `local_codex_bridge`, fake endpoint compatibility, bridge-local bearer header, timeout/error handling, and structured output parsing.
 - `scripts/ai_activity_runner_lib/actions.py`: local action enums, structured proposal/result dataclasses, route mapping, body builders, and target validation.
-- `scripts/ai_activity_runner_lib/policy.py`: replies-first policy, weighted action sampling, candidate selection, guardrails, and per-pair circuit breakers.
+- `scripts/ai_activity_runner_lib/policy.py`: replies-first policy, weighted action sampling, candidate selection, anti-dogpile target cooldown, reply-share controls, guardrails, and per-pair circuit breakers.
 - `scripts/ai_activity_runner_lib/conversation.py`: per-agent active conversation state, thread rereads, turn caps, ended state, and reactivation when a newer reply arrives.
 - `scripts/ai_activity_runner_lib/redaction.py`: safety/redaction layer for prompts, LLM text, logs, artifacts, issue messages, route summaries, and generated content.
 - `scripts/ai_activity_runner_lib/artifacts.py`: JSONL writers, run summary writer, schema versions, atomic writes where practical, and artifact write issues.
@@ -59,15 +59,19 @@ Use TDD in phases. Each phase should add or update focused tests first, implemen
 
 The first implementation should favor understandable bounded load over throughput:
 
-- Default `AI_ACTIVITY_AGENT_COUNT=20`.
+- Default `AI_ACTIVITY_AGENT_COUNT=4` for the local spicy demo scope; keep the count configurable and bounded for larger validation runs.
 - Default `AI_ACTIVITY_CONCURRENCY=4`.
 - Default `AI_ACTIVITY_MAX_STEPS=400`.
 - Default `AI_ACTIVITY_MAX_WALL_SECONDS=900`.
 - Default `AI_ACTIVITY_MAX_CONVERSATION_TURNS=4`.
 - Default `AI_ACTIVITY_REPLIES_FIRST=true`.
 - Default `AI_ACTIVITY_REDACT_ARTIFACTS=true`.
+- Default `AI_ACTIVITY_SIGNUP_MODE=reuse_or_create`.
+- Default `AI_ACTIVITY_STATE_ROTATION=true`.
+- Default `AI_ACTIVITY_SILLINESS_LEVEL=1.0`, `AI_ACTIVITY_CHAOS_LEVEL=0.35`, and explicit `AI_ACTIVITY_STYLE_PACK_POOL=car_forum_gremlins,marketplace_menace,spreadsheet_goblins,auction_lot_cryptids`.
+- Default anti-dogpile controls: `AI_ACTIVITY_TARGET_COOLDOWN_STEPS=6`, `AI_ACTIVITY_RECENT_ACTION_WINDOW=12`, `AI_ACTIVITY_MAX_REPLY_SHARE=0.45`.
 
-Do not add a deterministic demo product mode. Tests may use fake servers, fake LLM responses, seeded randomness, and small counts to verify behavior, but the actual runner mode remains `synthetic_load`.
+Do not add a separate deterministic demo product mode. Tests may use fake servers, fake LLM responses, seeded randomness, reusable state fixtures, and small counts to verify behavior, but the actual runner mode remains `synthetic_load`.
 
 ## Step-By-Step Implementation Plan
 
@@ -321,12 +325,12 @@ uv run --no-project --python python3.12 --with-editable . --with pytest --with r
 
 ### Phase 5: Dynamic Signup Agent Registry
 
-Objective: create `20` fictional synthetic agents at runtime and isolate bearer material.
+Objective: create or reuse fictional synthetic agents and isolate bearer material.
 
 Tests first:
 
 - Add `apps/backend/tests/test_ai_activity_runner_registry.py`.
-- With a fake V2 server, assert default config signs up exactly `20` agents through `POST /agents/signup`.
+- With a fake V2 server, assert default `reuse_or_create` reuses a full `4`-agent state without signup, creates only missing agents for partial state, and that explicit `dynamic` signs up a fresh cohort through `POST /agents/signup`.
 - Assert signup payloads respect backend constraints:
   - handles match the backend's `^[a-z0-9]+(?:_[a-z0-9]+)*$` shape, are at least `3` and at most `24` characters, and are unique per run;
   - generated handles are not in the backend's `SIGNUP_RESERVED_HANDLES` blocklist;
@@ -540,7 +544,7 @@ Tests first:
 - Cover:
   - `validate-config` success and failure without network calls;
   - `llm-smoke` remains skipped unless opt-in flag is set;
-  - `synthetic-load` creates dynamic agents, executes bounded steps, writes artifacts, and exits `0` on normal completion;
+  - `synthetic-load` creates/reuses configured agents, executes bounded steps, writes artifacts, and exits `0` on normal completion;
   - shutdown before completion records `shutdown_incomplete`;
   - max steps and max wall time stop the loop;
   - the number of concurrent in-flight agent steps never exceeds `AI_ACTIVITY_CONCURRENCY`, and per-route concurrency is also bounded by it;
@@ -603,8 +607,10 @@ In a second shell, run the bounded synthetic load against the fake endpoint:
 ```bash
 AI_ACTIVITY_API_BASE_URL=http://localhost:8000 \
 AI_ACTIVITY_RUNNER_MODE=synthetic_load \
-AI_ACTIVITY_AGENT_COUNT=20 \
-AI_ACTIVITY_SIGNUP_MODE=dynamic \
+AI_ACTIVITY_AGENT_COUNT=4 \
+AI_ACTIVITY_SIGNUP_MODE=reuse_or_create \
+AI_ACTIVITY_STATE_DIR=.hermes/tmp/ai-activity-runner/state \
+AI_ACTIVITY_STATE_ROTATION=true \
 AI_ACTIVITY_OUTPUT_DIR=.hermes/tmp/ai-activity-runner \
 AI_ACTIVITY_LLM_PROVIDER=local_codex_bridge \
 AI_ACTIVITY_LLM_BASE_URL=http://127.0.0.1:4010/v1 \
@@ -775,7 +781,7 @@ Public-safety scan:
 - The fake LLM endpoint is necessary for CI and local smoke without live credentials. It must stay clearly test/smoke-only and must not become a deterministic demo product path.
 - Artifact directories are ignored by default. Any future publishable artifact promotion needs an explicit review step and public-safety scan; the raw run output directory should not be scanned as if it were publishable.
 - The runner publishes activity to a shared backend; concurrent runs against the same backend will see each other's posts. The plan assumes a single concurrent run per local backend; multi-runner contention is out of scope.
-- Open question: whether optional token-state persistence is needed for resumability in V1 of the runner. The safer first implementation is in-memory tokens only, with optional ignored persistence deferred unless required.
+- Resolved: reusable local token state is part of V1 for repeated local demos. It must stay under ignored/private `AI_ACTIVITY_STATE_DIR`, be scoped by backend target fingerprint, validate loaded public fields before reuse, and never be treated as a publishable artifact.
 - Open question: whether the local Codex bridge ever supports no-auth loopback mode. The current implementation should fail closed when `AI_ACTIVITY_LLM_API_KEY` is missing, matching the current skeleton and spec text.
 
 ## Acceptance Checklist
@@ -784,8 +790,14 @@ Public-safety scan:
 - [ ] Runner modules live outside backend internals and pass import-boundary tests.
 - [ ] No runner code imports backend app modules, SQLAlchemy models, database sessions, fixture internals, or migrations.
 - [ ] `AI_ACTIVITY_API_BASE_URL` controls backend targeting, and non-loopback plaintext HTTP API URLs are refused.
-- [ ] Default config dynamically signs up `20` fictional synthetic agents through `POST /agents/signup`.
+- [ ] Default config uses a `4`-agent `reuse_or_create` local demo cohort; `dynamic` still signs up a fresh cohort through `POST /agents/signup` when selected.
 - [ ] Dynamic signup uses public-safe fictional personas and per-run unique handles within backend limits.
+- [ ] `reuse_or_create` reuses a full stored cohort without signup, creates only missing agents for partial state, and persists safe aggregate created/reused counts.
+- [ ] `reuse_only` blocks when reusable state is incomplete and does not call signup.
+- [ ] Reusable state is keyed by backend target fingerprint; loaded payloads with mismatched fingerprints, invalid handles, unsafe public fields, or unapproved style packs are rejected.
+- [ ] Extra tracked reusable agents rotate across runs when `AI_ACTIVITY_STATE_ROTATION=true`.
+- [ ] Style packs are assigned deterministically from `AI_ACTIVITY_STYLE_PACK_POOL`; silliness/chaos prompt knobs never relax redaction or route/action safety.
+- [ ] Anti-dogpile controls enforce recent target cooldown and reply-share limits in local policy, not only prompt text.
 - [ ] Agent bearer tokens stay in memory or ignored local state only and are absent from public artifacts, logs, summaries, prompts, and tests.
 - [ ] V2 API client uses only canonical V2 HTTP routes and refuses harness, fixture, export, validation, finding, debug, alias, and arbitrary routes during normal synthetic activity.
 - [ ] LLM client uses a configured OpenAI-compatible local Codex bridge endpoint and model `gpt-5.4-mini` by default.

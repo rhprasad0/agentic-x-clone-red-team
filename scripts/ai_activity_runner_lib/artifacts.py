@@ -100,20 +100,27 @@ class ArtifactWriter:
             payload["schema_version"] = REGISTRY_SCHEMA
             self._append_jsonl(self.registry_path, payload)
 
-    def write_summary(self, *, config_summary: dict[str, Any], started_at: str, finished_at: str | None = None) -> dict[str, Any]:
+    def write_summary(self, *, config_summary: dict[str, Any], started_at: str, finished_at: str | None = None, extra: dict[str, Any] | None = None) -> dict[str, Any]:
         summary = {
             "schema_version": SUMMARY_SCHEMA,
             "run_id": self.run_id,
             "runner_mode": config_summary.get("runner_mode"),
             "agent_count": config_summary.get("agent_count"),
             "signup_mode": config_summary.get("signup_mode"),
+            "state_rotation": config_summary.get("state_rotation"),
             "llm_provider_mode": config_summary.get("llm_provider_mode"),
             "api_target_class": config_summary.get("api_target_class"),
+            "style_pack": config_summary.get("style_pack"),
+            "style_pack_pool": config_summary.get("style_pack_pool"),
+            "silliness_level": config_summary.get("silliness_level"),
+            "chaos_level": config_summary.get("chaos_level"),
             "started_at": started_at,
             "finished_at": finished_at or utc_now(),
             "actions": self.action_counts,
             "issues": self.issue_counts,
             "redaction": {"artifacts_redacted": True},
         }
+        if extra:
+            summary.update(extra)
         self.summary_path.write_text(json.dumps(redact_mapping(summary), indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return summary

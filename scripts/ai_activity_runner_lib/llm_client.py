@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .config import AIActivityConfig
+from .personas import style_prompt
 from .redaction import redact_text, safe_summary, validate_generated_social_text
 
 
@@ -58,8 +59,11 @@ class LocalCodexBridgeClient:
 
     def propose_action(self, *, persona: str, context: dict[str, Any], action_options: list[str]) -> ActionProposal:
         redacted_context = redact_text(json.dumps(context, sort_keys=True)).text
+        style_pack = str(context.get("style_pack") or self.config.style_pack)
+        spicy = style_prompt(style_pack, silliness_level=self.config.silliness_level, chaos_level=self.config.chaos_level) if self.config.spicy_style else "Keep all content fictional, concise, and public-safe."
         messages = [
-            {"role": "system", "content": "Return only JSON with intent, optional candidate_ref, optional text, optional reason. Never include routes or credentials."},
+            {"role": "system", "content": "You are writing fictional used-car social banter for synthetic agents. Return only JSON with intent, optional candidate_ref, optional text, optional reason. Never include routes or credentials."},
+            {"role": "system", "content": spicy + " Choose varied actions; do not dogpile the same candidate when alternatives exist."},
             {"role": "user", "content": json.dumps({"persona": safe_summary(persona, 300), "context": redacted_context, "action_options": action_options})},
         ]
         return parse_action_proposal(self.complete(messages))

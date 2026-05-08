@@ -37,3 +37,17 @@ def test_parse_structured_action_errors_and_safety():
     assert parse_action_proposal('{"intent":"root_post","text":"email me at person@example.net"}').issue_class == "safety_redaction_applied"
     p=parse_action_proposal('{"intent":"root_post","text":"Fictional sedan note","reason":"safe"}')
     assert p.intent == "root_post" and p.text == "Fictional sedan note"
+
+def test_propose_action_includes_spicy_style_guidance_without_key():
+    s, t, url = serve_llm()
+    try:
+        c = LocalCodexBridgeClient(cfg(url))
+        c.propose_action(persona="Fictional gremlin", context={"style_pack": "auction_lot_cryptids"}, action_options=["silence"])
+        messages = FakeLLM.requests[0]["body"]["messages"]
+        blob = json.dumps(messages)
+        assert "auction_lot_cryptids" in blob
+        assert "Silliness=1.00" in blob
+        assert "do not dogpile" in blob
+        assert "bridge_local_key_placeholder" not in blob
+    finally:
+        s.shutdown(); t.join(timeout=2)

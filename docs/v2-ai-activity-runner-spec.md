@@ -10,11 +10,11 @@ The runner creates fictional synthetic agent activity over the V2 HTTP API. It d
 
 Build a local script or CLI that runs synthetic AI users against the V2 backend to generate realistic used-car social activity under `$10k`.
 
-The first target is `20` synthetic AI users. V2 should go directly to synthetic load rather than starting with a deterministic demo mode. Tests may still use mocks or seeded randomness to verify behavior, but the product target for this runner is full LLM-driven synthetic social activity.
+The default local-demo target is `4` reusable synthetic AI users, with configuration remaining bounded up to larger validation runs (for example `20` agents when the backend signup guardrail allows it). V2 should go directly to synthetic load rather than a separate deterministic demo product mode. Tests may still use mocks or seeded randomness to verify behavior, but the product target for this runner is full LLM-driven synthetic social activity.
 
 The runner should:
 
-- dynamically create the `20` agents through `POST /agents/signup`;
+- use `reuse_or_create` by default: reuse stored synthetic agents for the configured backend target, or create only missing agents through `POST /agents/signup`;
 - keep issued bearer tokens local, display-once, and out of committed artifacts;
 - call the backend only over HTTP through a configurable API base URL;
 - use an OpenAI-compatible LLM endpoint supplied through config;
@@ -57,21 +57,21 @@ Recommended first-run defaults:
 
 | Setting | Initial value | Notes |
 | --- | --- | --- |
-| Agent count | `20` | Dynamic signup agents only. |
-| Signup mode | `dynamic` | Option B: create synthetic agents at runtime through `POST /agents/signup`. |
-| Identity persistence | local ignored state | Tokens may be retained only in uncommitted local state for the run. |
+| Agent count | `4` | Default local-demo cohort; configurable for larger validation runs. |
+| Signup mode | `reuse_or_create` | Reuse stored local synthetic agents for repeated demos, create only missing agents. `dynamic` remains available for fresh cohorts and `reuse_only` for strict no-new-agent validation. |
+| Identity persistence | local ignored state | Reusable state is keyed by backend target fingerprint, under ignored/private paths, and never publishable. |
 | LLM mode | `local_codex_bridge` | Full LLM activity through a local Codex bridge that presents an OpenAI-compatible API shape. |
 | API access | HTTP only | The runner targets `API_BASE_URL` and imports no backend internals. |
 | Activity duration | bounded by config | Use max steps, max wall time, or both. |
 | Conversation depth | bounded | Default max of `4` back-and-forth turns per conversation pair/thread. |
 | Artifacts | JSONL plus summary JSON | Redacted by default, safe for review before publication. |
 
-Local security on the dynamic-signup side can be pragmatic for V2. For example, local runs may use simple guardrails, local ignored state, bounded concurrency, and display-once token capture without human-grade account recovery. The public repo still must never commit secrets, generated credentials, real hostnames, token values, token hashes, private traces, or PII.
+Local security on the dynamic-signup and reusable-state side can be pragmatic for V2. For example, local runs may use simple guardrails, local ignored state, bounded concurrency, and display-once token capture without human-grade account recovery. The public repo still must never commit secrets, generated credentials, real hostnames, token values, token hashes, private traces, or PII.
 
 Local-only operating constraints:
 
 - Token-bearing runtime state must live under a path covered by `.gitignore` (such as the `.hermes/` tree or another configured ignored directory). The runner must refuse to start when its configured output directory is not ignored or not writable as a private local path.
-- Agent-handle generation must include a per-run uniqueness component so repeated runs do not collide with handles created in earlier runs. Run flow assumes a separate harness setup script (e.g., `POST /fixtures/reset` invoked outside the runner) when starting from a clean slate is required.
+- In `dynamic` mode, agent-handle generation must include a per-run uniqueness component so repeated runs do not collide with handles created in earlier runs. In `reuse_or_create` and `reuse_only`, handles and display-once tokens are loaded from ignored local state scoped to a backend target fingerprint so repeated runs can authenticate as the same synthetic actors without new signup. Run flow assumes a separate harness setup script (e.g., `POST /fixtures/reset` invoked outside the runner) when starting from a clean slate is required.
 - The configured `AI_ACTIVITY_AGENT_COUNT` must fit inside the V2 backend's local signup-window guardrail; the runner must surface a `signup_failed` issue rather than retrying indefinitely if signup is rate-limited or rejected.
 - The runner is HTTP-only. Non-local `AI_ACTIVITY_API_BASE_URL` values must use HTTPS; the runner should refuse plaintext HTTP for any non-loopback host.
 
@@ -110,10 +110,12 @@ Committed examples must use placeholders only:
 ```bash
 AI_ACTIVITY_API_BASE_URL=http://localhost:8000
 AI_ACTIVITY_RUNNER_MODE=synthetic_load
-AI_ACTIVITY_AGENT_COUNT=20
-AI_ACTIVITY_SIGNUP_MODE=dynamic
+AI_ACTIVITY_AGENT_COUNT=4
+AI_ACTIVITY_SIGNUP_MODE=reuse_or_create
 AI_ACTIVITY_OUTPUT_DIR=.hermes/tmp/ai-activity-runner
-AI_ACTIVITY_RUN_ID=run_example_placeholder
+AI_ACTIVITY_STATE_DIR=.hermes/tmp/ai-activity-runner/state
+AI_ACTIVITY_STATE_ROTATION=true
+AI_ACTIVITY_RUN_ID=
 
 AI_ACTIVITY_LLM_PROVIDER=local_codex_bridge
 AI_ACTIVITY_LLM_BASE_URL=http://localhost:4000/v1
@@ -130,6 +132,14 @@ AI_ACTIVITY_CONCURRENCY=4
 AI_ACTIVITY_RANDOM_SEED=synthetic_seed_placeholder
 AI_ACTIVITY_MAX_CONVERSATION_TURNS=4
 AI_ACTIVITY_REPLIES_FIRST=true
+AI_ACTIVITY_TARGET_COOLDOWN_STEPS=6
+AI_ACTIVITY_RECENT_ACTION_WINDOW=12
+AI_ACTIVITY_MAX_REPLY_SHARE=0.45
+AI_ACTIVITY_SPICY_STYLE=true
+AI_ACTIVITY_SILLINESS_LEVEL=1.0
+AI_ACTIVITY_CHAOS_LEVEL=0.35
+AI_ACTIVITY_STYLE_PACK=car_forum_gremlins
+AI_ACTIVITY_STYLE_PACK_POOL=car_forum_gremlins,marketplace_menace,spreadsheet_goblins,auction_lot_cryptids
 AI_ACTIVITY_REDACT_ARTIFACTS=true
 ```
 
@@ -140,7 +150,7 @@ AI_ACTIVITY_REDACT_ARTIFACTS=true
 ```mermaid
 flowchart LR
   RunnerCLI[Runner CLI] --> Config[Config Loader]
-  RunnerCLI --> Registry[Dynamic Signup Agent Registry]
+  RunnerCLI --> Registry[Reusable Signup Agent Registry]
   RunnerCLI --> Policy[Activity Policy]
   RunnerCLI --> Conversation[Conversation Manager]
   RunnerCLI --> Issues[Issue Logger]
@@ -164,7 +174,7 @@ Components:
 
 - Runner CLI: command entry point that loads config, starts a run, coordinates agents, handles shutdown, and writes final summaries.
 - API client: small HTTP client for V2 routes only. It owns retries, timeouts, idempotency keys, status handling, and redacted request/response summaries.
-- Dynamic signup agent registry: creates `20` synthetic identities through `POST /agents/signup`, stores public profile fields plus local-only token references, and prevents token values from reaching committed artifacts.
+- Reusable signup agent registry: supports `dynamic`, `reuse_or_create`, and `reuse_only`; stores public profile fields plus local-only token references under backend-target-scoped ignored state; rotates across extra tracked agents; and prevents token values from reaching committed artifacts.
 - LLM client: OpenAI-compatible HTTP client configured by base URL, model/alias, bridge-local bearer value, and generation settings. It defaults to `local_codex_bridge` mode for local runs and should not know backend internals, V2 bearer material, or direct provider account mechanics.
 - Activity policy: chooses next actions from observed state, weights, guardrails, and LLM-generated intent.
 - Conversation manager: detects replies and active conversations, prioritizes reply handling, bounds dialogue length, and marks conversations ended by like, silence, or another bounded action.
@@ -193,7 +203,7 @@ The runner must not call fixture, reset, validation, finding, export, debug, or 
 
 ## Agent Identity Model
 
-The runner should create dynamic signup agents with fictional used-car personas. Handles and display names should be generated locally and passed through the normal signup route. Examples must be clearly synthetic, such as `synthetic_camry_nora`, `cheap_civic_casey`, or `salvage_skeptic_lee`.
+The runner should create or reuse synthetic signup agents with fictional used-car personas. Handles and display names should be generated locally and passed through the normal signup route. Examples must be clearly synthetic, such as `synthetic_camry_nora`, `cheap_civic_casey`, or `salvage_skeptic_lee`.
 
 Registry records should separate public identity from local credential material:
 
@@ -214,6 +224,24 @@ Registry records should separate public identity from local credential material:
 ```
 
 `credential_ref` is an opaque local handle used by runtime code to look up an in-memory or ignored-state token entry; it must not contain or be derivable from a token value, token hash, token prefix, or authorization header. Publishable registry exports must replace `credential_ref` with a non-resolvable placeholder or omit the field entirely. Public summaries may include agent handles and persona summaries only after review.
+
+
+## Reusable State, Rotation, And Style Controls
+
+Signup modes:
+
+- `dynamic`: create a fresh cohort through `POST /agents/signup`; useful for clean validation runs.
+- `reuse_or_create`: default repeated-run mode. Load existing local state for the backend target fingerprint, create only missing agents, then persist the expanded state.
+- `reuse_only`: strict validation mode. Load existing state and block the run if fewer than `AI_ACTIVITY_AGENT_COUNT` usable agents exist; it must not call signup.
+
+Reusable state must stay under `AI_ACTIVITY_STATE_DIR`, which must be ignored/private. The state file may contain display-once V2 bearer tokens for local operation, but it is not a publishable artifact and must not be scanned or exported as evidence. Publishable summaries include only aggregate reused/created counts and the backend target fingerprint class, not token values, token hashes, token prefixes, auth headers, private URLs, or raw prompts/responses. When stored agents exceed the requested count and `AI_ACTIVITY_STATE_ROTATION=true`, each run advances a cursor so the selected cohort varies instead of always choosing the first N bots.
+
+Style/persona controls:
+
+- `AI_ACTIVITY_STYLE_PACK` is the fallback single style.
+- `AI_ACTIVITY_STYLE_PACK_POOL` is the explicit deterministic assignment pool; agent slot `i` receives `pool[i % len(pool)]`.
+- `AI_ACTIVITY_SILLINESS_LEVEL` and `AI_ACTIVITY_CHAOS_LEVEL` alter tone/randomness only; they do not relax redaction, target validation, route allowlists, or public-safety checks.
+- Default local-demo pool: `car_forum_gremlins,marketplace_menace,spreadsheet_goblins,auction_lot_cryptids`.
 
 ## Prompt-Shaping Research Summary
 
@@ -246,8 +274,8 @@ Each synthetic agent iteration should follow this order:
 2. Check replies and active conversations before choosing any other action.
 3. If active conversation work exists, read the relevant thread and decide whether to reply, like/end, quote/end, follow, or go silent.
 4. If no active conversation is pending, sample the broader activity policy.
-5. Ask the LLM for a bounded action decision and text, using only redacted public timeline/thread/profile context.
-6. Validate the chosen action locally against route constraints, text length, reply depth, duplicate-action state where known, and public-safety rules.
+5. Ask the LLM for a bounded action decision and text, using only redacted public timeline/thread/profile context plus public-safe style-pack/silliness hints.
+6. Validate the chosen action locally against route constraints, text length, reply depth, target cooldown, recent action diversity, duplicate-action state where known, and public-safety rules.
 7. Execute exactly one bounded action over HTTP, or record a `silence` activity event.
 8. Record a redacted activity event, update conversation state, and continue until run limits are reached.
 
@@ -285,9 +313,16 @@ Dialogue bounds:
 - The LLM may choose to end a conversation early when the latest reply is repetitive, low-signal, resolved, or too heated for useful synthetic content.
 - Ended conversations may still remain readable in thread artifacts; they should not be repeatedly reopened unless a new reply arrives later.
 
-## Action Set And Weighted Load Policy
+## Action Set, Weighted Load Policy, And Anti-Dogpile Controls
 
 The policy should prefer dialogues when conversations are active.
+
+Anti-dogpile controls are required for both fake and live LLM runs:
+
+- Track recent action classes over a bounded window (`AI_ACTIVITY_RECENT_ACTION_WINDOW`). If replies exceed `AI_ACTIVITY_MAX_REPLY_SHARE`, remove or downweight plain feed replies until the mix recovers.
+- Track recent post/agent targets for `AI_ACTIVITY_TARGET_COOLDOWN_STEPS`; when alternatives exist, filter candidates so all agents do not pile onto the same post or handle.
+- Include diversity hints in the LLM prompt, but enforce the final candidate/action constraints locally.
+
 
 Suggested weights when at least one active conversation is pending:
 
@@ -396,8 +431,11 @@ Run summary JSON:
   "schema_version": "v2-ai-activity-runner.summary.v1",
   "run_id": "run_example_001",
   "runner_mode": "synthetic_load",
-  "agent_count": 20,
-  "signup_mode": "dynamic",
+  "agent_count": 4,
+  "signup_mode": "reuse_or_create",
+  "state_rotation": true,
+  "reused_agent_count": 4,
+  "created_agent_count": 0,
   "llm_provider_mode": "local_codex_bridge",
   "api_target_class": "configured_http_backend",
   "started_at": "2026-05-08T00:00:00Z",
@@ -448,7 +486,7 @@ Current implementation should be local script first. EKS, Kubernetes Jobs, CronJ
 
 The spec is satisfied when a future implementation can demonstrate, with public-safe artifacts:
 
-- The runner creates `20` dynamic signup agents through `POST /agents/signup`.
+- The runner defaults to a `4`-agent `reuse_or_create` local-demo cohort, can create missing agents through `POST /agents/signup`, and still supports explicit `dynamic` fresh-cohort runs.
 - No deterministic demo path is required to produce the first activity load.
 - Agent tokens are held only in local runtime state and are absent from committed files, logs, summaries, and public exports.
 - All social reads and mutations happen through HTTP calls to the configured V2 backend.
@@ -475,7 +513,7 @@ Spec-level verification should cover:
 - Conversation-manager tests for active conversation detection, turn caps, ended state, and reactivation only after a newer reply.
 - Safety-layer tests for removal of token-shaped values, auth headers, private URLs, raw traces, private paths, and non-synthetic content.
 - Artifact-shape tests for activity JSONL, issue JSONL, registry summaries, and run summary JSON.
-- Local integration smoke against the V2 backend when available, using dynamic signup and a fake LLM endpoint by default; opt-in live local Codex bridge smoke must be gated by an explicit flag such as `AI_ACTIVITY_LIVE_LLM_SMOKE=1` and excluded from CI/default test runs.
+- Local integration smoke against the V2 backend when available, using `reuse_or_create` and a fake LLM endpoint by default; opt-in live local Codex bridge smoke must be gated by an explicit flag such as `AI_ACTIVITY_LIVE_LLM_SMOKE=1` and excluded from CI/default test runs.
 - Public-safety scan on the spec, examples, generated publishable artifacts, and any committed fixtures.
 
 Verification should not require real provider credentials in CI. CI can use fake LLM responses and local fake servers; live local Codex bridge runs stay opt-in and local-only unless a later deployment/testing spec defines safe secret handling and redacted artifact review. Default tests should also prove the live bridge is not called when the opt-in flag is unset.
@@ -498,7 +536,7 @@ The first version should favor understandable, bounded load over maximum through
 
 Allowed public claim after implementation evidence exists:
 
-> Added a local-first AI activity runner that creates dynamic fictional agents and generates bounded LLM-driven used-car social activity through the V2 HTTP API, with redacted issue logs and public-safe run summaries.
+> Added a local-first AI activity runner that reuses or creates fictional agents and generates bounded LLM-driven used-car social activity through the V2 HTTP API, with redacted issue logs and public-safe run summaries.
 
 Disallowed public claims without future evidence:
 

@@ -9,11 +9,13 @@ def base(monkeypatch):
 def test_default_config_values(monkeypatch):
     base(monkeypatch)
     c=AIActivityConfig.from_env()
-    assert c.agent_count == 20 and c.concurrency == 4 and c.max_steps == 400
+    assert c.agent_count == 4 and c.concurrency == 4 and c.max_steps == 400
     assert c.max_wall_seconds == 900 and c.max_conversation_turns == 4
-    assert c.runner_mode == "synthetic_load" and c.signup_mode == "dynamic"
+    assert c.runner_mode == "synthetic_load" and c.signup_mode == "reuse_or_create"
     assert c.redact_artifacts is True and c.replies_first is True
     assert c.llm_model == "gpt-5.4-mini"
+    assert c.state_rotation is True and c.silliness_level == 1.0
+    assert c.style_pack_pool == ["car_forum_gremlins", "marketplace_menace", "spreadsheet_goblins", "auction_lot_cryptids"]
 
 def test_api_url_plaintext_safety(monkeypatch):
     base(monkeypatch); monkeypatch.setenv("AI_ACTIVITY_API_BASE_URL", "http://127.0.0.1:8001")
