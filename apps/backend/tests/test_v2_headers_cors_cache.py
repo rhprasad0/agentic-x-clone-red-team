@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import pytest
 from conftest import FIXTURE_CREDENTIAL_VALUES
 from fastapi.testclient import TestClient
