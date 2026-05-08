@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from typing import NoReturn
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -85,7 +86,7 @@ def resolve_actor_from_token(db: Session, token: str) -> ActorContext:
     raise_unauthorized("auth_invalid")
 
 
-def raise_unauthorized(event_class: str = "auth_invalid") -> None:
+def raise_unauthorized(event_class: str = "auth_invalid") -> NoReturn:
     raise AuthHTTPException(event_class)
 
 

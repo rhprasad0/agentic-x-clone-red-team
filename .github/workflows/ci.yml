@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -78,29 +85,35 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install backend dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install -U pip
-          python -m pip install -e "apps/backend[dev]"
-
       - name: Lint backend
         shell: bash
-        run: ruff check apps/backend
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" ruff check apps/backend scripts
+
+      - name: Type-check backend
+        shell: bash
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" mypy apps/backend/app scripts/ai_activity_runner_lib
+
+      - name: Audit backend dependencies
+        shell: bash
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" pip-audit --local --progress-spinner off
 
       - name: Apply backend migrations
         shell: bash
-        run: alembic -c apps/backend/alembic.ini upgrade head
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" alembic -c apps/backend/alembic.ini upgrade head
 
       - name: Test backend
         shell: bash
-        run: pytest apps/backend/tests -q
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" pytest apps/backend/tests -q
 
   frontend:
     runs-on: ubuntu-latest
@@ -119,6 +132,10 @@ jobs:
         working-directory: apps/frontend
         run: npm ci
 
+      - name: Type-check frontend
+        working-directory: apps/frontend
+        run: npm run typecheck
+
       - name: Lint frontend
         working-directory: apps/frontend
         run: npm run lint
@@ -126,6 +143,10 @@ jobs:
       - name: Test frontend
         working-directory: apps/frontend
         run: npm run test -- --run
+
+      - name: Audit frontend dependencies
+        working-directory: apps/frontend
+        run: npm audit --audit-level=high
 
       - name: Build frontend
         working-directory: apps/frontend
@@ -161,6 +182,32 @@ jobs:
           scanners: vuln
           severity: HIGH,CRITICAL
           exit-code: "1"
+
+      - name: Prepare SBOM output directory
+        run: mkdir -p exports/public-evidence/sbom
+
+      - name: Generate backend CycloneDX SBOM with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: xclone-backend:ci
+          scanners: vuln
+          format: cyclonedx
+          output: exports/public-evidence/sbom/xclone-backend.cdx.json
+
+      - name: Generate frontend CycloneDX SBOM with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: xclone-frontend:ci
+          scanners: vuln
+          format: cyclonedx
+          output: exports/public-evidence/sbom/xclone-frontend.cdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-cyclonedx-sboms
+          path: exports/public-evidence/sbom/*.cdx.json
+          if-no-files-found: error
 
       - name: Python public-safety scan
         run: python3 scripts/public_safety_scan.py .

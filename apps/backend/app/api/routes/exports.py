@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, cast
 
 from fastapi import APIRouter, Body, Depends, Request, Response
 from pydantic import BaseModel, ConfigDict
@@ -21,9 +21,11 @@ router = APIRouter(tags=["exports"])
 class PublicEvidenceExportRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    scope: Literal["validation_runs"] = PUBLIC_EVIDENCE_SCOPE
+    scope: Literal["validation_runs"] = cast(Literal["validation_runs"], PUBLIC_EVIDENCE_SCOPE)
     validation_run_ids: list[str] | None = None
-    redaction_mode: Literal["synthetic_redacted"] = PUBLIC_EVIDENCE_REDACTION_MODE
+    redaction_mode: Literal["synthetic_redacted"] = cast(
+        Literal["synthetic_redacted"], PUBLIC_EVIDENCE_REDACTION_MODE
+    )
 
 
 @router.post("/exports/public-evidence")

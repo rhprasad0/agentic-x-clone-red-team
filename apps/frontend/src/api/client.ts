@@ -96,7 +96,7 @@ export class ApiRequestError extends Error {
 const DEFAULT_API_BASE_URL = 'http://localhost:8000';
 
 export function apiBaseUrl(): string {
-  return (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+  return (import.meta.env['VITE_API_BASE_URL'] || DEFAULT_API_BASE_URL).replace(/\/$/, '');
 }
 
 function withCursor(path: string, cursor?: string): string {

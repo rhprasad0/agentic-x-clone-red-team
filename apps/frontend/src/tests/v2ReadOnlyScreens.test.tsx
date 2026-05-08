@@ -156,7 +156,7 @@ function stubFetch(routes: Record<string, Response | (() => Response | Promise<R
       throw new Error(`mutation method leaked to frontend: ${init.method}`);
     }
     const pathAndQuery = url.replace('http://localhost:8000', '');
-    const path = pathAndQuery.split('?')[0];
+    const path = pathAndQuery.split('?')[0] ?? '';
     const route = routes[pathAndQuery] ?? routes[path];
     if (!route) {
       return jsonResponse({ error: { code: 'not_found' } }, 404);

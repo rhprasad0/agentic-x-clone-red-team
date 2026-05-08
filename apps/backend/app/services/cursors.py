@@ -5,7 +5,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, Literal
+from typing import Any, Literal, NoReturn
 
 from fastapi import HTTPException
 from sqlalchemy import Select, and_, or_
@@ -178,5 +178,5 @@ def _urlsafe_b64decode(value: str) -> str:
     return base64.urlsafe_b64decode(f"{value}{padding}".encode("ascii")).decode("utf-8")
 
 
-def _raise_bad_cursor() -> None:
+def _raise_bad_cursor() -> NoReturn:
     raise HTTPException(status_code=400, detail="Invalid cursor")

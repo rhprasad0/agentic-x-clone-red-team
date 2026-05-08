@@ -65,23 +65,28 @@ For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runb
 
 ## Local Checks
 
-Backend, from `apps/backend` with a local Postgres available through `DATABASE_URL`:
+Backend, from the repo root with a local Postgres available through `DATABASE_URL`:
 
 ```bash
-python3 -m pip install -e '.[dev]'
-alembic -c alembic.ini upgrade head
-ruff check .
-pytest
+uv run --python 3.12 --with-editable "apps/backend[dev]" alembic -c apps/backend/alembic.ini upgrade head
+uv run --python 3.12 --with-editable "apps/backend[dev]" ruff check apps/backend scripts
+uv run --python 3.12 --with-editable "apps/backend[dev]" mypy apps/backend/app scripts/ai_activity_runner_lib
+uv run --python 3.12 --with-editable "apps/backend[dev]" pip-audit --local --progress-spinner off
+uv run --python 3.12 --with-editable "apps/backend[dev]" pytest apps/backend/tests -q
 ```
+
+The `pip-audit --local` form keeps the audit scoped to the active `uv` environment; it avoids unrelated host packages while still checking the backend dependency set.
 
 Frontend:
 
 ```bash
 cd apps/frontend
 npm ci
+npm run typecheck
 npm run lint
-npm test
+npm run test -- --run
 npm run build
+npm audit --audit-level=high
 ```
 
 Public-safety and Markdown tab checks from the repo root:
@@ -99,18 +104,24 @@ docker build -t xclone-backend -f apps/backend/Dockerfile .
 docker build -t xclone-frontend -f apps/frontend/Dockerfile .
 ```
 
-Trivy, using a local binary if installed:
+Trivy vulnerability scans and SBOM generation, using a local binary if installed:
 
 ```bash
-trivy image xclone-backend
-trivy image xclone-frontend
+trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
+trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
+mkdir -p exports/public-evidence/sbom
+trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
+trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
 ```
 
 Dockerized Trivy fallback:
 
 ```bash
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image xclone-backend
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image xclone-frontend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
+mkdir -p exports/public-evidence/sbom
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
 ```
 
 ## Validation Status

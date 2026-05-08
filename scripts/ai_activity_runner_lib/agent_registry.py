@@ -145,7 +145,9 @@ class AgentRegistry:
         if not token:
             self.issues.append({"issue_class": "signup_failed", "safe_message": "signup response missing display-once token"})
             raise RuntimeError("dynamic signup did not reach configured agent count")
-        agent_data = data.get("agent") if isinstance(data.get("agent"), dict) else data
+        agent_data = data.get("agent")
+        if not isinstance(agent_data, dict):
+            agent_data = data
         ref = self.vault.put(token)
         agent = AgentIdentity(
             handle=str(agent_data.get("handle", payload["handle"])),

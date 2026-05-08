@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, Request, Response
@@ -81,7 +81,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
 def register_security_response_middleware(app: FastAPI) -> None:
     @app.middleware("http")
     async def security_response_middleware(
-        request: Request, call_next: Callable[[Request], object]
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         request.state.correlation_id = uuid4().hex
         response = await call_next(request)

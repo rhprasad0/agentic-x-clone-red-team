@@ -47,6 +47,25 @@ V2 should use a layered test stack. Each layer catches a different class of regr
 | Bundle/static scans | Prove browser remains read-only. | POST/PUT/PATCH/DELETE calls, bearer tokens, localStorage credential use, `dangerouslySetInnerHTML`. |
 | Compose/local smoke | Prove the app runs as a system. | Backend/frontend mismatch, migration/seed failure, stale route paths, broken public read screens. |
 
+## Pre-Infra Quality Gates
+
+Before infra planning or publishing new public evidence, run the local gates that mirror CI:
+
+```bash
+uv run --python 3.12 --with-editable "apps/backend[dev]" ruff check apps/backend scripts
+uv run --python 3.12 --with-editable "apps/backend[dev]" mypy apps/backend/app scripts/ai_activity_runner_lib
+uv run --python 3.12 --with-editable "apps/backend[dev]" pip-audit --local --progress-spinner off
+uv run --python 3.12 --with-editable "apps/backend[dev]" pytest apps/backend/tests -q
+cd apps/frontend
+npm run typecheck
+npm run lint
+npm run test -- --run
+npm run build
+npm audit --audit-level=high
+```
+
+Strict typing is intentionally gradual: backend `mypy` covers the application package and AI activity runner library first, while frontend `tsc -b` runs with `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noImplicitOverride`, and `noPropertyAccessFromIndexSignature`. Refactors should move code only behind existing or newly failing tests, and should not alter the local-first synthetic boundary.
+
 ## V2 Test Data Principle: Contract Fixtures Before Pretty Fixtures
 
 Create a small, intentionally adversarial fixture set for tests before building the full used-car world.

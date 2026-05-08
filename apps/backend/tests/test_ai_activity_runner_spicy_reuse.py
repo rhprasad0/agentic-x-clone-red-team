@@ -7,9 +7,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
-
-from scripts.ai_activity_runner_lib.agent_registry import AgentRegistry
 from scripts.ai_activity_runner_lib.actions import Candidate, validate_and_plan_action
+from scripts.ai_activity_runner_lib.agent_registry import AgentRegistry
 from scripts.ai_activity_runner_lib.api_client import V2APIClient
 from scripts.ai_activity_runner_lib.config import AIActivityConfig, ConfigError
 from scripts.ai_activity_runner_lib.llm_client import ActionProposal
@@ -133,7 +132,8 @@ def test_reuse_or_create_reuses_full_state_without_signup_and_scopes_by_target(t
         other = config(tmp_path, url="http://127.0.0.1:9999", agent_count=4, run_id="run_other")
         assert LocalAgentStateStore(other.state_dir, target_fingerprint=other.state_target_fingerprint).load().agents == []
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 
 def test_dynamic_mode_always_creates_fresh_cohort(tmp_path):
@@ -146,7 +146,8 @@ def test_dynamic_mode_always_creates_fresh_cohort(tmp_path):
         assert ReuseFakeHandler.signup_count == 4
         assert reg.created_count == 4 and reg.reused_count == 0
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 
 def test_reuse_or_create_partial_creates_missing_and_reuse_only_blocks(tmp_path):
@@ -164,7 +165,8 @@ def test_reuse_or_create_partial_creates_missing_and_reuse_only_blocks(tmp_path)
             reg2.register_agents()
         assert ReuseFakeHandler.signup_count == 1
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 
 def test_rotation_selects_different_cohorts_when_state_exceeds_count(tmp_path):
@@ -201,7 +203,8 @@ def test_runner_excludes_posts_actor_already_replied_to_across_runs(tmp_path):
         assert "synthetic_mira" not in author_targets
         assert "post_fresh" in post_targets
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 
 def test_runner_allows_fresh_posts_from_seen_authors_when_strict_author_filter_starves(tmp_path):
@@ -218,7 +221,8 @@ def test_runner_allows_fresh_posts_from_seen_authors_when_strict_author_filter_s
         assert "post_seen" not in post_targets
         assert "post_mira_fresh" in post_targets
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 
 def test_runner_missing_target_text_action_falls_back_to_root_post(tmp_path):
@@ -260,7 +264,8 @@ def test_default_four_personas_are_diverse_and_weird(tmp_path):
         assert len({p["persona_seed"] for p in payloads}) == 4
         assert all("Fictional" in p["bio"] or "fictional" in p["bio"] for p in payloads)
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 def test_different_random_seeds_change_persona_bits(tmp_path):
     c1 = config(tmp_path / "a", agent_count=4, run_id="run_seed_a")
@@ -271,7 +276,8 @@ def test_different_random_seeds_change_persona_bits(tmp_path):
         p2 = [AgentRegistry(V2APIClient(url), config=c2, rng=random.Random(2)).persona_payload(i)["persona_seed"] for i in range(4)]
         assert p1 != p2
     finally:
-        server.shutdown(); thread.join(timeout=2)
+        server.shutdown()
+        thread.join(timeout=2)
 
 def test_state_load_rejects_payload_fingerprint_mismatch(tmp_path):
     c = config(tmp_path, agent_count=4, run_id="run_fingerprint")

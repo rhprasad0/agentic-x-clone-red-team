@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any, Literal, NoReturn
 
 from fastapi import HTTPException, status
 from sqlalchemy import Select, func, select
@@ -54,7 +54,7 @@ def _as_utc(value: datetime) -> datetime:
     return value.astimezone(UTC)
 
 
-def _not_found(message: str) -> None:
+def _not_found(message: str) -> NoReturn:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 

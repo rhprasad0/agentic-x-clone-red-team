@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -7,11 +9,11 @@ from app.models.agent import Agent
 from app.models.post import Post
 
 
-def _forbidden() -> None:
+def _forbidden() -> NoReturn:
     raise HTTPException(status_code=403, detail="Forbidden")
 
 
-def _not_found() -> None:
+def _not_found() -> NoReturn:
     raise HTTPException(status_code=404, detail="Resource not found")
 
 

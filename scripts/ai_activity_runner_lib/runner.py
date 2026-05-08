@@ -5,9 +5,9 @@ import random
 import time
 from dataclasses import dataclass
 
-from .actions import Candidate, validate_and_plan_action
+from .actions import ActionPlan, Candidate, validate_and_plan_action
 from .agent_registry import AgentRegistry
-from .api_client import V2APIClient
+from .api_client import APIResult, V2APIClient
 from .artifacts import ActivityEvent, ArtifactWriter, utc_now
 from .config import AIActivityConfig
 from .llm_client import ActionProposal, LocalCodexBridgeClient
@@ -193,7 +193,14 @@ class SyntheticLoadRunner:
                 return ActionProposal(proposal.intent, ref, proposal.text, proposal.reason)
         return proposal
 
-    def _fallback_missing_target_to_root_post(self, proposal: ActionProposal, plan, *, actor_handle: str, candidates: dict[str, Candidate]):
+    def _fallback_missing_target_to_root_post(
+        self,
+        proposal: ActionProposal,
+        plan: ActionPlan,
+        *,
+        actor_handle: str,
+        candidates: dict[str, Candidate],
+    ) -> ActionPlan | None:
         if plan.ok or plan.issue_class != "missing_target":
             return None
         if proposal.intent not in {"reply", "reply_continue", "quote", "quote_end"}:
@@ -202,7 +209,7 @@ class SyntheticLoadRunner:
         fallback_plan = validate_and_plan_action(fallback, actor_handle=actor_handle, candidates=candidates, max_reply_depth=self.config.max_conversation_turns)
         return fallback_plan if fallback_plan.ok else None
 
-    def _execute_plan(self, bearer: str, handle: str, plan):
+    def _execute_plan(self, bearer: str, handle: str, plan: ActionPlan) -> APIResult:
         if plan.intent in {"root_post"}:
             return self.api.create_post(bearer, plan.body.get("text", "Fictional used-car note."), agent_handle=handle)
         if plan.intent in {"reply", "reply_continue"}:

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
@@ -275,8 +275,14 @@ def post_dto(post: Post, db: Session) -> dict[str, Any]:
     return dump(
         PostDTO(
             **post_summary(post, db),
-            parent_summary=public_post_summary_or_placeholder(db, post.parent_post_id),
-            quoted_post=public_post_summary_or_placeholder(db, post.quote_post_id),
+            parent_summary=cast(
+                PostSummaryDTO | UnavailablePostDTO | None,
+                public_post_summary_or_placeholder(db, post.parent_post_id),
+            ),
+            quoted_post=cast(
+                PostSummaryDTO | UnavailablePostDTO | None,
+                public_post_summary_or_placeholder(db, post.quote_post_id),
+            ),
         )
     )
 

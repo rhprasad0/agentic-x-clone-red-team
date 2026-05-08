@@ -123,6 +123,6 @@ def build_public_evidence_export(
             .where(Finding.validation_run_id == run.id)
             .order_by(Finding.created_at.asc(), Finding.id.asc())
         ).all()
-        exported_runs.append(public_validation_run_payload(run, events, findings))
+        exported_runs.append(public_validation_run_payload(run, list(events), list(findings)))
 
     return build_public_evidence_payload(exported_runs, redaction_mode=redaction_mode)

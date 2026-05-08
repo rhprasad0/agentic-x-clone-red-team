@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, NoReturn
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -47,7 +47,7 @@ class FindingCreate(BaseModel):
     residual_risk: str | None = None
 
 
-def _not_found(message: str) -> None:
+def _not_found(message: str) -> NoReturn:
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
 

@@ -16,6 +16,14 @@ import {
   type TimelineItem,
   type UnavailablePostRef,
 } from './api/client';
+import { DisabledButton, PlainPostText } from './components/readOnlyPrimitives';
+import {
+  formatCount,
+  formatTimestamp,
+  isLikeItem,
+  isUnavailablePost,
+  profilePath,
+} from './utils/viewHelpers';
 import './styles.css';
 
 type Route =
@@ -104,52 +112,6 @@ function getErrorStatus(error: unknown): number | null {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Read request failed';
-}
-
-function profilePath(handle: string, tab: AgentFeedKind): string {
-  return tab === 'posts' ? `/agents/${encodeURIComponent(handle)}` : `/agents/${encodeURIComponent(handle)}/${tab}`;
-}
-
-function formatCount(value: number | undefined): string {
-  return String(value ?? 0);
-}
-
-function isUnavailablePost(value: PostSummary | UnavailablePostRef | null): value is UnavailablePostRef {
-  return Boolean(value && 'availability' in value);
-}
-
-function isLikeItem(item: TimelineItem | LikeTabItem): item is LikeTabItem {
-  return 'liked_at' in item;
-}
-
-function formatTimestamp(value: string): string {
-  return value.replace('T', ' ').replace('Z', ' UTC');
-}
-
-function PlainPostText({ text }: { text: string }) {
-  const parts = text.split(/(https?:\/\/\S+)/g);
-
-  return (
-    <p className="post-text">
-      {parts.map((part, index) =>
-        part.startsWith('http://') || part.startsWith('https://') ? (
-          <span className="plain-url" key={`${part}-${index}`}>
-            {part}
-          </span>
-        ) : (
-          part
-        ),
-      )}
-    </p>
-  );
-}
-
-function DisabledButton({ children, className = 'muted-button' }: { children: ReactNode; className?: string }) {
-  return (
-    <button className={className} type="button" disabled>
-      {children}
-    </button>
-  );
 }
 
 function LeftNav({ route, navigate }: { route: Route; navigate: Navigation }) {
@@ -253,7 +215,7 @@ function ScreenHeader({
   );
 }
 
-function AgentIdentity({ agent, navigate }: { agent: AgentSummary; navigate?: Navigation }) {
+function AgentIdentity({ agent, navigate }: { agent: AgentSummary; navigate?: Navigation | undefined }) {
   const identity = (
     <>
       <span className="avatar" aria-hidden="true">
@@ -282,7 +244,7 @@ function AgentIdentity({ agent, navigate }: { agent: AgentSummary; navigate?: Na
   return <div className="identity">{identity}</div>;
 }
 
-function EmbeddedPost({ post, navigate }: { post: PostSummary | UnavailablePostRef; navigate?: Navigation }) {
+function EmbeddedPost({ post, navigate }: { post: PostSummary | UnavailablePostRef; navigate?: Navigation | undefined }) {
   if (isUnavailablePost(post)) {
     return (
       <div className="quote-card unavailable">
@@ -312,7 +274,7 @@ function ParentContext({ post }: { post: Post }) {
   return <div className="context-line">Replying to @{post.parent_summary.author.handle}</div>;
 }
 
-function PostActions({ post, navigate }: { post: PostSummary; navigate?: Navigation }) {
+function PostActions({ post, navigate }: { post: PostSummary; navigate?: Navigation | undefined }) {
   return (
     <div className="post-actions" aria-label={`Disabled actions for ${post.id}`}>
       <DisabledButton>Reply {formatCount(post.counts.reply_count)}</DisabledButton>
@@ -342,7 +304,7 @@ function PostCard({
   post: Post;
   label?: string;
   context?: ReactNode;
-  navigate?: Navigation;
+  navigate?: Navigation | undefined;
 }) {
   return (
     <article className="post-card" aria-label={`${label} ${post.id} by ${post.author.handle}`}>
@@ -371,7 +333,7 @@ function PostCard({
   );
 }
 
-function TimelineItemCard({ item, navigate }: { item: TimelineItem; navigate?: Navigation }) {
+function TimelineItemCard({ item, navigate }: { item: TimelineItem; navigate?: Navigation | undefined }) {
   if (item.item_type === 'repost' && item.reposted_by) {
     return (
       <article className="post-card" aria-label={`repost ${item.post.id} by ${item.post.author.handle}`}>
@@ -395,7 +357,7 @@ function TimelineItemCard({ item, navigate }: { item: TimelineItem; navigate?: N
   return <PostCard post={item.post} label={label} context={context} navigate={navigate} />;
 }
 
-function LikeItemCard({ item, handle, navigate }: { item: LikeTabItem; handle: string; navigate?: Navigation }) {
+function LikeItemCard({ item, handle, navigate }: { item: LikeTabItem; handle: string; navigate?: Navigation | undefined }) {
   return (
     <PostCard
       post={item.post}
