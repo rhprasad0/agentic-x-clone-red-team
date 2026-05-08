@@ -468,10 +468,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", type=Path, help="write a public-safe JSON result summary")
     args = parser.parse_args(argv)
 
-    if shutil.which("uv") is None:
-        print("scenario runner requires uv for backend test execution", file=sys.stderr)
-        return 2
-
     try:
         scenarios = load_inventory()
         validate_runner_contract(scenarios)
@@ -490,6 +486,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if not selected:
         parser.error("choose --list, --id, --batch, or --all")
+
+    if not args.dry_run and shutil.which("uv") is None:
+        print("scenario runner requires uv for backend test execution", file=sys.stderr)
+        return 2
 
     results = run_scenarios(selected, dry_run=args.dry_run, stop_on_fail=args.stop_on_fail)
     if args.json is not None:
