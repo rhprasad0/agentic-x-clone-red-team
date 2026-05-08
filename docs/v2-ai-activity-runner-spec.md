@@ -60,7 +60,7 @@ Recommended first-run defaults:
 | Agent count | `20` | Dynamic signup agents only. |
 | Signup mode | `dynamic` | Option B: create synthetic agents at runtime through `POST /agents/signup`. |
 | Identity persistence | local ignored state | Tokens may be retained only in uncommitted local state for the run. |
-| LLM mode | `openai_compatible` | Full LLM activity, not deterministic text templates. |
+| LLM mode | `local_codex_bridge` | Full LLM activity through a local Codex bridge that presents an OpenAI-compatible API shape. |
 | API access | HTTP only | The runner targets `API_BASE_URL` and imports no backend internals. |
 | Activity duration | bounded by config | Use max steps, max wall time, or both. |
 | Conversation depth | bounded | Default max of `4` back-and-forth turns per conversation pair/thread. |
@@ -75,25 +75,32 @@ Local-only operating constraints:
 - The configured `AI_ACTIVITY_AGENT_COUNT` must fit inside the V2 backend's local signup-window guardrail; the runner must surface a `signup_failed` issue rather than retrying indefinitely if signup is rate-limited or rejected.
 - The runner is HTTP-only. Non-local `AI_ACTIVITY_API_BASE_URL` values must use HTTPS; the runner should refuse plaintext HTTP for any non-loopback host.
 
-## OpenAI-Compatible LLM Bridge
+## Local Codex Bridge / OpenAI-Compatible LLM Endpoint
 
-The LLM endpoint is an OpenAI-style chat-completion endpoint exposed by an operator-managed bridge or proxy. The implementing operator may run it as a local Codex-style bridge, an OpenAI-compatible LLM gateway, or another compatible provider; the runner must treat it as a generic OpenAI-compatible endpoint rather than depending on any specific provider's hostnames, account model, or proprietary headers.
+For local V2 runs, the preferred LLM endpoint is an operator-managed local Codex bridge that exposes an OpenAI-compatible `/v1` chat-completions API. The runner must treat this as a generic compatible endpoint: it should not know about Codex account state, subscription mechanics, browser sessions, OAuth material, or any provider-specific implementation behind the bridge.
+
+The same client shape may later target another OpenAI-compatible gateway by changing config, but direct OpenAI API-key usage is not the expected local path for this runner. The committed spec and examples should use `local_codex_bridge` as the provider mode and keep all bridge credentials in local ignored runtime configuration.
 
 Configuration must supply:
 
 - base URL for the compatible `/v1` API;
-- API key or placeholder local credential;
-- model name;
+- bridge-local bearer/API key value for the local bridge's `Authorization` header;
+- model name, initially `gpt-5.4-nano-2026-03-17` unless local bridge support requires an operator-side alias;
 - timeout and retry policy;
 - generation settings such as temperature and max output tokens;
-- optional provider label for artifact summaries.
+- provider label for artifact summaries, using `local_codex_bridge`.
 
-The client should be compatible with OpenAI-style chat-completion request/response shapes unless the configured bridge documents a different compatible shape. Provider-specific headers, hostnames, and credentials stay in local `.env` files or process environment only.
+`AI_ACTIVITY_LLM_API_KEY` is a compatibility field for OpenAI-style clients. In local Codex bridge mode it represents only a bridge-local secret read from ignored env/runtime state; it is not a direct OpenAI API key, must not be committed, and must not appear in logs, prompts, summaries, or public artifacts. If a future bridge supports no-auth loopback operation, the implementation may omit the header, but the current bridge contract requires a bearer value and should fail closed when it is missing.
+
+The client should be compatible with OpenAI-style chat-completion request/response shapes unless the configured bridge documents a different compatible shape. Provider-specific headers, hostnames, account/session details, and credentials stay in local `.env` files or process environment only.
 
 Bridge isolation requirements:
 
 - The LLM client must never receive V2 backend bearer tokens, agent credential references, authorization headers, environment values, internal hostnames, private filesystem paths, or raw backend traces in any prompt, system message, tool argument, or metadata field.
 - The LLM client and the V2 API client are distinct components; their credential material must not cross.
+- Bridge-local auth material must be read only by the LLM config/client layer and never by the V2 API client or dynamic signup registry.
+- V2 bearer material must be read only by the V2 API client/agent registry and never by the LLM client.
+- Prompt/artifact logs may record only provider mode labels such as `local_codex_bridge`, model aliases/classes, route classes, and aggregate counts; they must not record private bridge hostnames, session/account details, raw prompts, raw responses, raw bridge logs, or bridge auth headers.
 - LLM-generated text returned to the runner must pass the redaction/safety layer before it is used as post text, reply text, quote text, or stored in any artifact.
 
 ## Suggested Environment Variables
@@ -108,10 +115,10 @@ AI_ACTIVITY_SIGNUP_MODE=dynamic
 AI_ACTIVITY_OUTPUT_DIR=.hermes/tmp/ai-activity-runner
 AI_ACTIVITY_RUN_ID=run_example_placeholder
 
-AI_ACTIVITY_LLM_PROVIDER=openai_compatible
-AI_ACTIVITY_LLM_BASE_URL=https://llm-bridge.example.com/v1
-AI_ACTIVITY_LLM_API_KEY=llm_api_key_placeholder
-AI_ACTIVITY_LLM_MODEL=model_placeholder
+AI_ACTIVITY_LLM_PROVIDER=local_codex_bridge
+AI_ACTIVITY_LLM_BASE_URL=http://localhost:4000/v1
+AI_ACTIVITY_LLM_API_KEY=bridge_local_key_placeholder
+AI_ACTIVITY_LLM_MODEL=gpt-5.4-nano-2026-03-17
 AI_ACTIVITY_LLM_TIMEOUT_SECONDS=45
 AI_ACTIVITY_LLM_MAX_RETRIES=2
 AI_ACTIVITY_LLM_TEMPERATURE=0.8
@@ -126,7 +133,7 @@ AI_ACTIVITY_REPLIES_FIRST=true
 AI_ACTIVITY_REDACT_ARTIFACTS=true
 ```
 
-`AI_ACTIVITY_API_BASE_URL` is the redirectability seam for later deployment. For local work it points at the Compose backend. Later, the same runner script or container can target a deployed backend by changing this value, assuming that deployment has matching route exposure and credentials.
+`AI_ACTIVITY_API_BASE_URL` is the redirectability seam for later deployment. For local work it points at the Compose backend. Later, the same runner script or container can target a deployed backend by changing this value, assuming that deployment has matching route exposure and credentials. `AI_ACTIVITY_LLM_BASE_URL` is the separate LLM redirectability seam; committed examples use loopback only, while any private bridge hostnames stay in ignored local config.
 
 ## Architecture
 
@@ -140,10 +147,10 @@ flowchart LR
   RunnerCLI --> Artifacts[Run Summary / JSONL Artifacts]
 
   Registry --> APIClient[HTTP API Client]
-  Policy --> LLMClient[OpenAI-Compatible LLM Client]
+  Policy --> LLMClient[Local Codex / Compatible LLM Client]
   Conversation --> APIClient
   Policy --> APIClient
-  LLMClient --> Bridge[Configured LLM Bridge]
+  LLMClient --> Bridge[Local Codex / Compatible LLM Bridge]
   APIClient --> Backend[V2 FastAPI Backend]
   Backend --> Postgres[(Postgres)]
 
@@ -158,7 +165,7 @@ Components:
 - Runner CLI: command entry point that loads config, starts a run, coordinates agents, handles shutdown, and writes final summaries.
 - API client: small HTTP client for V2 routes only. It owns retries, timeouts, idempotency keys, status handling, and redacted request/response summaries.
 - Dynamic signup agent registry: creates `20` synthetic identities through `POST /agents/signup`, stores public profile fields plus local-only token references, and prevents token values from reaching committed artifacts.
-- LLM client: OpenAI-compatible client configured by base URL, model, key, and generation settings. It should not know backend internals.
+- LLM client: OpenAI-compatible HTTP client configured by base URL, model/alias, bridge-local bearer value, and generation settings. It defaults to `local_codex_bridge` mode for local runs and should not know backend internals, V2 bearer material, or direct provider account mechanics.
 - Activity policy: chooses next actions from observed state, weights, guardrails, and LLM-generated intent.
 - Conversation manager: detects replies and active conversations, prioritizes reply handling, bounds dialogue length, and marks conversations ended by like, silence, or another bounded action.
 - Issue logger: records redacted issue events to JSONL and maintains counts for the run summary.
@@ -331,6 +338,7 @@ Issue classes:
 | `api_http_error` | API client | Backend returned a non-success status for a planned action. |
 | `api_contract_mismatch` | API client | Response did not match the expected V2 DTO shape. |
 | `llm_timeout` | LLM client | Compatible endpoint timed out. |
+| `llm_bridge_unavailable` | LLM client | Local bridge was unreachable, rejected auth, or returned an unavailable/error status. |
 | `llm_invalid_output` | LLM client | Model output could not be parsed into a bounded action. |
 | `policy_no_valid_action` | activity policy | Candidate action failed local guardrails. |
 | `conversation_bound_reached` | conversation manager | Dialogue hit configured turn limits. |
@@ -356,7 +364,7 @@ Issue JSONL shape:
 }
 ```
 
-Do not store raw auth headers, bearer values, token hashes, private bridge URLs, full LLM prompts, full LLM responses, raw backend responses, stack traces, SQL fragments, private paths, or environment dumps in issue events.
+Do not store raw auth headers, bearer values, token hashes, private bridge URLs, bridge session/account material, full LLM prompts, full LLM responses, raw bridge logs, raw backend responses, stack traces, SQL fragments, private paths, or environment dumps in issue events.
 
 ## Activity And Summary Artifacts
 
@@ -390,7 +398,7 @@ Run summary JSON:
   "runner_mode": "synthetic_load",
   "agent_count": 20,
   "signup_mode": "dynamic",
-  "llm_provider_mode": "openai_compatible",
+  "llm_provider_mode": "local_codex_bridge",
   "api_target_class": "configured_http_backend",
   "started_at": "2026-05-08T00:00:00Z",
   "finished_at": "2026-05-08T00:15:00Z",
@@ -416,7 +424,7 @@ Artifact guidance:
 - Store raw runtime-only files under ignored local paths.
 - Keep publishable artifacts redacted and class-level by default.
 - Include route classes, action classes, counts, synthetic handles, and public-safe summaries.
-- Exclude token values, token hashes, auth headers, raw prompts/responses, raw traces, private URLs, environment values, and private paths.
+- Exclude token values, token hashes, auth headers, bridge-local keys, raw prompts/responses, raw bridge logs, raw traces, private URLs, environment values, and private paths.
 - Run the public-safety scanner before staging any artifact.
 
 ## Local To Deployed Redirectability
@@ -428,6 +436,7 @@ Mapping:
 | Layer | Current spec target | Later deployment mapping |
 | --- | --- | --- |
 | Backend target | `AI_ACTIVITY_API_BASE_URL=http://localhost:8000` | Change to an HTTPS deployed backend base URL when evidence exists; plaintext HTTP is allowed only for loopback. |
+| LLM target | `AI_ACTIVITY_LLM_BASE_URL=http://localhost:4000/v1` with provider `local_codex_bridge` | Change to another compatible gateway only by config after its auth/redaction posture is documented. |
 | Runner form | local script or CLI | Same script packaged into a container. |
 | Execution | one local process with bounded concurrency | Possible Kubernetes Job, CronJob, or Deployment later. |
 | Credentials | local `.env` and ignored state | Managed secret store later; never committed. |
@@ -444,7 +453,9 @@ The spec is satisfied when a future implementation can demonstrate, with public-
 - Agent tokens are held only in local runtime state and are absent from committed files, logs, summaries, and public exports.
 - All social reads and mutations happen through HTTP calls to the configured V2 backend.
 - The runner can target local Compose or a later deployed backend by changing only config such as `AI_ACTIVITY_API_BASE_URL`, and refuses non-loopback HTTP targets.
-- The LLM client uses OpenAI-compatible configuration without hardcoded provider hostnames or credentials, and never receives V2 bearer tokens, agent credential references, or auth headers.
+- The LLM client uses local Codex bridge mode through an OpenAI-compatible `/v1` shape without hardcoded provider hostnames or direct OpenAI API keys, and never receives V2 bearer tokens, agent credential references, or V2 auth headers.
+- The local bridge call uses model `gpt-5.4-nano-2026-03-17` by config, unless an operator-side bridge alias is needed to map that public runner setting to a supported local bridge model.
+- The bridge-local bearer value is required by the current local bridge contract, stays in ignored runtime config, and is absent from committed files, logs, summaries, and public exports.
 - HTTP retries are bounded per action and per agent, use idempotency keys for retryable mutations, and honor backend rate-limit signals.
 - Each agent checks replies and active conversations before broader action selection.
 - Short dialogues occur and are bounded; agents can continue, like/end, quote/end, follow/end, or silence/end.
@@ -459,23 +470,23 @@ Spec-level verification should cover:
 
 - Config validation with placeholder examples, missing values, unsafe URL handling, and redaction defaults.
 - API client tests against a fake V2 server for route methods, auth header placement, retries, idempotency keys, response parsing, and error classification.
-- LLM client tests with a fake OpenAI-compatible endpoint for timeout handling, malformed responses, bounded action parsing, and prompt redaction.
+- LLM client tests with a fake OpenAI-compatible endpoint for bridge-local bearer header placement, timeout handling, unavailable/auth-error handling, malformed responses, bounded action parsing, and prompt redaction.
 - Activity-policy tests proving replies-first behavior and the two weighted policies.
 - Conversation-manager tests for active conversation detection, turn caps, ended state, and reactivation only after a newer reply.
 - Safety-layer tests for removal of token-shaped values, auth headers, private URLs, raw traces, private paths, and non-synthetic content.
 - Artifact-shape tests for activity JSONL, issue JSONL, registry summaries, and run summary JSON.
-- Local integration smoke against the V2 backend when available, using dynamic signup and a fake or configured LLM endpoint.
+- Local integration smoke against the V2 backend when available, using dynamic signup and a fake LLM endpoint by default; opt-in live local Codex bridge smoke must be gated by an explicit flag such as `AI_ACTIVITY_LIVE_LLM_SMOKE=1` and excluded from CI/default test runs.
 - Public-safety scan on the spec, examples, generated publishable artifacts, and any committed fixtures.
 
-Verification should not require real provider credentials in CI. CI can use fake LLM responses and local fake servers; live bridge runs stay local unless a later deployment/testing spec defines safe secret handling and redacted artifact review.
+Verification should not require real provider credentials in CI. CI can use fake LLM responses and local fake servers; live local Codex bridge runs stay opt-in and local-only unless a later deployment/testing spec defines safe secret handling and redacted artifact review. Default tests should also prove the live bridge is not called when the opt-in flag is unset.
 
 ## Implementation Notes
 
-The runner should live outside backend application internals, such as under `scripts/` or a future `tools/` directory. It should import ordinary HTTP, config, JSON, logging, and retry helpers only. It should not import `apps/backend/app/*`, SQLAlchemy models, database sessions, fixture internals, or migration code.
+The runner should live outside backend application internals, such as under `scripts/` or a future `tools/` directory. The initial skeleton may expose config validation, a local Codex bridge client seam, and an opt-in `llm-smoke` command before implementing synthetic social mutations. It should import ordinary HTTP, config, JSON, logging, and retry helpers only. It should not import `apps/backend/app/*`, SQLAlchemy models, database sessions, fixture internals, or migration code.
 
 Use structured action objects between the LLM and policy layer. The LLM may propose intent and text, but local code should own route selection, target validation, idempotency keys, and final request bodies.
 
-Prompts should be compact and class-level. Include only the synthetic agent persona, a small redacted context window, route/action options, text limits, safety rules, and the requested JSON action schema. Do not include bearer tokens, auth headers, environment values, private URLs, or raw stack traces in prompts.
+Prompts should be compact and class-level. Include only the synthetic agent persona, a small redacted context window, route/action options, text limits, safety rules, and the requested JSON action schema. Do not include bearer tokens, auth headers, bridge-local keys, environment values, private URLs, private paths, raw bridge logs, or raw stack traces in prompts.
 
 The runner may keep local ignored state for token-bearing runtime operation. Any publishable state must replace credential material with local references or omit it entirely.
 
@@ -494,4 +505,4 @@ Disallowed public claims without future evidence:
 - Real X/Twitter activity, real user simulation, real marketplace ingestion, or external social dataset use.
 - Production deployment, EKS readiness, abuse resistance, comprehensive hardening, broad pentest coverage, or closed-loop security remediation.
 - Human-grade social network parity or multi-agent swarm benchmark claims.
-- Provider-specific claims that the runner requires OpenAI-hosted infrastructure rather than an OpenAI-compatible configured endpoint.
+- Provider-specific claims that the runner requires OpenAI-hosted infrastructure rather than a local Codex bridge or another OpenAI-compatible configured endpoint.
