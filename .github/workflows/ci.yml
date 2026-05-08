@@ -44,16 +44,6 @@ jobs:
             exit 1
           fi
 
-      - name: Basic public-safety grep
-        shell: bash
-        run: |
-          set -euo pipefail
-          pattern='(/[h]ome/|/[U]sers/|AKI[A-Z0-9]{16}|s[k]-[A-Za-z0-9]{20,}|xo[x][A-Za-z]-[A-Za-z0-9-]{20,})'
-          if git ls-files -z --cached --others --exclude-standard | xargs -0 grep -IEn "$pattern"; then
-            echo "Potential secret, private path, or unsafe public artifact found."
-            exit 1
-          fi
-
       - name: Python public-safety scan
         shell: bash
         run: |
@@ -201,6 +191,24 @@ jobs:
           scanners: vuln
           format: cyclonedx
           output: exports/public-evidence/sbom/xclone-frontend.cdx.json
+
+      - name: Redact SBOM maintainer emails for public artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          import re
+
+          email_re = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+          for path in sorted(Path("exports/public-evidence/sbom").glob("*.cdx.json")):
+              text = path.read_text()
+              text = email_re.sub("redacted@example.com", text)
+              data = json.loads(text)
+              path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+              print(f"redacted {path}")
+          PY
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v4
