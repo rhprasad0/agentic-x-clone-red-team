@@ -59,6 +59,7 @@ def db_session() -> Iterator[Session]:
         for model in DELETE_ORDER:
             session.execute(delete(model))
         session.commit()
+        session.expunge_all()
         seed_harness_fixture_token(session)
         yield session
     finally:

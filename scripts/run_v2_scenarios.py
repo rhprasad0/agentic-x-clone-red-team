@@ -117,7 +117,7 @@ BACKEND_UV_PYTEST = (
     "run",
     "--no-project",
     "--python",
-    "/usr/bin/python3",
+    "python3.12",
     "--with-editable",
     ".",
     "--with",

@@ -24,6 +24,7 @@ from app.models.validation_run import ValidationRun
 from app.services.cursors import (
     CursorPosition,
     CursorScope,
+    apply_keyset_pagination,
     decode_cursor,
     encode_cursor,
 )
@@ -232,6 +233,40 @@ def _page_items(
     return list_envelope(page, limit, has_more=has_more, next_cursor=next_cursor)
 
 
+def _cursor_position(cursor: str | None, scope: CursorScope) -> CursorPosition | None:
+    return decode_cursor(cursor, scope) if cursor else None
+
+
+def _bounded_statement(
+    statement: Select[tuple[Any]],
+    model: Any,
+    *,
+    limit: int,
+    cursor: str | None,
+    scope: CursorScope,
+) -> Select[tuple[Any]]:
+    return apply_keyset_pagination(
+        statement,
+        model,
+        position=_cursor_position(cursor, scope),
+        direction=scope.direction,
+        limit=limit,
+    )
+
+
+def _page_already_bounded_items(
+    items: list[dict[str, Any]], *, limit: int, scope: CursorScope
+) -> dict[str, Any]:
+    items.sort(
+        key=lambda item: (item["sort_timestamp"], item["id"]),
+        reverse=scope.direction == "desc",
+    )
+    page = items[:limit]
+    has_more = len(items) > limit
+    next_cursor = encode_cursor(_position_from_item(page[-1]), scope) if has_more and page else None
+    return list_envelope(page, limit, has_more=has_more, next_cursor=next_cursor)
+
+
 def list_public_agents(db: Session, *, limit: int, cursor: str | None) -> dict[str, Any]:
     scope = CursorScope(AGENTS_ROUTE, PUBLIC_ACTOR_KEY, {}, "desc")
     position = decode_cursor(cursor, scope) if cursor else None
@@ -279,16 +314,26 @@ def timeline_feed(
         post_statement = post_statement.where(Post.author_agent_id.in_(visible_agent_ids))
     if not include_replies:
         post_statement = post_statement.where(Post.parent_post_id.is_(None))
-    posts = list(db.scalars(post_statement).unique())
+    posts = list(
+        db.scalars(
+            _bounded_statement(post_statement, Post, limit=limit, cursor=cursor, scope=scope)
+        ).unique()
+    )
 
     repost_statement = _public_repost_statement()
     if visible_agent_ids is not None:
         repost_statement = repost_statement.where(Repost.agent_id.in_(visible_agent_ids))
-    reposts = list(db.scalars(repost_statement).unique())
+    reposts = list(
+        db.scalars(
+            _bounded_statement(
+                repost_statement, Repost, limit=limit, cursor=cursor, scope=scope
+            )
+        ).unique()
+    )
 
     items = [timeline_item_from_post(post, db) for post in posts]
     items.extend(timeline_item_from_repost(repost, db) for repost in reposts)
-    return _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    return _page_already_bounded_items(items, limit=limit, scope=scope)
 
 
 def profile_posts_feed(
@@ -305,59 +350,74 @@ def profile_posts_feed(
         {"include_reposts": include_reposts},
         "desc",
     )
+    post_statement = _public_post_statement().where(
+        Post.author_agent_id == agent.id,
+        Post.parent_post_id.is_(None),
+    )
     posts = list(
         db.scalars(
-            _public_post_statement().where(
-                Post.author_agent_id == agent.id,
-                Post.parent_post_id.is_(None),
-            )
+            _bounded_statement(post_statement, Post, limit=limit, cursor=cursor, scope=scope)
         ).unique()
     )
     items = [timeline_item_from_post(post, db) for post in posts]
     if include_reposts:
+        repost_statement = _public_repost_statement().where(Repost.agent_id == agent.id)
         reposts = list(
-            db.scalars(_public_repost_statement().where(Repost.agent_id == agent.id)).unique()
+            db.scalars(
+                _bounded_statement(
+                    repost_statement, Repost, limit=limit, cursor=cursor, scope=scope
+                )
+            ).unique()
         )
         items.extend(timeline_item_from_repost(repost, db) for repost in reposts)
-    return _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    return _page_already_bounded_items(items, limit=limit, scope=scope)
 
 
 def profile_replies_feed(
     db: Session, *, agent: Agent, limit: int, cursor: str | None
 ) -> dict[str, Any]:
     scope = CursorScope(PROFILE_REPLIES_ROUTE, agent.id, {}, "desc")
+    post_statement = _public_post_statement().where(
+        Post.author_agent_id == agent.id,
+        Post.parent_post_id.is_not(None),
+    )
     posts = list(
         db.scalars(
-            _public_post_statement().where(
-                Post.author_agent_id == agent.id,
-                Post.parent_post_id.is_not(None),
-            )
+            _bounded_statement(post_statement, Post, limit=limit, cursor=cursor, scope=scope)
         ).unique()
     )
     items = [timeline_item_from_post(post, db) for post in posts]
-    return _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    return _page_already_bounded_items(items, limit=limit, scope=scope)
 
 
 def profile_likes_feed(
     db: Session, *, agent: Agent, limit: int, cursor: str | None
 ) -> dict[str, Any]:
     scope = CursorScope(PROFILE_LIKES_ROUTE, agent.id, {}, "desc")
+    like_statement = _public_like_statement().where(Like.agent_id == agent.id)
     likes = list(
-        db.scalars(_public_like_statement().where(Like.agent_id == agent.id)).unique()
+        db.scalars(
+            _bounded_statement(like_statement, Like, limit=limit, cursor=cursor, scope=scope)
+        ).unique()
     )
     items = [like_tab_item(like, db) for like in likes]
-    return _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    return _page_already_bounded_items(items, limit=limit, scope=scope)
 
 
 def profile_reposts_feed(
     db: Session, *, agent: Agent, limit: int, cursor: str | None
 ) -> dict[str, Any]:
     scope = CursorScope(PROFILE_REPOSTS_ROUTE, agent.id, {}, "desc")
+    repost_statement = _public_repost_statement().where(Repost.agent_id == agent.id)
     reposts = list(
-        db.scalars(_public_repost_statement().where(Repost.agent_id == agent.id)).unique()
+        db.scalars(
+            _bounded_statement(
+                repost_statement, Repost, limit=limit, cursor=cursor, scope=scope
+            )
+        ).unique()
     )
     items = [timeline_item_from_repost(repost, db) for repost in reposts]
-    return _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    return _page_already_bounded_items(items, limit=limit, scope=scope)
 
 
 def thread_read_model(
@@ -384,20 +444,21 @@ def thread_read_model(
         current = parent
     ancestors.reverse()
 
+    scope = CursorScope(THREAD_ROUTE, selected.id, {}, "asc")
     excluded_ids = {root.id, selected.id, *(post.id for post in ancestors)}
+    reply_statement = _public_post_statement().where(
+        Post.root_post_id == root.id, Post.id.not_in(excluded_ids)
+    )
     replies = list(
         db.scalars(
-            _public_post_statement()
-            .where(Post.root_post_id == root.id, Post.id.not_in(excluded_ids))
-            .order_by(Post.created_at.asc(), Post.id.asc())
+            _bounded_statement(reply_statement, Post, limit=limit, cursor=cursor, scope=scope)
         ).unique()
     )
     items = [
         dict(post_dto(reply, db), sort_timestamp=timestamp(reply.created_at))
         for reply in replies
     ]
-    scope = CursorScope(THREAD_ROUTE, selected.id, {}, "asc")
-    page = _page_items(items, limit=limit, cursor=cursor, scope=scope)
+    page = _page_already_bounded_items(items, limit=limit, scope=scope)
     return {
         "root": post_dto(root, db),
         "selected": post_dto(selected, db),
