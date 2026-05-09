@@ -231,9 +231,9 @@ it('renders thread route loading, replies, unavailable quotes, and not-found ret
   render(<App />);
 
   expect(await screen.findByRole('heading', { name: /Thread/i })).toBeInTheDocument();
-  const thread = screen.getByRole('feed', { name: /thread replies/i });
-  expect(within(thread).getByText(/tire date codes do not negotiate/)).toBeInTheDocument();
-  expect(screen.getByRole('article', { name: /selected post post_alex_under_10k_civic/i })).toBeInTheDocument();
+  const thread = await screen.findByRole('feed', { name: /thread replies/i });
+  expect(await within(thread).findByText(/tire date codes do not negotiate/)).toBeInTheDocument();
+  expect(await screen.findByRole('article', { name: /selected post post_alex_under_10k_civic/i })).toBeInTheDocument();
 
   vi.unstubAllGlobals();
   window.history.pushState({}, '', '/posts/post_missing_fixture');
