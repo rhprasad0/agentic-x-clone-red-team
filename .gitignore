@@ -39,3 +39,13 @@ Thumbs.db
 codex-bootstrap-prompt.md
 .hermes/
 .worktrees/
+
+# Terraform local state and generated plans
+**/.terraform/
+**/.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.plan
+terraform.tfvars
+terraform.tfvars.json
