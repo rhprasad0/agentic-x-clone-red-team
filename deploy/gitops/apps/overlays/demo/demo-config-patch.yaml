@@ -6,13 +6,3 @@ metadata:
 data:
   APP_ENV: demo
   BACKEND_CORS_ORIGINS: https://xclone.ryans-lab.click
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: xclone-runner-config
-  namespace: xclone
-data:
-  AI_ACTIVITY_AGENT_COUNT: "4"
-  AI_ACTIVITY_MAX_STEPS: "80"
-  AI_ACTIVITY_CONCURRENCY: "4"

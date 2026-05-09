@@ -36,10 +36,6 @@ jobs:
             context: .
             build_args: |
               VITE_API_BASE_URL=https://api.xclone.example.com
-          - image: runner
-            dockerfile: scripts/ai-activity-runner.Dockerfile
-            context: .
-            build_args: ""
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -108,7 +104,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add deploy/gitops/apps/base/backend-deployment.yaml \
-            deploy/gitops/apps/base/frontend-deployment.yaml \
-            deploy/gitops/apps/base/runner-cronjob.yaml
+            deploy/gitops/apps/base/frontend-deployment.yaml
           git commit -m "ci: pin GitOps images to ${GITHUB_SHA::7} [skip ci]"
           git push

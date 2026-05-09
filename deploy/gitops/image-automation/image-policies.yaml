@@ -39,24 +39,3 @@ spec:
   policy:
     semver:
       range: ">=0.0.0"
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImageRepository
-metadata:
-  name: xclone-runner
-  namespace: flux-system
-spec:
-  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/runner
-  interval: 5m
----
-apiVersion: image.toolkit.fluxcd.io/v1
-kind: ImagePolicy
-metadata:
-  name: xclone-runner
-  namespace: flux-system
-spec:
-  imageRepositoryRef:
-    name: xclone-runner
-  policy:
-    semver:
-      range: ">=0.0.0"

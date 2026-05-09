@@ -8,5 +8,4 @@ resources:
   - secrets.example.yaml
   - backend-public.yaml
   - backend-internal.yaml
-  - runner-cronjob.yaml
   - network-policies.yaml

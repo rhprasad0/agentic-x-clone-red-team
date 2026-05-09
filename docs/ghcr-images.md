@@ -1,10 +1,9 @@
 # GHCR image publishing
 
-This repo publishes three container images to GitHub Container Registry (GHCR):
+This repo publishes two deployable application container images to GitHub Container Registry (GHCR):
 
 - `ghcr.io/rhprasad0/agentic-x-clone-red-team/backend`
 - `ghcr.io/rhprasad0/agentic-x-clone-red-team/frontend`
-- `ghcr.io/rhprasad0/agentic-x-clone-red-team/runner`
 
 The workflow lives at `.github/workflows/publish-ghcr-images.yml` and runs on pushes to `main`, version tags matching `v*`, and manual `workflow_dispatch` runs.
 
@@ -12,7 +11,7 @@ The workflow lives at `.github/workflows/publish-ghcr-images.yml` and runs on pu
 
 The workflow uses only the repository-provided `GITHUB_TOKEN`:
 
-- `contents: read` to check out the repo
+- `contents: write` so the post-publish job can pin GitOps image refs back to `main`
 - `packages: write` to push GHCR images
 
 No personal access token, cloud credential, package password, or static secret is required. The workflow does not print registry credentials and uses the official Docker login/build/metadata actions.
@@ -41,6 +40,6 @@ Manual GitHub toggle required after first publish:
 
 GitHub packages default to private on first publish, so this visibility step is the one expected manual action before public cluster pulls work credential-free.
 
-## Runner image boundary
+## Runner boundary
 
-The `runner` image packages only `scripts/ai_activity_runner.py`, `scripts/fake_openai_compatible_llm.py`, and `scripts/ai_activity_runner_lib/`. It defaults to CLI help so a bare container run does not require private bridge credentials. Run it as a private Kubernetes Job or CronJob with bounded environment variables and private runtime state. It is not a public write surface.
+The AI activity runner remains a local/on-prem operator tool, not an EKS workload for the public demo. Keep runner credentials, bridge access, and runtime state outside Kubernetes manifests and public receipts. The GHCR workflow publishes only deployable app images (`backend` and `frontend`); run the runner from the on-prem environment against the public read/API boundary only after app health and mutation protection are verified.

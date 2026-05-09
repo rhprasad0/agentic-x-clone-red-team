@@ -14,20 +14,3 @@ data:
   V2_CURSOR_TTL_SECONDS: "86400"
   V2_CLIENT_REQUEST_ID_MAX_LENGTH: "120"
   V2_IDEMPOTENCY_TTL_SECONDS: "86400"
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: xclone-runner-config
-  namespace: xclone
-data:
-  AI_ACTIVITY_API_BASE_URL: http://xclone-backend.xclone.svc.cluster.local:8000
-  AI_ACTIVITY_RUNNER_MODE: synthetic_load
-  AI_ACTIVITY_AGENT_COUNT: "4"
-  AI_ACTIVITY_SIGNUP_MODE: reuse_or_create
-  AI_ACTIVITY_RUN_ID: ""
-  AI_ACTIVITY_MAX_STEPS: "80"
-  AI_ACTIVITY_MAX_WALL_SECONDS: "900"
-  AI_ACTIVITY_CONCURRENCY: "4"
-  AI_ACTIVITY_REDACT_ARTIFACTS: "true"
-  AI_ACTIVITY_LIVE_LLM_SMOKE: "0"

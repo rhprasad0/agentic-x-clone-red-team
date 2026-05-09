@@ -43,48 +43,30 @@ def test_internal_backend_keeps_mutation_mode_off_public_ingress_path() -> None:
     assert env["BACKEND_CORS_ORIGINS"] == ""
 
 
-def test_runner_cronjob_is_private_suspended_and_bounded() -> None:
-    service_account = docs_by_kind("deploy/k8s/base/runner-cronjob.yaml", "ServiceAccount")[0]
-    cronjob = docs_by_kind("deploy/k8s/base/runner-cronjob.yaml", "CronJob")[0]
-    pod_spec = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]
-    container = pod_spec["containers"][0]
-    env = {item["name"]: str(item["value"]) for item in container["env"]}
+def test_k8s_base_has_no_runner_cronjob_or_runner_secret() -> None:
+    kustomization = load_docs("deploy/k8s/base/kustomization.yaml")[0]
+    assert "runner-cronjob.yaml" not in kustomization["resources"]
+    assert not (REPO_ROOT / "deploy/k8s/base/runner-cronjob.yaml").exists()
 
-    assert service_account["automountServiceAccountToken"] is False
-    assert cronjob["spec"]["suspend"] is True
-    assert cronjob["spec"]["concurrencyPolicy"] == "Forbid"
-    assert cronjob["spec"]["jobTemplate"]["spec"]["activeDeadlineSeconds"] == 900
-    assert pod_spec["serviceAccountName"] == "xclone-synthetic-runner"
-    assert pod_spec["automountServiceAccountToken"] is False
-    assert env["AI_ACTIVITY_API_BASE_URL"] == "http://xclone-backend-internal.xclone-demo.svc.cluster.local:8000"
-    assert env["AI_ACTIVITY_AGENT_COUNT"] == "4"
-    assert container["securityContext"]["readOnlyRootFilesystem"] is True
+    secrets = docs_by_kind("deploy/k8s/base/secrets.example.yaml", "Secret")
+    assert {secret["metadata"]["name"] for secret in secrets} == {"xclone-backend-runtime"}
 
 
-def test_network_policy_only_allows_runner_to_internal_mutation_backend() -> None:
-    policies = {
-        policy["metadata"]["name"]: policy
-        for policy in docs_by_kind("deploy/k8s/base/network-policies.yaml", "NetworkPolicy")
-    }
+def test_network_policy_has_no_runner_selectors() -> None:
+    policies = docs_by_kind("deploy/k8s/base/network-policies.yaml", "NetworkPolicy")
+    policy_names = {policy["metadata"]["name"] for policy in policies}
 
-    assert "default-deny" in policies
-    assert policies["default-deny"]["spec"]["podSelector"] == {}
-    assert set(policies["default-deny"]["spec"]["policyTypes"]) == {"Ingress", "Egress"}
+    assert "default-deny" in policy_names
+    assert "allow-public-ingress-to-public-backend" in policy_names
+    assert "allow-internal-backend-runtime-egress" in policy_names
+    assert all("runner" not in name for name in policy_names)
 
-    internal_policy = policies["allow-runner-to-internal-backend"]
-    internal_selector = internal_policy["spec"]["podSelector"]["matchLabels"]
-    assert internal_selector["app.kubernetes.io/component"] == "backend-internal"
-    ingress_from = internal_policy["spec"]["ingress"][0]["from"][0]["podSelector"]["matchLabels"]
-    assert ingress_from["app.kubernetes.io/component"] == "synthetic-runner"
-
-    runner_policy = policies["allow-runner-egress"]
-    runner_selector = runner_policy["spec"]["podSelector"]["matchLabels"]
-    assert runner_selector["app.kubernetes.io/component"] == "synthetic-runner"
-    first_egress_to = runner_policy["spec"]["egress"][0]["to"][0]["podSelector"]["matchLabels"]
-    assert first_egress_to["app.kubernetes.io/component"] == "backend-internal"
+    serialized = yaml.safe_dump_all(policies)
+    assert "synthetic-runner" not in serialized
+    assert "xclone-synthetic-runner" not in serialized
 
 
-def test_kustomization_lists_private_runner_boundary_resources() -> None:
+def test_kustomization_lists_only_app_backend_boundary_resources() -> None:
     kustomization = load_docs("deploy/k8s/base/kustomization.yaml")[0]
 
     assert kustomization["namespace"] == "xclone-demo"
@@ -93,6 +75,5 @@ def test_kustomization_lists_private_runner_boundary_resources() -> None:
         "secrets.example.yaml",
         "backend-public.yaml",
         "backend-internal.yaml",
-        "runner-cronjob.yaml",
         "network-policies.yaml",
     ]

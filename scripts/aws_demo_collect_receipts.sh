@@ -65,7 +65,6 @@ if command -v kubectl >/dev/null 2>&1; then
   section "Recent warning events" kubectl -n "$NAMESPACE" get events --sort-by=.lastTimestamp --field-selector type=Warning
   section "Backend recent logs" kubectl -n "$NAMESPACE" logs deploy/backend --tail=80
   section "Frontend recent logs" kubectl -n "$NAMESPACE" logs deploy/frontend --tail=80
-  section "Runner CronJobs" kubectl -n "$NAMESPACE" get cronjob -o wide
 fi
 
 if command -v aws >/dev/null 2>&1; then

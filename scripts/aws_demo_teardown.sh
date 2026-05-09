@@ -59,7 +59,6 @@ EOF
 
 if command -v kubectl >/dev/null 2>&1; then
   run_receipt "Current Kubernetes context" kubectl config current-context
-  run_receipt "Suspend runner CronJobs" kubectl -n "$NAMESPACE" patch cronjob --all -p '{"spec":{"suspend":true}}'
   run_receipt "Delete public Ingresses before ALB cleanup" kubectl -n "$NAMESPACE" delete ingress --all --ignore-not-found=true
   run_receipt "Wait for Ingress deletion" kubectl -n "$NAMESPACE" wait --for=delete ingress --all --timeout="${WAIT_SECONDS}s"
 else

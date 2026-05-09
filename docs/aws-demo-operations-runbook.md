@@ -8,7 +8,7 @@ The repo does not commit live AWS identifiers, account IDs, ARNs, raw logs, priv
 
 - Scope: temporary small demo for a handful of visitors.
 - Cost mode: single-NAT demo mode, minimal node group, small RDS, short log retention.
-- Surface: public frontend and public read API only; mutation/runner paths stay internal.
+- Surface: public frontend and public read API only; mutation paths stay controlled by the backend/public edge. The AI activity runner is on-prem only, not an EKS CronJob.
 - Ownership: Terraform owns AWS primitives; Flux/Kubernetes owns in-cluster desired state.
 - Teardown: destroy from Terraform, but delete/suspend Kubernetes resources first so the AWS Load Balancer Controller can release ALBs cleanly.
 
@@ -157,7 +157,7 @@ Teardown should be rehearsed before the demo and run immediately when the demo i
    ./scripts/aws_demo_post_destroy_verify.sh
    ```
 
-The teardown script suspends runner CronJobs, deletes Ingress objects to give the AWS Load Balancer Controller a chance to release ALBs, runs `terraform plan -destroy`, and only applies when `DESTROY_APPROVAL=destroy-xclone-demo` is explicitly set.
+The teardown script deletes Ingress objects to give the AWS Load Balancer Controller a chance to release ALBs, runs `terraform plan -destroy`, and only applies when `DESTROY_APPROVAL=destroy-xclone-demo` is explicitly set.
 
 ## Post-destroy verification checklist
 

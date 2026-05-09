@@ -16,15 +16,14 @@ def image_line(component: str, image_component: str | None = None) -> str:
     image_component = image_component or f"xclone-{component}"
     return (
         f"image: ghcr.io/{REPOSITORY}/{image_component}:demo-placeholder "
-        f'# {{\"$imagepolicy\": \"flux-system:xclone-{component}:tag\"}}'
+        f'# {{"$imagepolicy": "flux-system:xclone-{component}:tag"}}'
     )
 
 
-def test_update_gitops_image_tags_pins_images_to_short_commit_sha(tmp_path: Path) -> None:
+def test_update_gitops_image_tags_pins_app_images_to_short_commit_sha(tmp_path: Path) -> None:
     repo_root = tmp_path
     backend = repo_root / "deploy/gitops/apps/base/backend-deployment.yaml"
     frontend = repo_root / "deploy/gitops/apps/base/frontend-deployment.yaml"
-    runner = repo_root / "deploy/gitops/apps/base/runner-cronjob.yaml"
     backend.parent.mkdir(parents=True)
 
     backend.write_text(
@@ -33,10 +32,6 @@ def test_update_gitops_image_tags_pins_images_to_short_commit_sha(tmp_path: Path
     )
     frontend.write_text(
         f"containers:\n  - name: frontend\n    {image_line('frontend')}\n",
-        encoding="utf-8",
-    )
-    runner.write_text(
-        f"containers:\n  - name: runner\n    {image_line('runner')}\n",
         encoding="utf-8",
     )
 
@@ -48,16 +43,14 @@ def test_update_gitops_image_tags_pins_images_to_short_commit_sha(tmp_path: Path
 
     backend_text = backend.read_text(encoding="utf-8")
     frontend_text = frontend.read_text(encoding="utf-8")
-    runner_text = runner.read_text(encoding="utf-8")
 
-    assert changed == [backend, frontend, runner]
+    assert changed == [backend, frontend]
     assert (
         f"image: ghcr.io/{REPOSITORY}/backend:sha-357d18f "
         '# {"$imagepolicy": "flux-system:xclone-backend:tag"}'
     ) in backend_text
     assert "xclone-backend:demo-placeholder" not in backend_text
     assert f"image: ghcr.io/{REPOSITORY}/frontend:sha-357d18f " in frontend_text
-    assert f"image: ghcr.io/{REPOSITORY}/runner:sha-357d18f " in runner_text
 
 
 def test_update_gitops_image_tags_rejects_short_or_non_hex_commit(tmp_path: Path) -> None:

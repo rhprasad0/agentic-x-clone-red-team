@@ -10,12 +10,11 @@ from pathlib import Path
 _IMAGE_TARGETS = {
     "backend": Path("deploy/gitops/apps/base/backend-deployment.yaml"),
     "frontend": Path("deploy/gitops/apps/base/frontend-deployment.yaml"),
-    "runner": Path("deploy/gitops/apps/base/runner-cronjob.yaml"),
 }
 
 _IMAGE_LINE_RE = re.compile(
     r"^(?P<indent>\s*image:\s+)"
-    r"(?P<image>ghcr\.io/[^\s#]+/(?:xclone-)?(?P<component>backend|frontend|runner):[^\s#]+)"
+    r"(?P<image>ghcr\.io/[^\s#]+/(?:xclone-)?(?P<component>backend|frontend):[^\s#]+)"
     r"(?P<suffix>.*)$",
     re.MULTILINE,
 )

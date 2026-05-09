@@ -7,7 +7,6 @@ resources:
   - secretproviderclass.yaml
   - backend-deployment.yaml
   - frontend-deployment.yaml
-  - runner-cronjob.yaml
   - services.yaml
   - ingress.yaml
   - networkpolicies.yaml

@@ -106,21 +106,18 @@ Image and Compose checks:
 docker compose config
 docker build -t xclone-backend -f apps/backend/Dockerfile .
 docker build -t xclone-frontend -f apps/frontend/Dockerfile .
-docker build -t xclone-runner -f scripts/ai-activity-runner.Dockerfile .
 ```
 
-GHCR publishing for backend, frontend, and runner images is documented in `docs/ghcr-images.md`.
+GHCR publishing for backend and frontend application images is documented in `docs/ghcr-images.md`. The AI activity runner is executed on-prem as an operator tool rather than published/deployed as an EKS CronJob.
 
 Trivy vulnerability scans and SBOM generation, using a local binary if installed:
 
 ```bash
 trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
 trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
-trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-runner
 mkdir -p exports/public-evidence/sbom
 trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
 trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
-trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-runner.cdx.json xclone-runner
 ```
 
 Dockerized Trivy fallback:
@@ -128,11 +125,9 @@ Dockerized Trivy fallback:
 ```bash
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-runner
 mkdir -p exports/public-evidence/sbom
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-runner.cdx.json xclone-runner
 ```
 
 ## Validation Status
