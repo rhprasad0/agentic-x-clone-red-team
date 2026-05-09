@@ -34,6 +34,7 @@ metadata:
     # Certificate discovery uses the rule hostnames; do not commit account-specific ACM ARNs.
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/conditions.xclone-backend-public-read: '[{"field":"http-request-method","httpRequestMethodConfig":{"Values":["GET","HEAD"]}}]'
 spec:
   ingressClassName: alb
