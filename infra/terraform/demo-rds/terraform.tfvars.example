@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars locally or pass via CI variables. Placeholder-only; do not commit real IDs.
+aws_region                    = "us-east-1"
+vpc_id                        = "vpc-REPLACE_WITH_DEMO_VPC_ID"
+private_subnet_ids            = ["subnet-REPLACE_PRIVATE_A", "subnet-REPLACE_PRIVATE_B"]
+eks_cluster_security_group_id = "sg-REPLACE_WITH_EKS_CLUSTER_OR_NODE_SG"
+expires_at                    = "2026-05-12T00:00:00Z"
+owner                         = "portfolio-demo"

@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: x-clone-db-migrate
+  namespace: x-clone-demo
+  labels:
+    app.kubernetes.io/name: x-clone-db-migrate
+    app.kubernetes.io/part-of: x-clone
+  annotations:
+    # If managed through Helm/Flux HelmRelease later, preserve this as a pre-upgrade/pre-install hook.
+    # For Kustomize/Flux, trigger intentionally by changing the image tag or job name per release.
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: x-clone-db-migrate
+        app.kubernetes.io/part-of: x-clone
+    spec:
+      restartPolicy: Never
+      serviceAccountName: x-clone-migrations
+      containers:
+        - name: migrate
+          image: ghcr.io/rhprasad0/agentic-x-clone-red-team/backend:REPLACE_WITH_GIT_SHA
+          imagePullPolicy: IfNotPresent
+          command: ["alembic"]
+          args: ["-c", "alembic.ini", "upgrade", "head"]
+          envFrom:
+            - secretRef:
+                name: x-clone-migration-database
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
