@@ -6,8 +6,8 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    # Certificate discovery uses the rule hostnames; do not commit account-specific ACM ARNs.
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
     alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
   ingressClassName: alb
@@ -31,8 +31,8 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    # Certificate discovery uses the rule hostnames; do not commit account-specific ACM ARNs.
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/conditions.xclone-backend-public-read: '[{"field":"http-request-method","httpRequestMethodConfig":{"Values":["GET","HEAD"]}}]'
 spec:
