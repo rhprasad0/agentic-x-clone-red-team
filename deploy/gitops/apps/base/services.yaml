@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-backend
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-backend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-backend-public-read
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-backend
+    app.kubernetes.io/component: public-read-edge
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-frontend
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

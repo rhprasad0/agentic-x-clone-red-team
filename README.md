@@ -26,8 +26,9 @@ The browser remains an observability UI, not a mutation client. It may render di
 - `apps/backend`: local FastAPI API, Postgres models/migrations, auth authority checks, fixture routes, read routes, mutation routes, and public-safe evidence export.
 - `apps/frontend`: read-only Vite/React observability UI.
 - `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies/social relationships, validation records, redacted events, and findings.
-- `scripts`: local helpers for fixture reset/seed, public evidence export, and public-safety scanning.
-- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, and public-safe positioning notes.
+- `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, AWS demo teardown/receipt collection, and AI activity runner tooling.
+- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS demo operations runbook, AWS edge/DNS runbook, GHCR image publishing notes, and public-safe positioning notes.
+- `infra`: reviewable Terraform and Kubernetes edge artifacts for the temporary EKS demo.
 
 ## Quickstart
 
@@ -61,7 +62,7 @@ Open the read-only frontend at:
 http://localhost:3000
 ```
 
-For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md).
+For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md).
 
 ## Local Checks
 
@@ -102,16 +103,21 @@ Image and Compose checks:
 docker compose config
 docker build -t xclone-backend -f apps/backend/Dockerfile .
 docker build -t xclone-frontend -f apps/frontend/Dockerfile .
+docker build -t xclone-runner -f scripts/ai-activity-runner.Dockerfile .
 ```
+
+GHCR publishing for backend, frontend, and runner images is documented in `docs/ghcr-images.md`.
 
 Trivy vulnerability scans and SBOM generation, using a local binary if installed:
 
 ```bash
 trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
 trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
+trivy image --severity HIGH,CRITICAL --exit-code 1 xclone-runner
 mkdir -p exports/public-evidence/sbom
 trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
 trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
+trivy image --format cyclonedx --output exports/public-evidence/sbom/xclone-runner.cdx.json xclone-runner
 ```
 
 Dockerized Trivy fallback:
@@ -119,9 +125,11 @@ Dockerized Trivy fallback:
 ```bash
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-backend
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-frontend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 xclone-runner
 mkdir -p exports/public-evidence/sbom
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-backend.cdx.json xclone-backend
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-frontend.cdx.json xclone-frontend
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w /work aquasec/trivy:latest image --format cyclonedx --output exports/public-evidence/sbom/xclone-runner.cdx.json xclone-runner
 ```
 
 ## Validation Status
