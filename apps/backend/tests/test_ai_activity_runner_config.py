@@ -24,12 +24,22 @@ def test_api_url_plaintext_safety(monkeypatch):
     with pytest.raises(ConfigError, match="non-loopback API URLs must use HTTPS"): AIActivityConfig.from_env()
     monkeypatch.setenv("AI_ACTIVITY_API_BASE_URL", "https://social.example.com")
     assert AIActivityConfig.from_env().api_base_url.startswith("https://")
+    monkeypatch.setenv(
+        "AI_ACTIVITY_API_BASE_URL",
+        "http://xclone-backend-internal.xclone-demo.svc.cluster.local:8000",
+    )
+    assert AIActivityConfig.from_env().redacted_summary()["api_target_class"] == "kubernetes_service"
 
-def test_llm_requires_key_and_loopback_or_https(monkeypatch):
+def test_llm_requires_key_and_loopback_https_or_kubernetes_service(monkeypatch):
     monkeypatch.delenv("AI_ACTIVITY_LLM_API_KEY", raising=False)
     with pytest.raises(ConfigError, match="bridge-local API key"): AIActivityConfig.from_env()
     base(monkeypatch); monkeypatch.setenv("AI_ACTIVITY_LLM_BASE_URL", "http://llm.example.com/v1")
     with pytest.raises(ConfigError, match="non-loopback LLM bridge URLs must use HTTPS"): AIActivityConfig.from_env()
+    monkeypatch.setenv(
+        "AI_ACTIVITY_LLM_BASE_URL",
+        "http://codex-bridge.xclone-demo.svc.cluster.local:4000/v1",
+    )
+    assert AIActivityConfig.from_env().redacted_summary()["llm_target_class"] == "kubernetes_service"
 
 def test_rejects_bad_numbers_modes_and_output(monkeypatch):
     base(monkeypatch); monkeypatch.setenv("AI_ACTIVITY_AGENT_COUNT", "zero")

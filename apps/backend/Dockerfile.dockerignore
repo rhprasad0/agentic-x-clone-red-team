@@ -6,6 +6,8 @@
 !fixtures
 !fixtures/used_car_world
 !fixtures/used_car_world/**
+!scripts
+!scripts/**
 
 .env
 .env.*
