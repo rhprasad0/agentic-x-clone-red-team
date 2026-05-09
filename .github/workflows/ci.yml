@@ -34,7 +34,6 @@ jobs:
           test -f scripts/public_safety_scan.py
           test -f apps/backend/Dockerfile
           test -f apps/frontend/Dockerfile
-          test -f scripts/ai-activity-runner.Dockerfile
           test -f docs/ghcr-images.md
 
       - name: Markdown tabs check
@@ -167,9 +166,6 @@ jobs:
       - name: Build frontend image
         run: docker build -t xclone-frontend:ci --build-arg VITE_API_BASE_URL=http://localhost:8000 -f apps/frontend/Dockerfile .
 
-      - name: Build runner image
-        run: docker build -t xclone-runner:ci -f scripts/ai-activity-runner.Dockerfile .
-
       - name: Scan backend image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -182,14 +178,6 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: xclone-frontend:ci
-          scanners: vuln
-          severity: HIGH,CRITICAL
-          exit-code: "1"
-
-      - name: Scan runner image with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: xclone-runner:ci
           scanners: vuln
           severity: HIGH,CRITICAL
           exit-code: "1"
@@ -212,14 +200,6 @@ jobs:
           scanners: vuln
           format: cyclonedx
           output: exports/public-evidence/sbom/xclone-frontend.cdx.json
-
-      - name: Generate runner CycloneDX SBOM with Trivy
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: xclone-runner:ci
-          scanners: vuln
-          format: cyclonedx
-          output: exports/public-evidence/sbom/xclone-runner.cdx.json
 
       - name: Redact SBOM maintainer emails for public artifacts
         shell: bash
