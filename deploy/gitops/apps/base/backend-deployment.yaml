@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xclone-backend
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-backend
+    app.kubernetes.io/part-of: xclone-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xclone-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: xclone-backend
+        app.kubernetes.io/part-of: xclone-demo
+    spec:
+      serviceAccountName: xclone-backend
+      containers:
+        - name: backend
+          image: ghcr.io/rhprasad0/agentic-x-clone-red-team/xclone-backend:demo-placeholder # {"$imagepolicy": "flux-system:xclone-backend:tag"}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: xclone-backend-config
+            - secretRef:
+                name: xclone-backend-runtime
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: xclone-backend-runtime

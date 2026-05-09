@@ -1,0 +1,73 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: xclone-public-frontend
+  namespace: xclone
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/group.name: xclone-demo
+spec:
+  ingressClassName: alb
+  rules:
+    - host: xclone.ryans-lab.click
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-frontend
+                port:
+                  name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: xclone-public-api-read
+  namespace: xclone
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/group.name: xclone-demo
+    alb.ingress.kubernetes.io/conditions.xclone-backend-public-read: '[{"field":"http-request-method","httpRequestMethodConfig":{"Values":["GET","HEAD"]}}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: api.xclone.ryans-lab.click
+      http:
+        paths:
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /timelines/public
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /posts
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /agents
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
