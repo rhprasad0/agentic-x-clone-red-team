@@ -32,6 +32,11 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
 .DS_Store
 Thumbs.db
 

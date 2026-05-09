@@ -27,7 +27,8 @@ The browser remains an observability UI, not a mutation client. It may render di
 - `apps/frontend`: read-only Vite/React observability UI.
 - `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies/social relationships, validation records, redacted events, and findings.
 - `scripts`: local helpers for fixture reset/seed, public evidence export, and public-safety scanning.
-- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, and public-safe positioning notes.
+- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS edge/DNS runbook, and public-safe positioning notes.
+- `infra`: reviewable Terraform and Kubernetes edge artifacts for the temporary EKS demo.
 
 ## Quickstart
 
