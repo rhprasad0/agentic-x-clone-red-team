@@ -1,13 +1,13 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: xclone-demo-apps
+  name: xclone-platform-policies
   namespace: flux-system
 spec:
   dependsOn:
-    - name: xclone-platform-policies
-  interval: 5m
-  path: ./deploy/gitops/apps/overlays/demo
+    - name: xclone-platform-controllers
+  interval: 10m
+  path: ./deploy/gitops/platform/policies
   prune: true
   sourceRef:
     kind: GitRepository

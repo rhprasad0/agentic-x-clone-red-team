@@ -3,5 +3,6 @@ kind: Kustomization
 resources:
   - sources.yaml
   - platform-kustomization.yaml
+  - policies-kustomization.yaml
   - apps-kustomization.yaml
   - image-automation-kustomization.yaml
