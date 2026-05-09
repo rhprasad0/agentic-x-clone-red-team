@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -80,3 +80,35 @@ jobs:
           build-args: ${{ matrix.build_args }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  update-gitops-image-tags:
+    name: Update GitOps image tags
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pin GitOps manifests to this commit image tag
+        run: |
+          python3 scripts/update_gitops_image_tags.py \
+            --repo-root . \
+            --repository "${{ github.repository }}" \
+            --commit-sha "${{ github.sha }}"
+
+      - name: Commit GitOps image tag update
+        run: |
+          if git diff --quiet -- deploy/gitops/apps/base; then
+            echo "GitOps image refs already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/gitops/apps/base/backend-deployment.yaml \
+            deploy/gitops/apps/base/frontend-deployment.yaml \
+            deploy/gitops/apps/base/runner-cronjob.yaml
+          git commit -m "ci: pin GitOps images to ${GITHUB_SHA::7} [skip ci]"
+          git push
