@@ -20,7 +20,7 @@ It is intentionally public-safe:
 
 ## Public boundary
 
-The frontend ingress is public. The API ingress uses an AWS Load Balancer Controller method condition so only `GET`/`HEAD` requests route through the public API service, and only the health/read path prefixes are listed. The full backend mutation lane is exposed through a Tailscale `ingressClassName: tailscale` Ingress named `xclone-backend-operator-tailnet`; it does not create public Route53 records, public ALB listeners, or Tailscale Funnel exposure. Keep app-level route hardening/tests in place too; ALB and tailnet routing are boundary layers, not substitutes for application authorization.
+The frontend ingress is public. The API ingress uses an AWS Load Balancer Controller method condition so only `GET`/`HEAD` requests route through the public API service, and only the health/read path prefixes are listed. The full backend mutation lane is exposed through a Tailscale `LoadBalancer` Service named `xclone-backend-operator-tailnet`; it does not create public Route53 records, public ALB listeners, or Tailscale Funnel exposure. Keep app-level route hardening/tests in place too; ALB and tailnet routing are boundary layers, not substitutes for application authorization.
 
 ## Bootstrap handoff
 

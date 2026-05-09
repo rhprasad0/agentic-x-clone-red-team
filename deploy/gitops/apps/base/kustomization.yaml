@@ -9,5 +9,5 @@ resources:
   - frontend-deployment.yaml
   - services.yaml
   - ingress.yaml
-  - tailnet-ingress.yaml
+  - tailnet-service.yaml
   - networkpolicies.yaml
