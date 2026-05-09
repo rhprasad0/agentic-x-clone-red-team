@@ -70,9 +70,9 @@ variable "node_instance_types" {
 }
 
 variable "node_desired_size" {
-  description = "Desired managed node count for the demo."
+  description = "Desired managed node count for the demo. Three t3.small nodes leave enough pod slots for Flux, Kyverno, CSI/ASCP, ALB controller, and the app workloads."
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "node_min_size" {
