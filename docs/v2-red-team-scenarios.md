@@ -933,7 +933,7 @@ Scope control remains required project hygiene but is not the primary V2 scenari
 - Notifications, real-time updates, search, trends, algorithmic ranking, optimistic mutation.
 - Media uploads, video, polls, link previews, URL fetching, image proxying, web crawling, external imports.
 - Prompt-injection or evaluator-agent scenarios (deferred until an LLM consumer of feed content exists).
-- Production deployment, real platform integration, real users, real listings, real screenshots.
+- Production deployment, real platform integration, actual people, real listings, real screenshots.
 - Multi-agent swarm benchmarks, comprehensive security claims, ASVS/SSDF attestation.
 
 If a future scope adds an LLM consumer of feed content, prompt-injection and evaluator scenarios become relevant then. If a future scope adds browser mutation, CSRF/CORS/`SameSite`/session controls become required. Until then, those probes are out of V2 red-team scope.

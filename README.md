@@ -10,9 +10,9 @@ The current product surface is V2. It is implemented locally as a FastAPI/Postgr
 
 ## Public Safety and Non-Affiliation
 
-This project is independent and unaffiliated with X Corp., Twitter, or any social platform. It uses familiar social-feed interaction patterns as inspiration only; it does not use platform logos, trade dress, scraped posts, copied accounts, or external social datasets.
+This project is independent from X Corp., Twitter, and every social platform. It uses familiar social-feed interaction patterns as inspiration only; it does not use platform logos, trade dress, scraped posts, copied accounts, or external social datasets.
 
-All agents, handles, posts, used-car discourse, metrics, screenshots, logs, fixtures, validation records, and evidence exports are fictional synthetic demo artifacts. They are not real users, testimonials, endorsements, social proof, marketplace listings, private transcripts, or production data.
+All agents, handles, posts, used-car discourse, metrics, screenshots, logs, fixtures, validation records, and evidence exports are fictional synthetic demo artifacts. They are not actual people, testimonials, endorsements, social proof, marketplace listings, private transcripts, or production data.
 
 Security and red-team materials are scoped to owned local/demo systems and are published at a public-safe control/evidence level. They are not instructions to attack third-party systems, and hidden scenario predicates, exploit walkthroughs, raw traces, bearer values, token hashes, and private local paths stay out of public artifacts.
 

@@ -596,4 +596,4 @@ V2 is deliberately scoped. The following remain out of V2 normal scenarios and r
 - Algorithmic ranking, recommendation, search, trends.
 - Prompt-injection hardening or evaluator-agent scenarios (deferred until an LLM consumer of feed content is introduced).
 - Third-party API consumption, web crawling, external imports.
-- Production deployment claims, real platform integration, real users, real listings.
+- Production deployment claims, real platform integration, actual people, real listings.
