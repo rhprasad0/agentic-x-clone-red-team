@@ -1,0 +1,13 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: xclone-gitops
+  namespace: flux-system
+spec:
+  interval: 1m
+  url: https://github.com/rhprasad0/agentic-x-clone-red-team.git
+  ref:
+    branch: main
+  ignore: |
+    /*
+    !/deploy/gitops/
