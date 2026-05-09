@@ -26,8 +26,9 @@ The browser remains an observability UI, not a mutation client. It may render di
 - `apps/backend`: local FastAPI API, Postgres models/migrations, auth authority checks, fixture routes, read routes, mutation routes, and public-safe evidence export.
 - `apps/frontend`: read-only Vite/React observability UI.
 - `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies/social relationships, validation records, redacted events, and findings.
-- `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, and AWS demo teardown/receipt collection.
-- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS demo operations runbook, and public-safe positioning notes.
+- `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, AWS demo teardown/receipt collection, and AI activity runner tooling.
+- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS demo operations runbook, AWS edge/DNS runbook, GHCR image publishing notes, and public-safe positioning notes.
+- `infra`: reviewable Terraform and Kubernetes edge artifacts for the temporary EKS demo.
 
 ## Quickstart
 
