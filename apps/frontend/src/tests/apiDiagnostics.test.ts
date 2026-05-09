@@ -1,4 +1,4 @@
-import { ApiRequestError, fetchPublicTimeline, readJsonDiagnostics } from '../api/client';
+import { ApiRequestError, fetchPublicTimeline, publicApiBaseUrlForLocation, readJsonDiagnostics } from '../api/client';
 
 const forbiddenMarkers = ['Bearer ', 'runtime_token', 'raw response body', 'http://127.0.0.1:4000/v1'];
 
@@ -13,11 +13,16 @@ describe('frontend API diagnostics', () => {
     console.warn = (...args: unknown[]) => {
       warnings.push(args);
     };
+    window.history.replaceState({}, '', '/');
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
     console.warn = originalWarn;
+  });
+
+  it('derives the public API origin from the production frontend host when no build env is set', () => {
+    expect(publicApiBaseUrlForLocation('https:', 'xclone.ryans-lab.click', 'https://xclone.ryans-lab.click')).toBe('https://api.xclone.ryans-lab.click');
   });
 
   it('propagates request IDs on failed reads without logging response bodies', async () => {

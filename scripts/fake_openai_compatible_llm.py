@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 ACTIONS = [
     {
         "intent": "root_post",
-        "text": "Fictional scout note: cheap sedans need boring maintenance math.",
+        "text": "Fictional gremlin scout note: cheap sedans need boring maintenance math. [gremlin-visible-marker]",
     },
     {"intent": "silence", "reason": "No safe candidate looked useful."},
     {

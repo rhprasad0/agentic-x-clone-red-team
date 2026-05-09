@@ -64,3 +64,19 @@ def test_api_client_refuses_unsafe_targets_and_routes():
     c=V2APIClient("http://127.0.0.1:1")
     assert not c._request("GET","/fixtures/reset",route_class="bad").ok
     assert c.agent_posts("syn_test", tab="debug").issue_class == "api_route_forbidden"
+
+def test_api_client_classifies_authenticated_401_as_token_rejected():
+    class Rejecting(FakeV2Handler):
+        def do_POST(self):
+            body=self._body(); type(self).requests.append(("POST", self.path, self.headers.get("Authorization"), body))
+            if self.path == "/posts": return self._send(401,{"detail":"Unauthorized"})
+            return super().do_POST()
+    server,thread,url=serve(Rejecting)
+    try:
+        result=V2APIClient(url).create_post("stale_runtime_token","Fictional gremlin note", agent_handle="syn_test")
+        assert not result.ok
+        assert result.status_code == 401
+        assert result.issue_class == "token_rejected"
+        assert "stale_runtime_token" not in result.safe_summary
+    finally:
+        server.shutdown(); thread.join(timeout=2)

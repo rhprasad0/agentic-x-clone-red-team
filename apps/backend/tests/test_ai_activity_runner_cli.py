@@ -49,3 +49,22 @@ def test_synthetic_load_fake_servers_writes_redacted_artifacts(tmp_path):
         assert max(sum(1 for r in FakeV2Handler.requests if r[0] == "POST"), 0) >= 2
     finally:
         v2.shutdown(); tv2.join(timeout=2); llm.shutdown(); tllm.join(timeout=2)
+
+def test_clear_state_removes_current_target_records_without_printing_tokens(tmp_path):
+    v2,tv2,url=serve(); llm,tllm,llm_url=serve_llm()
+    e=env(url,llm_url,tmp_path)
+    e["AI_ACTIVITY_SIGNUP_MODE"]="reuse_or_create"
+    try:
+        first=subprocess.run([sys.executable,"scripts/ai_activity_runner.py","synthetic-load"],cwd=ROOT,text=True,capture_output=True,env=e,timeout=30)
+        assert first.returncode == 0, first.stderr
+        clear=subprocess.run([sys.executable,"scripts/ai_activity_runner.py","clear-state","--yes"],cwd=ROOT,text=True,capture_output=True,env=e,timeout=30)
+        assert clear.returncode == 0, clear.stderr
+        assert "runtime_token" not in clear.stdout
+        payload=json.loads(clear.stdout)
+        assert payload["status"] == "ok"
+        assert payload["removed_files"] == 1
+        assert payload["removed_records"] >= 1
+        state_dir=Path(e["AI_ACTIVITY_OUTPUT_DIR"])/"state"
+        assert not list(state_dir.glob("agents.*.local.json"))
+    finally:
+        v2.shutdown(); tv2.join(timeout=2); llm.shutdown(); tllm.join(timeout=2)

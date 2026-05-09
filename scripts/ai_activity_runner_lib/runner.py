@@ -67,7 +67,8 @@ class SyntheticLoadRunner:
         deadline = time.monotonic() + self.config.max_wall_seconds
         steps = 0
         while steps < self.config.max_steps and time.monotonic() < deadline:
-            agent = agents[steps % len(agents)]
+            agent_index = steps % len(agents)
+            agent = agents[agent_index]
             bearer = registry.vault.get(agent.credential_ref)
             candidates = self._build_candidates(actor_handle=agent.handle)
             active = False
@@ -128,6 +129,19 @@ class SyntheticLoadRunner:
             else:
                 intent = plan.intent
                 result = self._execute_plan(bearer, agent.handle, plan)
+                if not result.ok and result.issue_class == "token_rejected":
+                    replacement = registry.replace_rejected_agent(agent)
+                    if replacement is not None:
+                        agents[agent_index] = replacement
+                        agent = replacement
+                        bearer = registry.vault.get(agent.credential_ref)
+                        self.created_agent_count = registry.created_count
+                        self.reused_agent_count = max(0, self.reused_agent_count - 1)
+                        self.logger.emit("token_rejected_recovered", phase="auth", outcome_class="success", step=steps, safe_synthetic_actor_id=agent.handle, route_class=plan.route_class)
+                        self.writer.safe_record_issue(severity="info", issue_class="token_rejected_recovered", component="agent_registry", agent_handle=agent.handle, route_class=plan.route_class, safe_message="stored token rejected; replacement synthetic agent created")
+                        result = self._execute_plan(bearer, agent.handle, plan)
+                    else:
+                        self.logger.emit("token_rejected_blocked", phase="auth", outcome_class="blocked", step=steps, safe_synthetic_actor_id=agent.handle, route_class=plan.route_class)
                 outcome = "ok" if result.ok else "failed"
                 status_code = result.status_code
                 self.logger.emit("action_executed", phase="action", outcome_class="success" if result.ok else "failure", step=steps, safe_synthetic_actor_id=agent.handle, intent=intent, route_class=plan.route_class, status_code=status_code, issue_class=result.issue_class)

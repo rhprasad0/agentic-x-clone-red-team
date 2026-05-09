@@ -22,6 +22,7 @@ from scripts.ai_activity_runner_lib.config import (
 )
 from scripts.ai_activity_runner_lib.llm_client import LLMBridgeError, LocalCodexBridgeClient
 from scripts.ai_activity_runner_lib.runner import SyntheticLoadRunner
+from scripts.ai_activity_runner_lib.state_store import LocalAgentStateStore
 
 __all__ = ["AIActivityConfig", "ConfigError", "LLMBridgeError", "LocalCodexBridgeClient", "DEFAULT_LLM_MODEL", "LOCAL_CODEX_BRIDGE", "main"]
 
@@ -57,6 +58,20 @@ def _run_synthetic_load() -> int:
     print(json.dumps({"status": result.status, "run_id": result.run_id, "steps": result.steps, "issues": result.issues, "actions": result.actions, "artifact_dir": ".hermes/tmp/ai-activity-runner/<run_id>"}, sort_keys=True))
     return 0 if result.status == "ok" else 1
 
+def _run_clear_state(*, yes: bool) -> int:
+    if not yes:
+        print("Refusing to clear local runner state without --yes.", file=sys.stderr)
+        return 2
+    try:
+        config = AIActivityConfig.from_env()
+    except ConfigError as exc:
+        print(f"Config validation failed: {exc}", file=sys.stderr)
+        return 2
+    store = LocalAgentStateStore(config.state_dir, target_fingerprint=config.state_target_fingerprint)
+    removed = store.clear()
+    print(json.dumps({"status": "ok", "target_class": config.redacted_summary()["api_target_class"], "target_fingerprint": config.state_target_fingerprint, **removed}, sort_keys=True))
+    return 0
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="V2 AI activity runner")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -64,10 +79,13 @@ def main(argv: list[str] | None = None) -> int:
     subparsers.add_parser("llm-smoke", help="Opt-in live smoke for the local Codex bridge")
     subparsers.add_parser("synthetic-load", help="Run bounded synthetic social activity")
     subparsers.add_parser("fake-llm-server", help="Run a fake OpenAI-compatible LLM endpoint")
+    clear_state = subparsers.add_parser("clear-state", help="Delete ignored local reusable bot state for the configured API target")
+    clear_state.add_argument("--yes", action="store_true", help="Confirm deletion of local ignored runner state")
     args = parser.parse_args(argv)
     if args.command == "validate-config": return _run_validate_config()
     if args.command == "llm-smoke": return _run_llm_smoke()
     if args.command == "synthetic-load": return _run_synthetic_load()
+    if args.command == "clear-state": return _run_clear_state(yes=args.yes)
     if args.command == "fake-llm-server":
         from scripts.fake_openai_compatible_llm import main as fake_main
         return fake_main([])

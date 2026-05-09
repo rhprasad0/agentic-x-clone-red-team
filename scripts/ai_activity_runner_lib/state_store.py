@@ -79,6 +79,24 @@ class LocalAgentStateStore:
         except OSError:
             pass
 
+    def clear(self) -> dict[str, int]:
+        state = self.load()
+        removed_records = len(state.agents)
+        removed_files = 0
+        try:
+            self.path.unlink()
+            removed_files = 1
+        except FileNotFoundError:
+            pass
+        return {"removed_files": removed_files, "removed_records": removed_records}
+
+    def remove_handles(self, handles: set[str]) -> tuple[list[dict[str, Any]], int]:
+        state = self.load()
+        kept = [record for record in state.agents if str(record.get("handle")) not in handles]
+        removed = len(state.agents) - len(kept)
+        self.save(kept, rotation_cursor=0)
+        return kept, removed
+
     @staticmethod
     def select_rotating(records: list[dict[str, Any]], *, count: int, rotation: bool, cursor: int = 0) -> list[dict[str, Any]]:
         if len(records) <= count or not rotation:

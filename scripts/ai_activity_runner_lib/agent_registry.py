@@ -195,3 +195,17 @@ class AgentRegistry:
         self.agents = [self._identity_from_record(record) for record in selected_records]
         self.reused_count = len(self.agents) - self.created_count
         return self.agents
+
+    def replace_rejected_agent(self, agent: AgentIdentity) -> AgentIdentity | None:
+        if not self.config or self.config.signup_mode != "reuse_or_create":
+            self.issues.append({"issue_class": "token_rejected_blocked", "safe_message": "stored token rejected and signup mode does not permit replacement"})
+            return None
+        store = LocalAgentStateStore(self.config.state_dir, target_fingerprint=self.config.state_target_fingerprint)
+        records, _removed = store.remove_handles({agent.handle})
+        seen = {str(record.get("handle")) for record in records}
+        replacement, token = self._signup_one(len(records), seen)
+        records.append(self._record_from_identity(replacement, token))
+        store.save(records, rotation_cursor=0)
+        self.created_count += 1
+        self.issues.append({"issue_class": "token_rejected_recovered", "safe_message": "stored token rejected; replacement synthetic agent created"})
+        return replacement

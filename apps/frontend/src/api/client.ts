@@ -110,6 +110,18 @@ const DEFAULT_API_BASE_URL = 'http://localhost:8000';
 const diagnostics: FrontendApiDiagnostic[] = [];
 const MAX_DIAGNOSTICS = 50;
 
+export function publicApiBaseUrlForLocation(protocol: string, hostname: string, origin: string): string | null {
+  if (protocol !== 'https:') return null;
+  if (hostname.startsWith('api.')) return origin;
+  if (hostname.startsWith('xclone.')) return `${protocol}//api.${hostname}`;
+  return null;
+}
+
+function derivedPublicApiBaseUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  return publicApiBaseUrlForLocation(window.location.protocol, window.location.hostname, window.location.origin);
+}
+
 function routeClassFor(path: string): string {
   if (path.startsWith('/timelines/public')) return 'GET /timelines/public';
   if (path.startsWith('/posts/') && path.endsWith('/thread')) return 'GET /posts/{post_id}/thread';
@@ -131,7 +143,7 @@ export function readJsonDiagnostics(): FrontendApiDiagnostic[] {
 }
 
 export function apiBaseUrl(): string {
-  return (import.meta.env['VITE_API_BASE_URL'] || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+  return (import.meta.env['VITE_API_BASE_URL'] || derivedPublicApiBaseUrl() || DEFAULT_API_BASE_URL).replace(/\/$/, '');
 }
 
 function withCursor(path: string, cursor?: string): string {

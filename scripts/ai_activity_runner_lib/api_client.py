@@ -74,8 +74,10 @@ class V2APIClient:
             except urllib.error.HTTPError as exc:
                 retry_after = exc.headers.get("Retry-After")
                 body_text = exc.read().decode("utf-8", errors="replace")
-                last = APIResult(False, route_class, exc.code, issue_class="api_http_error", safe_summary=safe_summary(body_text), client_request_id=client_request_id)
-                self._emit("api_request_completed", method=method, route_class=route_class, outcome_class="failure", status_code=exc.code, issue_class="api_http_error", api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id, safe_message=body_text)
+                issue_class = "token_rejected" if bearer and exc.code in {401, 403} else "api_http_error"
+                summary = "bearer token rejected by backend" if issue_class == "token_rejected" else safe_summary(body_text)
+                last = APIResult(False, route_class, exc.code, issue_class=issue_class, safe_summary=summary, client_request_id=client_request_id)
+                self._emit("api_request_completed", method=method, route_class=route_class, outcome_class="failure", status_code=exc.code, issue_class=issue_class, api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id, safe_message=summary)
                 if exc.code not in {429, 500, 502, 503, 504} or not (retryable or method in {"GET", "DELETE"}):
                     return last
                 if retry_after:

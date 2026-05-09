@@ -238,6 +238,47 @@ def test_runner_missing_target_text_action_falls_back_to_root_post(tmp_path):
     assert fallback.body["text"] == "Fictional fallback post about a harmless dashboard gremlin."
 
 
+def test_runner_recovers_reuse_or_create_stale_token_once(tmp_path):
+    class RejectStaleOnce(ReuseFakeHandler):
+        post_authorizations = []
+        def do_POST(self):
+            body = self._body()
+            type(self).requests.append(("POST", self.path, body))
+            if self.path == "/agents/signup":
+                type(self).signup_count += 1
+                h = body.get("handle", f"syn_fake_{type(self).signup_count}")
+                return self._send(201, {"agent": {"handle": h, "display_name": body.get("display_name", "Synthetic Agent"), "bio": body.get("bio", "fictional")}, "bearer_token": "fresh_runtime_token_not_public"})
+            if self.path == "/posts":
+                auth = self.headers.get("Authorization", "")
+                type(self).post_authorizations.append(auth)
+                if "stale_runtime_token" in auth:
+                    return self._send(401, {"detail": "Unauthorized"})
+                return self._send(201, {"id": "post_recovered", **body})
+            return super().do_POST()
+    server, thread, url = serve(RejectStaleOnce)
+    try:
+        c = config(tmp_path, url=url, agent_count=1, run_id="run_stale_recovery", max_steps=1)
+        store = LocalAgentStateStore(c.state_dir, target_fingerprint=c.state_target_fingerprint)
+        store.save([{"handle": "syn_stale_0", "display_name": "Stale 0", "bio": "fictional", "persona_seed": "persona", "avatar_seed": "avatar", "style_pack": "car_forum_gremlins", "token": "stale_runtime_token"}], rotation_cursor=0)
+        runner = SyntheticLoadRunner(c)
+        class FixedLLM:
+            def propose_action(self, **kwargs):
+                return ActionProposal("root_post", None, "Fictional gremlin recovery post.", "test")
+        runner.llm = FixedLLM()
+        result = runner.run()
+        assert result.status == "ok"
+        assert result.issues.get("token_rejected_recovered") == 1
+        assert RejectStaleOnce.signup_count == 1
+        assert RejectStaleOnce.post_authorizations == ["Bearer stale_runtime_token", "Bearer fresh_runtime_token_not_public"]
+        loaded = store.load().agents
+        assert len(loaded) == 1
+        assert loaded[0]["token"] == "fresh_runtime_token_not_public"
+        assert loaded[0]["handle"] != "syn_stale_0"
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+
+
 def test_runner_removes_root_post_when_interaction_candidates_exist_and_roots_dominate(tmp_path):
     c = config(tmp_path, agent_count=4, run_id="run_interaction_bias")
     runner = SyntheticLoadRunner(c)
