@@ -6,7 +6,7 @@ This is a public-safe operator runbook for the temporary x-clone EKS demo edge. 
 
 - Frontend: `https://xclone.ryans-lab.click`
 - API: `https://api.xclone.ryans-lab.click`
-- Controller: AWS Load Balancer Controller installed through Terraform-managed Helm release.
+- Controller: AWS Load Balancer Controller installed through Terraform-managed Helm release, with the cluster VPC ID passed explicitly so nodes with restricted IMDS do not break controller startup.
 - TLS: regional ACM public certificate with DNS validation records in Route53.
 - DNS: Terraform-owned Route53 alias records after the Kubernetes Ingress creates an ALB.
 - Kubernetes ingress class: `alb`.

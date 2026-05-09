@@ -69,6 +69,13 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = var.aws_region
   }
 
+  # Required when node IMDS is restricted: avoid controller startup
+  # failures while discovering the cluster VPC from instance metadata.
+  set {
+    name  = "vpcId"
+    value = data.aws_eks_cluster.this.vpc_config[0].vpc_id
+  }
+
   set {
     name  = "serviceAccount.create"
     value = "true"
