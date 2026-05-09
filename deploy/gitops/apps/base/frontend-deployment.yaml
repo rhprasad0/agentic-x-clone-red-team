@@ -20,7 +20,7 @@ spec:
       serviceAccountName: xclone-frontend
       containers:
         - name: frontend
-          image: ghcr.io/rhprasad0/agentic-x-clone-red-team/frontend:sha-8bca5fe # {"$imagepolicy": "flux-system:xclone-frontend:tag"}
+          image: ghcr.io/rhprasad0/agentic-x-clone-red-team/frontend:sha-a3d9236 # {"$imagepolicy": "flux-system:xclone-frontend:tag"}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
