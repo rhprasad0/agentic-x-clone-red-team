@@ -40,6 +40,11 @@ output "external_secrets_role_arn" {
   value       = aws_iam_role.external_secrets.arn
 }
 
+output "backend_secrets_read_role_arn" {
+  description = "IRSA role ARN for xclone/xclone-backend runtime secret reads."
+  value       = aws_iam_role.backend_secrets_read.arn
+}
+
 output "rds_endpoint" {
   description = "Private RDS endpoint for app secret creation."
   value       = try(aws_db_instance.postgres[0].endpoint, null)

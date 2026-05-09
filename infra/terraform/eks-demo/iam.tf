@@ -194,6 +194,77 @@ resource "aws_iam_role_policy_attachment" "aws_lb_controller" {
   policy_arn = aws_iam_policy.aws_lb_controller.arn
 }
 
+data "aws_secretsmanager_secret" "backend_database_url" {
+  name = "/xclone/demo/database-url"
+}
+
+data "aws_secretsmanager_secret" "backend_cursor_signing_key" {
+  name = "/xclone/demo/cursor-signing-key"
+}
+
+data "aws_iam_policy_document" "backend_secrets_read_assume_role" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRole",
+      "sts:TagSession",
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["pods.eks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "backend_secrets_read" {
+  name               = "${local.name_prefix}-backend-secrets-read"
+  assume_role_policy = data.aws_iam_policy_document.backend_secrets_read_assume_role.json
+
+  tags = {
+    Name = "${local.name_prefix}-backend-secrets-read"
+  }
+}
+
+resource "aws_iam_policy" "backend_secrets_read" {
+  name        = "${local.name_prefix}-backend-secrets-read"
+  description = "Read only the two runtime Secrets Manager entries for xclone/xclone-backend via EKS Pod Identity."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          data.aws_secretsmanager_secret.backend_database_url.arn,
+          data.aws_secretsmanager_secret.backend_cursor_signing_key.arn,
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-backend-secrets-read"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "backend_secrets_read" {
+  role       = aws_iam_role.backend_secrets_read.name
+  policy_arn = aws_iam_policy.backend_secrets_read.arn
+}
+
+resource "aws_eks_pod_identity_association" "backend_secrets_read" {
+  cluster_name    = aws_eks_cluster.main.name
+  namespace       = "xclone"
+  service_account = "xclone-backend"
+  role_arn        = aws_iam_role.backend_secrets_read.arn
+}
+
 data "aws_iam_policy_document" "external_secrets_assume_role" {
   statement {
     effect  = "Allow"
@@ -253,4 +324,68 @@ resource "aws_iam_policy" "external_secrets" {
 resource "aws_iam_role_policy_attachment" "external_secrets" {
   role       = aws_iam_role.external_secrets.name
   policy_arn = aws_iam_policy.external_secrets.arn
+}
+
+data "aws_iam_policy_document" "backend_secrets_assume_role" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.eks.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider_host}:aud"
+      values   = ["sts.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${local.oidc_provider_host}:sub"
+      values   = ["system:serviceaccount:xclone:xclone-backend"]
+    }
+  }
+}
+
+resource "aws_iam_role" "backend_secrets_read" {
+  name               = "${local.name_prefix}-backend-secrets-read"
+  assume_role_policy = data.aws_iam_policy_document.backend_secrets_assume_role.json
+
+  tags = {
+    Name = "${local.name_prefix}-backend-secrets-read"
+  }
+}
+
+resource "aws_iam_policy" "backend_secrets_read" {
+  name        = "${local.name_prefix}-backend-secrets-read"
+  description = "Read only the two x-clone demo runtime secrets for the backend ServiceAccount."
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:/xclone/demo/database-url-*",
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:/xclone/demo/cursor-signing-key-*"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-backend-secrets-read"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "backend_secrets_read" {
+  role       = aws_iam_role.backend_secrets_read.name
+  policy_arn = aws_iam_policy.backend_secrets_read.arn
 }

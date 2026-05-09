@@ -23,7 +23,7 @@ The frontend ingress is public. The API ingress uses an AWS Load Balancer Contro
 
 ## Bootstrap handoff
 
-Terraform should create the EKS cluster, OIDC provider, IRSA roles, ACM certificate, Route53 zone lookups, RDS, Secrets Manager records, VPC CNI network-policy configuration, and the AWS Load Balancer Controller IAM role before Flux reconciles these manifests.
+Terraform should create the EKS cluster, OIDC provider, IRSA/Pod Identity roles, ACM certificate, Route53 zone lookups, RDS, Secrets Manager records, VPC CNI network-policy configuration, and the AWS Load Balancer Controller IAM role before Flux reconciles these manifests. The backend runtime secret path intentionally uses EKS Pod Identity for `xclone/xclone-backend`; the `SecretProviderClass` sets `usePodIdentity: "true"` and syncs mounted values into the `xclone-backend-runtime` Kubernetes Secret so the current backend can keep using `envFrom`. That sync means the values materialize as Kubernetes Secret data and environment variables after a pod mounts the CSI volume; file-only CSI mounts should replace this once the backend supports file reads.
 
 A future live bootstrap can point Flux at this repository path:
 
