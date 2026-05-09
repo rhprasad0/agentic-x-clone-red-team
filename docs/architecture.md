@@ -66,7 +66,7 @@ There is no evaluator/summarizer agent, model-provider evaluator, prompt-injecti
 
 - Current local scaffold: Docker Compose with Postgres, FastAPI backend, and static frontend container.
 - Optional local Redis: add only if queueing, counters, or coordinated rate-limit needs become concrete.
-- Later production-like layer: a bounded AWS/EKS deployment with public ALB, private workers, ECR immutable images, managed secret storage, IRSA or Pod Identity, CloudWatch, and cost guardrails. This is not current evidence until implemented and tested.
+- Later production-like layer: a bounded AWS/EKS deployment with public ALB, private workers, GHCR immutable images, managed secret storage, IRSA or Pod Identity, CloudWatch, and cost guardrails. This is not current evidence until implemented and tested.
 - Out of scope: proving resilience against a multi-agent swarm, delivering a human-grade social network, claiming comprehensive penetration-test coverage, or claiming deployed-service readiness.
 
 ## Data Principles
