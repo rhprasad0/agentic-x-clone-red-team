@@ -85,15 +85,50 @@ export type AgentFeedKind = 'posts' | 'replies' | 'likes' | 'reposts';
 
 export class ApiRequestError extends Error {
   status: number;
+  requestId: string;
+  routeClass: string;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, requestId = 'none', routeClass = 'unknown') {
     super(message);
     this.name = 'ApiRequestError';
     this.status = status;
+    this.requestId = requestId;
+    this.routeClass = routeClass;
   }
 }
 
+type FrontendApiDiagnostic = {
+  event_class: 'frontend_api_read_failed';
+  outcome_class: 'client_error' | 'server_error' | 'network_error';
+  route_class: string;
+  status_code?: number;
+  request_id: string;
+  redaction_status: 'redacted';
+};
+
 const DEFAULT_API_BASE_URL = 'http://localhost:8000';
+const diagnostics: FrontendApiDiagnostic[] = [];
+const MAX_DIAGNOSTICS = 50;
+
+function routeClassFor(path: string): string {
+  if (path.startsWith('/timelines/public')) return 'GET /timelines/public';
+  if (path.startsWith('/posts/') && path.endsWith('/thread')) return 'GET /posts/{post_id}/thread';
+  if (/^\/agents\/[^/]+\/(posts|replies|likes|reposts)/.test(path)) {
+    return `GET /agents/{handle}/${path.split('/')[3]}`;
+  }
+  if (path.startsWith('/agents/')) return 'GET /agents/{handle}';
+  return 'GET unknown';
+}
+
+function recordDiagnostic(diagnostic: FrontendApiDiagnostic): void {
+  diagnostics.push(diagnostic);
+  diagnostics.splice(0, Math.max(0, diagnostics.length - MAX_DIAGNOSTICS));
+  console.warn('frontend_api_read_failed', diagnostic);
+}
+
+export function readJsonDiagnostics(): FrontendApiDiagnostic[] {
+  return [...diagnostics];
+}
 
 export function apiBaseUrl(): string {
   return (import.meta.env['VITE_API_BASE_URL'] || DEFAULT_API_BASE_URL).replace(/\/$/, '');
@@ -109,12 +144,36 @@ function withCursor(path: string, cursor?: string): string {
 }
 
 async function readJson<T>(path: string): Promise<T> {
-  const response = await fetch(`${apiBaseUrl()}${path}`, { method: 'GET' });
-  if (!response.ok) {
-    throw new ApiRequestError(`Read request failed with ${response.status}`, response.status);
-  }
+  const routeClass = routeClassFor(path);
+  try {
+    const response = await fetch(`${apiBaseUrl()}${path}`, { method: 'GET' });
+    if (!response.ok) {
+      const requestId = response.headers.get('X-Request-ID') || 'none';
+      recordDiagnostic({
+        event_class: 'frontend_api_read_failed',
+        outcome_class: response.status >= 500 ? 'server_error' : 'client_error',
+        route_class: routeClass,
+        status_code: response.status,
+        request_id: requestId,
+        redaction_status: 'redacted',
+      });
+      throw new ApiRequestError(`Read request failed with ${response.status}`, response.status, requestId, routeClass);
+    }
 
-  return response.json() as Promise<T>;
+    return response.json() as Promise<T>;
+  } catch (error) {
+    if (error instanceof ApiRequestError) {
+      throw error;
+    }
+    recordDiagnostic({
+      event_class: 'frontend_api_read_failed',
+      outcome_class: 'network_error',
+      route_class: routeClass,
+      request_id: 'none',
+      redaction_status: 'redacted',
+    });
+    throw new ApiRequestError('Read request failed with network error', 0, 'none', routeClass);
+  }
 }
 
 export function fetchPublicTimeline(cursor?: string): Promise<ListEnvelope<TimelineItem>> {

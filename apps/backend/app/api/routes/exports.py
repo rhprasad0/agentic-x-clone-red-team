@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_harness_authority
 from app.api.dto import export_dto
 from app.core.auth import ActorContext
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import emit_security_event, v2_route_metadata
 from app.services.authorization import export_invocation
 from app.services.evidence_exports import (
@@ -58,5 +59,18 @@ def export_public_evidence(
         status_code=200,
         outcome_class="success",
         actor=actor,
+    )
+    emit_operational_event(
+        http_request,
+        event_class="export_write",
+        outcome_class="success",
+        actor=actor,
+        status_code=200,
+        artifact_path_class="public_evidence_export",
+        item_count=(
+            len(response_json.get("validation_runs", []))
+            if isinstance(response_json, dict)
+            else 0
+        ),
     )
     return response_json

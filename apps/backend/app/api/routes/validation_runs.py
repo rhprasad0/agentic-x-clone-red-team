@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db_session, require_harness_authority
 from app.api.dto import finding_dto, validation_event_dto, validation_run_dto
 from app.core.auth import ActorContext
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import emit_security_event, v2_route_metadata
 from app.models.finding import Finding
 from app.models.validation_event import ValidationEvent
@@ -92,6 +93,15 @@ def _create_validation_run(
         outcome_class="success",
         actor=actor,
     )
+    emit_operational_event(
+        request,
+        event_class="validation_write",
+        outcome_class="success",
+        actor=actor,
+        status_code=status.HTTP_201_CREATED,
+        artifact_path_class="validation_run",
+        created_count=1,
+    )
     return validation_run_dto(run)
 
 
@@ -138,6 +148,15 @@ def _create_validation_event(
         status_code=status.HTTP_201_CREATED,
         outcome_class="success",
         actor=actor,
+    )
+    emit_operational_event(
+        request,
+        event_class="validation_write",
+        outcome_class="success",
+        actor=actor,
+        status_code=status.HTTP_201_CREATED,
+        artifact_path_class="validation_event",
+        created_count=1,
     )
     return validation_event_dto(event)
 
@@ -187,6 +206,15 @@ def _create_validation_finding(
         status_code=status.HTTP_201_CREATED,
         outcome_class="success",
         actor=actor,
+    )
+    emit_operational_event(
+        request,
+        event_class="validation_write",
+        outcome_class="success",
+        actor=actor,
+        status_code=status.HTTP_201_CREATED,
+        artifact_path_class="finding",
+        created_count=1,
     )
     return finding_dto(finding)
 

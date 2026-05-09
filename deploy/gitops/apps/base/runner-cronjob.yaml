@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: xclone-synthetic-runner
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-synthetic-runner
+    app.kubernetes.io/part-of: xclone-demo
+spec:
+  schedule: "0 15 * * *"
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: xclone-synthetic-runner
+            app.kubernetes.io/part-of: xclone-demo
+        spec:
+          restartPolicy: Never
+          serviceAccountName: xclone-runner
+          containers:
+            - name: runner
+              image: ghcr.io/rhprasad0/agentic-x-clone-red-team/xclone-runner:demo-placeholder # {"$imagepolicy": "flux-system:xclone-runner:tag"}
+              imagePullPolicy: IfNotPresent
+              command: ["python", "scripts/ai_activity_runner.py", "run"]
+              envFrom:
+                - configMapRef:
+                    name: xclone-runner-config
+                - secretRef:
+                    name: xclone-runner-runtime
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
+              volumeMounts:
+                - name: runner-state
+                  mountPath: /workspace/.hermes/tmp/ai-activity-runner
+          volumes:
+            - name: runner-state
+              emptyDir: {}

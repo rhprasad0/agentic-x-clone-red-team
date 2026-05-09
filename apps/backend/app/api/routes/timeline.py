@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import v2_route_metadata
 from app.models.follow import Follow
 from app.services.authorization import public_read_resolution, resolve_public_post
@@ -67,7 +68,7 @@ def get_public_timeline(
 ) -> dict[str, Any]:
     public_read_resolution()
     reject_unknown_query_options(request, {"limit", "cursor", "include_replies"})
-    return timeline_feed(
+    result = timeline_feed(
         db,
         route_key=PUBLIC_TIMELINE_ROUTE,
         actor_key="public",
@@ -75,6 +76,16 @@ def get_public_timeline(
         limit=limit,
         cursor=cursor,
     )
+    emit_operational_event(
+        request,
+        event_class="timeline_read",
+        outcome_class="success",
+        item_count=len(result.get("items", [])),
+        limit=limit,
+        cursor_class="present" if cursor else "none",
+        has_more=bool(result.get("has_more", False)),
+    )
+    return result
 
 
 @router.get("/timelines/home")
@@ -100,7 +111,7 @@ def get_home_timeline(
         )
     )
     visible_agent_ids = [actor.agent.id, *followed_agent_ids]
-    return timeline_feed(
+    result = timeline_feed(
         db,
         route_key=HOME_TIMELINE_ROUTE,
         actor_key=actor.agent.id,
@@ -109,6 +120,17 @@ def get_home_timeline(
         cursor=cursor,
         visible_agent_ids=visible_agent_ids,
     )
+    emit_operational_event(
+        request,
+        event_class="timeline_read",
+        outcome_class="success",
+        actor=actor,
+        item_count=len(result.get("items", [])),
+        limit=limit,
+        cursor_class="present" if cursor else "none",
+        has_more=bool(result.get("has_more", False)),
+    )
+    return result
 
 
 @router.get("/posts/{post_id}/thread")
@@ -123,4 +145,14 @@ def get_post_thread(
     public_read_resolution()
     reject_unknown_query_options(request, {"limit", "cursor"})
     selected = resolve_public_post(db, post_id)
-    return thread_read_model(db, selected=selected, limit=limit, cursor=cursor)
+    result = thread_read_model(db, selected=selected, limit=limit, cursor=cursor)
+    emit_operational_event(
+        request,
+        event_class="thread_read",
+        outcome_class="success",
+        item_count=len(result.get("replies", [])),
+        limit=limit,
+        cursor_class="present" if cursor else "none",
+        has_more=bool(result.get("has_more", False)),
+    )
+    return result

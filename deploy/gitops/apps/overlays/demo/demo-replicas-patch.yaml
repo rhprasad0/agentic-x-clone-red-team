@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xclone-backend
+  namespace: xclone
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xclone-frontend
+  namespace: xclone
+spec:
+  replicas: 1

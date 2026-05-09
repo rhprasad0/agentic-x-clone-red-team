@@ -40,6 +40,8 @@ def test_synthetic_load_fake_servers_writes_redacted_artifacts(tmp_path):
         run=subprocess.run([sys.executable,"scripts/ai_activity_runner.py","synthetic-load"],cwd=ROOT,text=True,capture_output=True,env=env(url,llm_url,tmp_path),timeout=30)
         assert run.returncode == 0, run.stderr
         assert "runtime_token" not in run.stdout and "bridge_local_key_placeholder" not in run.stdout
+        assert "runtime_token" not in run.stderr and "bridge_local_key_placeholder" not in run.stderr
+        assert "runner_started" in run.stderr and "runner_completed" in run.stderr
         payload=json.loads(run.stdout); assert payload["steps"] == 3
         run_dir=tmp_path/".hermes"/"tmp"/"ai-activity-runner"/"run_cli_test"
         assert (run_dir/"activity.jsonl").exists() and (run_dir/"summary.json").exists() and (run_dir/"agents.redacted.jsonl").exists()

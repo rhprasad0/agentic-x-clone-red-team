@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .config import _validate_http_url
+from .operational_logging import RunnerOperationalLogger
 from .redaction import safe_summary
 
 READ_TIMEOUT = 30
@@ -27,15 +28,21 @@ class APIResult:
 
 
 class V2APIClient:
-    def __init__(self, base_url: str, *, timeout: float = READ_TIMEOUT, per_agent_retry_budget: int = 2) -> None:
+    def __init__(self, base_url: str, *, timeout: float = READ_TIMEOUT, per_agent_retry_budget: int = 2, logger: RunnerOperationalLogger | None = None) -> None:
         _validate_http_url(base_url, label="API")
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.per_agent_retry_budget = per_agent_retry_budget
         self.retry_spent: dict[str, int] = {}
+        self.logger = logger
+
+    def _emit(self, event_class: str, **fields: object) -> None:
+        if self.logger is not None:
+            self.logger.emit(event_class, **fields)
 
     def _request(self, method: str, path: str, *, bearer: str | None = None, body: dict[str, Any] | None = None, route_class: str, retryable: bool = False, agent_handle: str | None = None) -> APIResult:
         if not path.startswith("/") or any(blocked in path for blocked in ("fixture", "reset", "validation", "finding", "export", "debug", "harness")):
+            self._emit("api_request_blocked", method=method, route_class=route_class, outcome_class="blocked", issue_class="api_route_forbidden", safe_synthetic_actor_id=agent_handle)
             return APIResult(False, route_class, issue_class="api_route_forbidden", safe_summary="route refused")
         if method == "POST" and retryable and body is not None and "client_request_id" not in body:
             body = {**body, "client_request_id": str(uuid.uuid4())}
@@ -47,7 +54,10 @@ class V2APIClient:
                 key = agent_handle or "global"
                 self.retry_spent[key] = self.retry_spent.get(key, 0) + 1
                 if self.retry_spent[key] > self.per_agent_retry_budget:
+                    self._emit("api_retry_exhausted", method=method, route_class=route_class, outcome_class="failure", api_retry_count=self.retry_spent[key], safe_synthetic_actor_id=agent_handle)
                     break
+                self._emit("api_retry", method=method, route_class=route_class, outcome_class="retry", api_retry_count=self.retry_spent[key], safe_synthetic_actor_id=agent_handle)
+            self._emit("api_request_attempt", method=method, route_class=route_class, outcome_class="attempt", api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id)
             try:
                 req_body = json.dumps(body).encode("utf-8") if body is not None else None
                 headers = {"Accept": "application/json"}
@@ -59,11 +69,13 @@ class V2APIClient:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     raw = response.read().decode("utf-8")
                     data = json.loads(raw) if raw else None
+                    self._emit("api_request_completed", method=method, route_class=route_class, outcome_class="success", status_code=response.status, api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id)
                     return APIResult(True, route_class, response.status, data, client_request_id=client_request_id, safe_summary="ok")
             except urllib.error.HTTPError as exc:
                 retry_after = exc.headers.get("Retry-After")
                 body_text = exc.read().decode("utf-8", errors="replace")
                 last = APIResult(False, route_class, exc.code, issue_class="api_http_error", safe_summary=safe_summary(body_text), client_request_id=client_request_id)
+                self._emit("api_request_completed", method=method, route_class=route_class, outcome_class="failure", status_code=exc.code, issue_class="api_http_error", api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id, safe_message=body_text)
                 if exc.code not in {429, 500, 502, 503, 504} or not (retryable or method in {"GET", "DELETE"}):
                     return last
                 if retry_after:
@@ -72,7 +84,9 @@ class V2APIClient:
                     except ValueError:
                         pass
             except (OSError, json.JSONDecodeError) as exc:
-                last = APIResult(False, route_class, issue_class="api_contract_mismatch" if isinstance(exc, json.JSONDecodeError) else "api_network_error", safe_summary=safe_summary(str(exc)), client_request_id=client_request_id)
+                issue_class = "api_contract_mismatch" if isinstance(exc, json.JSONDecodeError) else "api_network_error"
+                last = APIResult(False, route_class, issue_class=issue_class, safe_summary=safe_summary(str(exc)), client_request_id=client_request_id)
+                self._emit("api_request_completed", method=method, route_class=route_class, outcome_class="failure", issue_class=issue_class, api_retry_count=attempt, safe_synthetic_actor_id=agent_handle, request_id=client_request_id, safe_message=str(exc))
                 if not (retryable or method in {"GET", "DELETE"}):
                     return last
         return last or APIResult(False, route_class, issue_class="api_http_error", safe_summary="retry budget exhausted", client_request_id=client_request_id)

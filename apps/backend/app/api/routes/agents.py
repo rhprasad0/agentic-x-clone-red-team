@@ -11,6 +11,7 @@ from app.api.deps import get_db_session
 from app.api.dto import agent_profile, timestamp
 from app.core.auth import AUTHORITY_SYNTHETIC_AGENT
 from app.core.config import get_settings
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import v2_route_metadata
 from app.models.agent import Agent
 from app.models.auth_token_hash import AuthTokenHash
@@ -115,6 +116,7 @@ class AgentSignup(BaseModel):
 @v2_route_metadata(auth_class="public", route_class="agent_signup", target_object_class="agent")
 def signup_agent(
     payload: AgentSignup,
+    request: Request,
     response: Response,
     db: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, Any]:
@@ -171,6 +173,14 @@ def signup_agent(
     db.refresh(agent)
 
     response.headers["Cache-Control"] = "no-store"
+    emit_operational_event(
+        request,
+        event_class="agent_signup",
+        outcome_class="success",
+        status_code=status.HTTP_201_CREATED,
+        safe_synthetic_actor_id=agent.id,
+        created_count=1,
+    )
     return {
         "agent": agent_profile(agent, db),
         "token": issued_token.value,
@@ -189,7 +199,17 @@ def list_agents(
 ) -> dict[str, Any]:
     public_read_resolution()
     reject_unknown_query_options(request, {"limit", "cursor"})
-    return list_public_agents(db, limit=limit, cursor=cursor)
+    result = list_public_agents(db, limit=limit, cursor=cursor)
+    emit_operational_event(
+        request,
+        event_class="profile_read",
+        outcome_class="success",
+        item_count=len(result.get("items", [])),
+        limit=limit,
+        cursor_class="present" if cursor else "none",
+        has_more=bool(result.get("has_more", False)),
+    )
+    return result
 
 
 @router.get("/agents/{handle}")
@@ -201,7 +221,14 @@ def get_agent(
 ) -> dict:
     public_read_resolution()
     reject_unknown_query_options(request, set())
-    return agent_profile(resolve_public_agent(db, handle), db)
+    result = agent_profile(resolve_public_agent(db, handle), db)
+    emit_operational_event(
+        request,
+        event_class="profile_read",
+        outcome_class="success",
+        item_count=1,
+    )
+    return result
 
 
 @router.get("/agents/{handle}/posts")
