@@ -91,5 +91,45 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = aws_iam_role.aws_load_balancer_controller.arn
   }
 
+  set {
+    name  = "ingressClassParams.create"
+    value = "true"
+  }
+
+  set {
+    name  = "ingressClassParams.name"
+    value = "alb"
+  }
+
+  set {
+    name  = "ingressClassParams.spec.group.name"
+    value = "xclone-public"
+  }
+
+  set {
+    name  = "ingressClassParams.spec.namespaceSelector.matchLabels.kubernetes\\.io/metadata\\.name"
+    value = "xclone"
+  }
+
+  set {
+    name  = "ingressClassParams.spec.scheme"
+    value = "internet-facing"
+  }
+
+  set {
+    name  = "ingressClassParams.spec.targetType"
+    value = "ip"
+  }
+
+  set {
+    name  = "ingressClassConfig.default"
+    value = "false"
+  }
+
+  set {
+    name  = "disableIngressGroupNameAnnotation"
+    value = "true"
+  }
+
   depends_on = [aws_iam_role_policy_attachment.aws_load_balancer_controller]
 }

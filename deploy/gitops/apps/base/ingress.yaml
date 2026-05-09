@@ -9,7 +9,6 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/group.name: xclone-demo
 spec:
   ingressClassName: alb
   rules:
@@ -35,7 +34,6 @@ metadata:
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<aws-account-id>:certificate/<certificate-id>
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/group.name: xclone-demo
     alb.ingress.kubernetes.io/conditions.xclone-backend-public-read: '[{"field":"http-request-method","httpRequestMethodConfig":{"Values":["GET","HEAD"]}}]'
 spec:
   ingressClassName: alb

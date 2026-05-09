@@ -19,7 +19,9 @@ def test_alb_ingress_keeps_frontend_and_api_hosts_explicit() -> None:
     ingress = (REPO_ROOT / "infra/k8s/xclone/alb-ingress.yaml").read_text()
 
     assert "ingressClassName: alb" in ingress
-    assert "alb.ingress.kubernetes.io/group.name: xclone-public" in ingress
+    assert "alb.ingress.kubernetes.io/group.name" not in ingress
+    assert "alb.ingress.kubernetes.io/conditions.xclone-backend-public-read" in ingress
+    assert "xclone-backend-public-read" in ingress
     assert "alb.ingress.kubernetes.io/certificate-arn" in ingress
     assert "host: xclone.ryans-lab.click" in ingress
     assert "host: api.xclone.ryans-lab.click" in ingress
@@ -35,5 +37,9 @@ def test_terraform_edge_layer_has_acm_route53_and_controller_contracts() -> None
     assert "aws_route53_record" in terraform_text
     assert "helm_release" in terraform_text
     assert "aws-load-balancer-controller" in terraform_text
+    assert "disableIngressGroupNameAnnotation" in terraform_text
+    assert "ingressClassParams.spec.namespaceSelector.matchLabels.kubernetes" in terraform_text
+    assert "metadata\\\\.name" in terraform_text
+    assert "xclone-public" in terraform_text
     assert "alb_dns_name" in terraform_text
     assert (terraform_dir / "iam/aws-load-balancer-controller-policy.json").exists()

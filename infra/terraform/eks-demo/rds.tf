@@ -6,11 +6,14 @@ resource "aws_security_group" "rds" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    description     = "PostgreSQL from EKS cluster security group."
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [aws_security_group.eks_cluster.id]
+    description = "PostgreSQL from EKS control plane and managed node security groups."
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [
+      aws_security_group.eks_cluster.id,
+      aws_eks_cluster.main.vpc_config[0].cluster_security_group_id,
+    ]
   }
 
   egress {

@@ -7,7 +7,6 @@ metadata:
     app.kubernetes.io/name: xclone-frontend
     app.kubernetes.io/part-of: x-clone-demo
   annotations:
-    alb.ingress.kubernetes.io/group.name: xclone-public
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
@@ -35,10 +34,10 @@ metadata:
   name: xclone-api-public
   namespace: xclone
   labels:
-    app.kubernetes.io/name: xclone-api
+    app.kubernetes.io/name: xclone-backend
+    app.kubernetes.io/component: public-read-edge
     app.kubernetes.io/part-of: x-clone-demo
   annotations:
-    alb.ingress.kubernetes.io/group.name: xclone-public
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
@@ -46,16 +45,38 @@ metadata:
     alb.ingress.kubernetes.io/certificate-arn: "${ACM_CERTIFICATE_ARN}"
     alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/success-codes: "200-399"
+    alb.ingress.kubernetes.io/conditions.xclone-backend-public-read: '[{"field":"http-request-method","httpRequestMethodConfig":{"Values":["GET","HEAD"]}}]'
 spec:
   ingressClassName: alb
   rules:
     - host: api.xclone.ryans-lab.click
       http:
         paths:
-          - path: /
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /timelines/public
             pathType: Prefix
             backend:
               service:
-                name: xclone-api
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /posts
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-backend-public-read
+                port:
+                  name: http
+          - path: /agents
+            pathType: Prefix
+            backend:
+              service:
+                name: xclone-backend-public-read
                 port:
                   name: http

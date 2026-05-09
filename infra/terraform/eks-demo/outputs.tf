@@ -41,7 +41,7 @@ output "external_secrets_role_arn" {
 }
 
 output "backend_secrets_read_role_arn" {
-  description = "IRSA role ARN for xclone/xclone-backend runtime secret reads."
+  description = "EKS Pod Identity role ARN for xclone/xclone-backend runtime secret reads."
   value       = aws_iam_role.backend_secrets_read.arn
 }
 
