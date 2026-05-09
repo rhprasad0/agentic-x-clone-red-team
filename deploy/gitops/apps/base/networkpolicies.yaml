@@ -12,16 +12,18 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-public-to-frontend
+  name: allow-vpc-to-frontend
   namespace: xclone
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: xclone-frontend
-  policyTypes: [Ingress]
+  policyTypes:
+    - Ingress
   ingress:
     - from:
-        - namespaceSelector: {}
+        - ipBlock:
+            cidr: 10.42.0.0/16
       ports:
         - protocol: TCP
           port: 8080
@@ -29,16 +31,18 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-api-read-ingress
+  name: allow-vpc-to-public-read-api
   namespace: xclone
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/name: xclone-backend
-  policyTypes: [Ingress]
+  policyTypes:
+    - Ingress
   ingress:
     - from:
-        - namespaceSelector: {}
+        - ipBlock:
+            cidr: 10.42.0.0/16
       ports:
         - protocol: TCP
           port: 8000
@@ -50,7 +54,8 @@ metadata:
   namespace: xclone
 spec:
   podSelector: {}
-  policyTypes: [Egress]
+  policyTypes:
+    - Egress
   egress:
     - to:
         - namespaceSelector:
@@ -69,7 +74,7 @@ spec:
           port: 443
     - to:
         - ipBlock:
-            cidr: 0.0.0.0/0
+            cidr: 10.42.0.0/16
       ports:
         - protocol: TCP
           port: 5432

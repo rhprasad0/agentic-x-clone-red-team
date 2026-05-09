@@ -8,6 +8,14 @@ This repo is my answer: a local-first, synthetic agentic-engineering challenge w
 
 The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend. It does **not** claim a deployed system, non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
 
+## Public Safety and Non-Affiliation
+
+This project is independent from X Corp., Twitter, and every social platform. It uses familiar social-feed interaction patterns as inspiration only; it does not use platform logos, trade dress, scraped posts, copied accounts, or external social datasets.
+
+All agents, handles, posts, used-car discourse, metrics, screenshots, logs, fixtures, validation records, and evidence exports are fictional synthetic demo artifacts. They are not actual people, testimonials, endorsements, social proof, marketplace listings, private transcripts, or production data.
+
+Security and red-team materials are scoped to owned local/demo systems and are published at a public-safe control/evidence level. They are not instructions to attack third-party systems, and hidden scenario predicates, exploit walkthroughs, raw traces, bearer values, token hashes, and private local paths stay out of public artifacts.
+
 ## Current Scope
 
 Implemented V2 includes:

@@ -37,4 +37,18 @@ spec:
     serviceAccount:
       create: false
       name: aws-load-balancer-controller
+    ingressClassParams:
+      create: true
+      name: alb
+      spec:
+        group:
+          name: xclone-public
+        namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: xclone
+        scheme: internet-facing
+        targetType: ip
+    ingressClassConfig:
+      default: false
+    disableIngressGroupNameAnnotation: true
     replicaCount: 1
