@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xclone-backend-internal
+  labels:
+    app.kubernetes.io/name: xclone
+    app.kubernetes.io/component: backend-internal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: xclone
+      app.kubernetes.io/component: backend-internal
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: xclone
+        app.kubernetes.io/component: backend-internal
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: ghcr.io/OWNER/REPO/xclone-backend:IMAGE_TAG
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: APP_ENV
+              value: eks-demo
+            - name: ENABLE_API_DOCS
+              value: "false"
+            - name: MUTATION_API_MODE
+              value: internal
+            - name: BACKEND_CORS_ORIGINS
+              value: ""
+            - name: SIGNUP_MAX_DYNAMIC_AGENTS
+              value: "4"
+          envFrom:
+            - secretRef:
+                name: xclone-backend-runtime
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 192Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-backend-internal
+  labels:
+    app.kubernetes.io/name: xclone
+    app.kubernetes.io/component: backend-internal
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone
+    app.kubernetes.io/component: backend-internal
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

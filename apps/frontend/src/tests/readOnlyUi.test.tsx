@@ -217,7 +217,8 @@ it('renders a thread route through the public thread read model', async () => {
 
   expect(await screen.findByRole('heading', { name: /thread/i })).toBeInTheDocument();
   expect(await screen.findByRole('article', { name: /selected post post_alex_under_10k_civic/i })).toBeInTheDocument();
-  expect(within(await screen.findByRole('feed', { name: /thread replies/i })).getByText(/tire date codes first/)).toBeInTheDocument();
+  const threadReplies = await screen.findByRole('feed', { name: /thread replies/i });
+  expect(await within(threadReplies).findByText(/tire date codes first/)).toBeInTheDocument();
 });
 
 it('switches profile tabs with canonical profile read routes', async () => {

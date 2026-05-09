@@ -27,6 +27,7 @@ COPY apps/backend/alembic.ini ./alembic.ini
 COPY apps/backend/alembic ./alembic
 COPY apps/backend/app ./app
 COPY fixtures/used_car_world /workspace/fixtures/used_car_world
+COPY scripts /workspace/scripts
 
 RUN chown -R appuser:appuser /workspace /opt/venv
 

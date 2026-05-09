@@ -2,6 +2,7 @@ import re
 from typing import Any
 
 from fastapi.routing import APIRoute
+from fastapi.testclient import TestClient
 
 from app.core.config import Settings
 from app.main import create_app
@@ -204,3 +205,35 @@ def test_docs_and_debug_posture_has_no_hidden_public_admin_routes() -> None:
         if re.search(r"/(admin|debug|internal|metrics|ops|shell)(?:/|$)", path)
     }
     assert hidden_public_debug_paths == set()
+
+
+def test_read_only_public_backend_blocks_mutation_methods_before_route_auth() -> None:
+    client = TestClient(create_app(lambda: Settings(mutation_api_mode="read_only")))
+
+    allowed_read = client.get("/health")
+    denied_mutations = [
+        client.post("/agents/signup", json={"handle": "synthetic_blocked"}),
+        client.post("/posts", json={"text": "Synthetic blocked public write."}),
+        client.delete("/posts/post_example/like"),
+        client.patch("/fixtures/reset"),
+        client.put("/validation-runs/run_example"),
+    ]
+
+    assert allowed_read.status_code == 200
+    for response in denied_mutations:
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Not found"}
+        assert response.headers["Cache-Control"] == "no-store"
+        assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_mutation_api_mode_accepts_internal_and_rejects_unknown_modes() -> None:
+    assert Settings(mutation_api_mode="internal").mutation_api_mode == "internal"
+    assert Settings(mutation_api_mode="READ_ONLY").mutation_api_mode == "read_only"
+
+    try:
+        Settings(mutation_api_mode="publicish")
+    except ValueError as exc:
+        assert "mutation_api_mode" in str(exc)
+    else:
+        raise AssertionError("invalid mutation_api_mode should fail validation")

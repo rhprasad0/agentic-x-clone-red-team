@@ -66,6 +66,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
         docs_url=settings.effective_docs_url,
         openapi_url=settings.effective_openapi_url,
     )
+    app.state.settings = settings
     configure_logging(settings)
     register_security_response_middleware(app)
     if settings.backend_cors_origins:
@@ -88,6 +89,26 @@ def register_security_response_middleware(app: FastAPI) -> None:
     ) -> Response:
         request.state.correlation_id = uuid4().hex
         start = time.perf_counter()
+        settings = getattr(request.app.state, "settings", None)
+        if settings is None:
+            settings = get_settings()
+        if settings.mutation_api_mode == "read_only" and request.method in MUTATION_METHODS:
+            emit_operational_event(
+                request,
+                event_class="public_mutation_blocked",
+                outcome_class="client_error",
+                status_code=404,
+                duration_ms=_duration_ms(start),
+            )
+            response = Response(
+                status_code=404,
+                media_type="application/json",
+                content='{"detail":"Not found"}',
+            )
+            response.headers["X-Request-ID"] = request.state.correlation_id
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Cache-Control"] = "no-store"
+            return response
         try:
             response = await call_next(request)
         except Exception as exc:

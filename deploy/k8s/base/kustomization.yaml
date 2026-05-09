@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: xclone-base
+namespace: xclone-demo
+resources:
+  - namespace.yaml
+  - secrets.example.yaml
+  - backend-public.yaml
+  - backend-internal.yaml
+  - runner-cronjob.yaml
+  - network-policies.yaml
