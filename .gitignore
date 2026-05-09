@@ -35,6 +35,16 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Terraform local state and provider caches
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+*.tfplan
+
 # Local prompt scratch files
 codex-bootstrap-prompt.md
 .hermes/
