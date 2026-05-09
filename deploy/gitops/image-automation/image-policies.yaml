@@ -16,8 +16,8 @@ spec:
   imageRepositoryRef:
     name: xclone-backend
   policy:
-    semver:
-      range: ">=0.0.0"
+    alphabetical:
+      order: desc
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -37,5 +37,5 @@ spec:
   imageRepositoryRef:
     name: xclone-frontend
   policy:
-    semver:
-      range: ">=0.0.0"
+    alphabetical:
+      order: desc

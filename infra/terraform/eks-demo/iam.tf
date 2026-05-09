@@ -139,15 +139,30 @@ resource "aws_iam_policy" "aws_lb_controller" {
           "ec2:DescribeInstances",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DescribeTags",
+          "ec2:DescribeRouteTables",
+          "ec2:GetSecurityGroupsForVpc",
+          "acm:DescribeCertificate",
+          "acm:ListCertificates",
+          "iam:GetServerCertificate",
+          "iam:ListServerCertificates",
+          "waf-regional:GetWebACL",
+          "waf-regional:GetWebACLForResource",
+          "wafv2:GetWebACL",
+          "wafv2:GetWebACLForResource",
+          "shield:GetSubscriptionState",
+          "shield:DescribeProtection",
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",
           "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeListenerAttributes",
           "elasticloadbalancing:DescribeListenerCertificates",
           "elasticloadbalancing:DescribeSSLPolicies",
           "elasticloadbalancing:DescribeRules",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeTargetHealth"
+          "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeTags",
+          "elasticloadbalancing:DescribeTrustStores"
         ]
         Resource = "*"
       },
@@ -166,14 +181,27 @@ resource "aws_iam_policy" "aws_lb_controller" {
           "elasticloadbalancing:CreateRule",
           "elasticloadbalancing:AddTags",
           "elasticloadbalancing:RemoveTags",
+          "elasticloadbalancing:AddListenerCertificates",
+          "elasticloadbalancing:RemoveListenerCertificates",
           "elasticloadbalancing:ModifyLoadBalancerAttributes",
           "elasticloadbalancing:ModifyTargetGroup",
           "elasticloadbalancing:ModifyTargetGroupAttributes",
           "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:ModifyListenerAttributes",
           "elasticloadbalancing:ModifyRule",
           "elasticloadbalancing:RegisterTargets",
           "elasticloadbalancing:DeregisterTargets",
+          "elasticloadbalancing:SetIpAddressType",
+          "elasticloadbalancing:SetRulePriorities",
+          "elasticloadbalancing:SetSecurityGroups",
+          "elasticloadbalancing:SetSubnets",
           "elasticloadbalancing:SetWebAcl",
+          "waf-regional:AssociateWebACL",
+          "waf-regional:DisassociateWebACL",
+          "wafv2:AssociateWebACL",
+          "wafv2:DisassociateWebACL",
+          "shield:CreateProtection",
+          "shield:DeleteProtection",
           "elasticloadbalancing:DeleteLoadBalancer",
           "elasticloadbalancing:DeleteTargetGroup",
           "elasticloadbalancing:DeleteListener",
@@ -229,7 +257,7 @@ resource "aws_iam_role" "backend_secrets_read" {
 
 resource "aws_iam_policy" "backend_secrets_read" {
   name        = "${local.name_prefix}-backend-secrets-read"
-  description = "Read only the two runtime Secrets Manager entries for xclone/xclone-backend via EKS Pod Identity."
+  description = "Read only x-clone backend runtime secrets"
 
   policy = jsonencode({
     Version = "2012-10-17"

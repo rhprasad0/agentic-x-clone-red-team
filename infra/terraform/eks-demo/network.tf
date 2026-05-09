@@ -79,14 +79,14 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-  for_each = aws_subnet.public
+  for_each = { for az in local.azs : az => aws_subnet.public[az].id }
 
-  subnet_id      = each.value.id
+  subnet_id      = each.value
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table" "private" {
-  for_each = aws_subnet.private
+  for_each = { for az in local.azs : az => aws_subnet.private[az].id }
 
   vpc_id = aws_vpc.main.id
 
@@ -96,14 +96,14 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name = "${local.name_prefix}-private-${each.value.availability_zone}"
+    Name = "${local.name_prefix}-private-${each.key}"
     Mode = "single-nat-demo"
   }
 }
 
 resource "aws_route_table_association" "private" {
-  for_each = aws_subnet.private
+  for_each = { for az in local.azs : az => aws_subnet.private[az].id }
 
-  subnet_id      = each.value.id
+  subnet_id      = each.value
   route_table_id = aws_route_table.private[each.key].id
 }
