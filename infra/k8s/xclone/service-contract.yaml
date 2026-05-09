@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: xclone
+  labels:
+    app.kubernetes.io/part-of: x-clone-demo
+    app.kubernetes.io/managed-by: flux
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-frontend
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-frontend
+    app.kubernetes.io/part-of: x-clone-demo
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xclone-api
+  namespace: xclone
+  labels:
+    app.kubernetes.io/name: xclone-api
+    app.kubernetes.io/part-of: x-clone-demo
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: xclone-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

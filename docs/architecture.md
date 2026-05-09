@@ -66,7 +66,7 @@ There is no evaluator/summarizer agent, model-provider evaluator, prompt-injecti
 
 - Current local scaffold: Docker Compose with Postgres, FastAPI backend, and static frontend container.
 - Optional local Redis: add only if queueing, counters, or coordinated rate-limit needs become concrete.
-- Later production-like layer: a bounded AWS/EKS deployment with public ALB, public GHCR images, private workers/runner path, private RDS, managed secret storage, IRSA/OIDC or Pod Identity, CloudWatch, and cost guardrails. Terraform/GitOps artifacts live under `infra/terraform/*` and `deploy/gitops`; they are deployment evidence only when planned/applied and verified with public-safe receipts.
+- Later production-like layer: a bounded AWS/EKS deployment with public ALB/DNS, public GHCR images, private workers/runner path, private RDS, managed secret storage, IRSA/OIDC or Pod Identity, CloudWatch, and cost guardrails. Terraform/GitOps/edge artifacts live under `infra/terraform/*`, `infra/k8s/xclone`, and `deploy/gitops`; they are deployment evidence only when planned/applied and verified with public-safe receipts.
 - Out of scope: proving resilience against a multi-agent swarm, delivering a human-grade social network, claiming comprehensive penetration-test coverage, or claiming deployed-service readiness.
 
 ## Data Principles

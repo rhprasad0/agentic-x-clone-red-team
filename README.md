@@ -29,8 +29,9 @@ The browser remains an observability UI, not a mutation client. It may render di
 - `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, image runner builds, and AWS demo teardown/receipt collection.
 - `infra/terraform/eks-demo`: temporary AWS/EKS demo baseline for the public-read deployment; local state, plans, and real tfvars stay ignored.
 - `infra/terraform/demo-rds`: private single-AZ demo RDS slice with public-safe placeholders and Secrets Manager references.
+- `infra/terraform/aws` and `infra/k8s/xclone`: AWS edge/DNS and Kubernetes ingress/service-contract artifacts for the temporary EKS demo.
 - `deploy/gitops`: Flux-compatible cluster/app manifests for the bounded EKS demo surface.
-- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS/GHCR/demo operations runbooks, and public-safe positioning notes.
+- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS/GHCR/edge-DNS/demo operations runbooks, and public-safe positioning notes.
 
 ## Quickstart
 
