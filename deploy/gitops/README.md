@@ -8,6 +8,7 @@ It is intentionally public-safe:
 - Kubernetes manifests reference Secrets Manager / Kubernetes Secret names only, never secret values;
 - AWS account-specific IDs, ARNs, certificate ARNs, subnet IDs, security group IDs, and hosted-zone IDs are placeholders;
 - Flux live bootstrap write credentials are not included.
+- Tailscale Operator OAuth values are not included; use the public-safe bootstrap contract in `docs/infra/tailscale-operator-private-bootstrap.md`.
 
 ## Layout
 
@@ -19,7 +20,7 @@ It is intentionally public-safe:
 
 ## Public boundary
 
-The frontend ingress is public. The API ingress uses an AWS Load Balancer Controller method condition so only `GET`/`HEAD` requests route through the public API service, and only the health/read path prefixes are listed. The synthetic runner is a suspended internal CronJob and talks to the backend ClusterIP service. Keep app-level route hardening/tests in place too; ALB routing is a boundary layer, not a substitute for application authorization.
+The frontend ingress is public. The API ingress uses an AWS Load Balancer Controller method condition so only `GET`/`HEAD` requests route through the public API service, and only the health/read path prefixes are listed. The full backend mutation lane is exposed through a Tailscale `ingressClassName: tailscale` Ingress named `xclone-backend-operator-tailnet`; it does not create public Route53 records, public ALB listeners, or Tailscale Funnel exposure. Keep app-level route hardening/tests in place too; ALB and tailnet routing are boundary layers, not substitutes for application authorization.
 
 ## Bootstrap handoff
 
