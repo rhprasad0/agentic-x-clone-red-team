@@ -11,7 +11,7 @@ This is a public-safe operator runbook for the temporary x-clone EKS demo edge. 
 - DNS: Terraform-owned Route53 alias records after the Kubernetes Ingress creates an ALB.
 - Kubernetes ingress class: `alb`.
 
-The public frontend remains read-only. The API hostname can reach backend read paths and health checks, but mutation and harness routes still require server-side bearer-token authority. Browser CORS must stay read-only, and exposed backend pods should run with `ENABLE_API_DOCS=false` so `/docs` and `/openapi.json` are absent.
+The public frontend remains read-only. The API hostname can reach backend read paths and health checks, while mutation and harness routes should be denied at the public edge before they reach the backend. Browser CORS must stay read-only, and exposed backend pods should run with `ENABLE_API_DOCS=false` so `/docs` and `/openapi.json` are absent.
 
 ## Terraform flow
 
@@ -112,7 +112,7 @@ Expected exposed-backend posture:
 - `/health` returns `200` with `status=ok`.
 - `/docs` and `/openapi.json` return absent/non-200 when `ENABLE_API_DOCS=false` is set for the exposed API deployment.
 - Public read endpoints work without bearer tokens.
-- Synthetic mutations and harness routes return `401`/`403` without the right authority token.
+- Synthetic mutations and harness routes are denied externally. For the current ALB-constrained public demo, the preferred public outcome is an ALB/edge fixed-response 404 before mutation traffic reaches the backend; if a later private/internal path reaches the backend, it should still require the right authority token and deny unauthorized mutation attempts.
 
 ## Blockers for live apply
 

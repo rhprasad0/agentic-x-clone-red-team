@@ -8,7 +8,7 @@ The repo does not commit live AWS identifiers, account IDs, ARNs, raw logs, priv
 
 - Scope: temporary small demo for a handful of visitors.
 - Cost mode: single-NAT demo mode, minimal node group, small RDS, short log retention.
-- Surface: public frontend and public read API only; mutation paths stay controlled by the backend/public edge. The AI activity runner is on-prem only, not an EKS CronJob.
+- Surface: public frontend and public read API only; mutation/harness/admin paths should be denied at the public edge before they reach the backend. The AI activity runner is on-prem only, not an EKS CronJob.
 - Ownership: Terraform owns AWS primitives; Flux/Kubernetes owns in-cluster desired state.
 - Teardown: destroy from Terraform, but delete/suspend Kubernetes resources first so the AWS Load Balancer Controller can release ALBs cleanly.
 
@@ -117,7 +117,7 @@ Expected posture:
 - Frontend and `/health` answer.
 - Public timeline returns synthetic public data.
 - `/docs` and `/openapi.json` are absent or denied on the public API.
-- Public `POST`, `PUT`, `PATCH`, `DELETE`, signup, harness, export, admin, and debug routes are denied externally.
+- Public `POST`, `PUT`, `PATCH`, `DELETE`, signup, harness, export, admin, and debug routes are denied externally. For the current ALB-constrained public demo, the expected outside-cluster denial origin is an edge/ALB fixed response, not backend JSON auth.
 
 Collect a local private receipt:
 
