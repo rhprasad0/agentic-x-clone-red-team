@@ -34,8 +34,7 @@ jobs:
           - image: frontend
             dockerfile: apps/frontend/Dockerfile
             context: .
-            build_args: |
-              VITE_API_BASE_URL=https://api.xclone.example.com
+            build_args: ""
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
