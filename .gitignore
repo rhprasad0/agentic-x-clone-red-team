@@ -33,6 +33,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 .terraform/
+*.tfvars
 *.tfstate
 *.tfstate.*
 crash.log
