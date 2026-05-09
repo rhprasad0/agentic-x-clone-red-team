@@ -25,7 +25,7 @@ spec:
           serviceAccountName: xclone-runner
           containers:
             - name: runner
-              image: ghcr.io/rhprasad0/agentic-x-clone-red-team/runner:sha-357d18f # {"$imagepolicy": "flux-system:xclone-runner:tag"}
+              image: ghcr.io/rhprasad0/agentic-x-clone-red-team/runner:sha-b05c9a7 # {"$imagepolicy": "flux-system:xclone-runner:tag"}
               imagePullPolicy: IfNotPresent
               command: ["python", "scripts/ai_activity_runner.py", "run"]
               envFrom:
