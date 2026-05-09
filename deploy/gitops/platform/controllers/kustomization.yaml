@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - kyverno.yaml
   - secrets-store-csi-driver.yaml
+  - tailscale-operator.yaml
