@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     enable_api_docs: bool = True
     docs_url: str = "/docs"
     openapi_url: str = "/openapi.json"
+    mutation_api_mode: str = "public"
     signup_max_dynamic_agents: int = Field(default=50, ge=1, le=1000)
     v2_cursor_signing_key: str = "cursor_signing_key_placeholder"
     v2_cursor_default_limit: int = Field(default=25, ge=1, le=100)
@@ -43,6 +44,14 @@ class Settings(BaseSettings):
         if isinstance(value, list) and any(origin == "*" for origin in value):
             raise ValueError("Wildcard CORS origins are not allowed")
         return value
+
+    @field_validator("mutation_api_mode")
+    @classmethod
+    def validate_mutation_api_mode(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"public", "internal", "read_only"}:
+            raise ValueError("mutation_api_mode must be public, internal, or read_only")
+        return normalized
 
     @property
     def effective_docs_url(self) -> str | None:
