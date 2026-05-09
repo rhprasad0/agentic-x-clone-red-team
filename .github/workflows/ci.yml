@@ -101,6 +101,10 @@ jobs:
         shell: bash
         run: uv run --python 3.12 --with-editable "apps/backend[dev]" alembic -c apps/backend/alembic.ini upgrade head
 
+      - name: Logging redaction regression tests
+        shell: bash
+        run: uv run --python 3.12 --with-editable "apps/backend[dev]" pytest apps/backend/tests/test_v2_operational_logging.py apps/backend/tests/test_ai_activity_runner_operational_logging.py -q
+
       - name: Test backend
         shell: bash
         run: uv run --python 3.12 --with-editable "apps/backend[dev]" pytest apps/backend/tests -q
@@ -129,6 +133,10 @@ jobs:
       - name: Lint frontend
         working-directory: apps/frontend
         run: npm run lint
+
+      - name: Frontend diagnostics regression tests
+        working-directory: apps/frontend
+        run: npm run test -- --run src/tests/apiDiagnostics.test.ts
 
       - name: Test frontend
         working-directory: apps/frontend

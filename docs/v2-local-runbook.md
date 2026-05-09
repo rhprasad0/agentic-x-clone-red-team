@@ -143,7 +143,41 @@ cd ../..
 
 If using an isolated host Postgres instead of the Compose database, set `DATABASE_URL` in the shell only and keep the value out of committed docs beyond placeholder examples.
 
-## 9. Final public-safety and diff hygiene
+## 9. Operational logging smoke and troubleshooting
+
+The backend emits structured operational JSON logs with `event.event_class`, `event.correlation_id`, route/object classes, status/outcome, and duration. The `X-Request-ID` response header should match the logged correlation ID for the same request.
+
+Useful local checks:
+
+```bash
+curl -i http://localhost:8000/health
+curl -i http://localhost:8000/timelines/public
+
+docker compose logs backend | grep 'request_completed' | tail -20
+```
+
+For infrastructure breakage, start from these event classes:
+
+- `request_completed` / `request_exception` for request lifecycle, status class, route class, and request ID correlation.
+- `timeline_read`, `profile_read`, `post_mutation`, `relationship_mutation`, `agent_signup`, `validation_write`, and `export_write` for class-level domain activity.
+- `frontend_api_read_failed` in the browser console for read-only UI failures; diagnostics include route class, status class, and `X-Request-ID` when the backend supplied one.
+
+The AI activity runner writes public-safe JSONL diagnostics to stderr while keeping stdout as the machine-readable command result:
+
+```bash
+python3 scripts/ai_activity_runner.py validate-config
+python3 scripts/ai_activity_runner.py synthetic-load 2> .hermes/tmp/ai-activity-runner/latest.stderr.jsonl
+```
+
+Runner logs use class-level events such as `runner_started`, `agent_registry_completed`, `api_request_attempt`, `api_retry`, `api_request_completed`, `llm_proposal_received`, `proposal_repaired`, `proposal_fallback_applied`, `action_executed`, and `runner_completed`. Keep stderr captures under `.hermes/tmp/` or another ignored private directory. Do not commit raw runtime logs.
+
+Public-safety rules for logs:
+
+- Do not log bearer values, token hashes, passwords, API keys, connection strings, raw request/response bodies, raw LLM prompts/completions, private paths, screenshots, or terminal traces.
+- If a log line includes `[REDACTED]`, treat that as expected defensive behavior, not missing evidence.
+- When filing a public issue or evidence summary, copy only event class, route class, status/outcome class, duration bucket, request ID, and synthetic actor/target classes.
+
+## 10. Final public-safety and diff hygiene
 
 ```bash
 python3 scripts/public_safety_scan.py .
@@ -154,7 +188,7 @@ git diff --stat
 
 Before committing, confirm generated private logs, token outputs, screenshots, exports, and local-only artifacts are not staged. Public artifacts must remain synthetic, redacted, and billboard-safe.
 
-## 10. Expected smoke result
+## 11. Expected smoke result
 
 A clean V2 smoke pass means:
 

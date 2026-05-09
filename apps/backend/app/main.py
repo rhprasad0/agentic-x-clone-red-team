@@ -1,3 +1,4 @@
+import time
 from collections.abc import Awaitable, Callable
 from uuid import uuid4
 
@@ -16,6 +17,7 @@ from app.api.routes import (
     validation_runs,
 )
 from app.core.config import Settings, get_settings
+from app.core.logging_config import configure_logging, emit_operational_event
 from app.core.security_logging import v2_route_metadata
 
 health_router = APIRouter(tags=["health"])
@@ -64,6 +66,7 @@ def create_app(settings_factory: Callable[[], Settings] = get_settings) -> FastA
         docs_url=settings.effective_docs_url,
         openapi_url=settings.effective_openapi_url,
     )
+    configure_logging(settings)
     register_security_response_middleware(app)
     if settings.backend_cors_origins:
         app.add_middleware(
@@ -84,7 +87,18 @@ def register_security_response_middleware(app: FastAPI) -> None:
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         request.state.correlation_id = uuid4().hex
-        response = await call_next(request)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            emit_operational_event(
+                request,
+                event_class="request_exception",
+                outcome_class="server_error",
+                exception_class=exc.__class__.__name__,
+                duration_ms=_duration_ms(start),
+            )
+            raise
         response.headers["X-Request-ID"] = request.state.correlation_id
 
         content_type = response.headers.get("content-type", "")
@@ -93,7 +107,29 @@ def register_security_response_middleware(app: FastAPI) -> None:
 
         if _requires_no_store(request, response):
             response.headers["Cache-Control"] = "no-store"
+        emit_operational_event(
+            request,
+            event_class="request_completed",
+            outcome_class=_outcome_class(response.status_code),
+            status_code=response.status_code,
+            duration_ms=_duration_ms(start),
+            cache_control_class=(
+                "no_store" if response.headers.get("Cache-Control") == "no-store" else "default"
+            ),
+        )
         return response
+
+
+def _duration_ms(start: float) -> int:
+    return max(0, round((time.perf_counter() - start) * 1000))
+
+
+def _outcome_class(status_code: int) -> str:
+    if status_code >= 500:
+        return "server_error"
+    if status_code >= 400:
+        return "client_error"
+    return "success"
 
 
 def _requires_no_store(request: Request, response: Response) -> bool:

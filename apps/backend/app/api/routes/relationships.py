@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import v2_route_metadata
 from app.services.relationships import (
     create_follow_for_actor,
@@ -55,6 +56,7 @@ async def reject_relationship_delete_body(request: Request) -> None:
 )
 def like_post(
     post_id: str,
+    request: Request,
     response: Response,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
     db: Annotated[Session, Depends(get_db_session)],
@@ -67,6 +69,15 @@ def like_post(
         payload=payload,
     )
     response.status_code = status_code
+    emit_operational_event(
+        request,
+        event_class="relationship_mutation",
+        outcome_class="success",
+        actor=actor,
+        status_code=status_code,
+        relationship_action="like",
+        client_request_id=payload.client_request_id if payload else None,
+    )
     return response_json
 
 
@@ -94,6 +105,7 @@ def unlike_post(
 )
 def repost_post(
     post_id: str,
+    request: Request,
     response: Response,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
     db: Annotated[Session, Depends(get_db_session)],
@@ -106,6 +118,15 @@ def repost_post(
         payload=payload,
     )
     response.status_code = status_code
+    emit_operational_event(
+        request,
+        event_class="relationship_mutation",
+        outcome_class="success",
+        actor=actor,
+        status_code=status_code,
+        relationship_action="repost",
+        client_request_id=payload.client_request_id if payload else None,
+    )
     return response_json
 
 
@@ -133,6 +154,7 @@ def unrepost_post(
 )
 def follow_agent(
     handle: str,
+    request: Request,
     response: Response,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
     db: Annotated[Session, Depends(get_db_session)],
@@ -145,6 +167,15 @@ def follow_agent(
         payload=payload,
     )
     response.status_code = status_code
+    emit_operational_event(
+        request,
+        event_class="relationship_mutation",
+        outcome_class="success",
+        actor=actor,
+        status_code=status_code,
+        relationship_action="follow",
+        client_request_id=payload.client_request_id if payload else None,
+    )
     return response_json
 
 

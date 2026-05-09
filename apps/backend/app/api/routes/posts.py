@@ -1,11 +1,12 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db_session, require_synthetic_agent_authority
 from app.core.auth import ActorContext
+from app.core.logging_config import emit_operational_event
 from app.core.security_logging import v2_route_metadata
 from app.services.posts import create_post_for_actor
 
@@ -37,8 +38,18 @@ class PostCreate(BaseModel):
 )
 def create_post(
     payload: PostCreate,
+    request: Request,
     actor: Annotated[ActorContext, Depends(require_synthetic_agent_authority)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, Any]:
-    response_json, _is_replay = create_post_for_actor(payload=payload, actor=actor, db=db)
+    response_json, is_replay = create_post_for_actor(payload=payload, actor=actor, db=db)
+    emit_operational_event(
+        request,
+        event_class="post_mutation",
+        outcome_class="replayed" if is_replay else "success",
+        actor=actor,
+        status_code=status.HTTP_201_CREATED,
+        relationship_action="create_post",
+        client_request_id=payload.client_request_id,
+    )
     return response_json
