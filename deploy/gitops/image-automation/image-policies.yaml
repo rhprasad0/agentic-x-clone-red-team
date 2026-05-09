@@ -4,7 +4,7 @@ metadata:
   name: xclone-backend
   namespace: flux-system
 spec:
-  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/xclone-backend
+  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/backend
   interval: 5m
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
@@ -25,7 +25,7 @@ metadata:
   name: xclone-frontend
   namespace: flux-system
 spec:
-  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/xclone-frontend
+  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/frontend
   interval: 5m
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
@@ -46,7 +46,7 @@ metadata:
   name: xclone-runner
   namespace: flux-system
 spec:
-  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/xclone-runner
+  image: ghcr.io/rhprasad0/agentic-x-clone-red-team/runner
   interval: 5m
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
