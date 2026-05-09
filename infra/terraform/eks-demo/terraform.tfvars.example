@@ -1,0 +1,28 @@
+aws_region  = "us-east-1"
+project_name = "xclone"
+environment  = "demo"
+owner_tag    = "project-maintainer"
+ttl_hours    = 48
+expires_at   = "manual-teardown-required"
+
+# Tighten this before apply if you know the operator IP range.
+cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
+
+# Small temporary-demo defaults for a handful of visitors.
+node_instance_types = ["t3.small"]
+node_min_size       = 1
+node_desired_size   = 2
+node_max_size       = 3
+
+create_rds              = true
+db_instance_class       = "db.t4g.micro"
+db_allocated_storage_gb = 20
+db_name                 = "xclone"
+
+# Route53 aliases are a second phase after Flux creates the ALB.
+create_dns_records = false
+hosted_zone_name   = "example.com"
+frontend_hostname  = "xclone.example.com"
+api_hostname       = "api.xclone.example.com"
+alb_dns_name       = ""
+alb_zone_id        = ""

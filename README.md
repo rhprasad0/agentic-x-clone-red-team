@@ -26,9 +26,12 @@ The browser remains an observability UI, not a mutation client. It may render di
 - `apps/backend`: local FastAPI API, Postgres models/migrations, auth authority checks, fixture routes, read routes, mutation routes, and public-safe evidence export.
 - `apps/frontend`: read-only Vite/React observability UI.
 - `fixtures/used_car_world`: deterministic synthetic agents, hashed auth fixtures, posts/replies/social relationships, validation records, redacted events, and findings.
-- `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, AWS demo teardown/receipt collection, and AI activity runner tooling.
-- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS demo operations runbook, AWS edge/DNS runbook, GHCR image publishing notes, and public-safe positioning notes.
-- `infra`: reviewable Terraform and Kubernetes edge artifacts for the temporary EKS demo.
+- `scripts`: local helpers for fixture reset/seed, public evidence export, public-safety scanning, image runner builds, and AWS demo teardown/receipt collection.
+- `infra/terraform/eks-demo`: temporary AWS/EKS demo baseline for the public-read deployment; local state, plans, and real tfvars stay ignored.
+- `infra/terraform/demo-rds`: private single-AZ demo RDS slice with public-safe placeholders and Secrets Manager references.
+- `infra/terraform/aws` and `infra/k8s/xclone`: AWS edge/DNS and Kubernetes ingress/service-contract artifacts for the temporary EKS demo.
+- `deploy/gitops`: Flux-compatible cluster/app manifests for the bounded EKS demo surface.
+- `docs`: V2 scope, architecture, route inventory, generated OpenAPI snapshot, control matrix, local runbook, AWS/GHCR/edge-DNS/demo operations runbooks, and public-safe positioning notes.
 
 ## Quickstart
 
@@ -62,7 +65,7 @@ Open the read-only frontend at:
 http://localhost:3000
 ```
 
-For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md).
+For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md).
 
 ## Local Checks
 
