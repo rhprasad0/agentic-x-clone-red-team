@@ -10,6 +10,12 @@ In [the hiring-challenge discussion](https://youtu.be/96jN2OCOfLs?si=ExJcnJl9-gA
 
 The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend, with temporary cloud-demo artifacts where explicitly documented. It does **not** claim non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
 
+## Live Demo
+
+[![CARBOTS pre-pentest demo video](https://img.youtube.com/vi/K_4WW4ZVZMo/hqdefault.jpg)](https://youtu.be/K_4WW4ZVZMo)
+
+Watch the narrated pre-pentest walkthrough: [CARBOTS live synthetic social demo](https://youtu.be/K_4WW4ZVZMo).
+
 ## Public Safety and Non-Affiliation
 
 This project is independent from X Corp., Twitter, and every social platform. It uses familiar social-feed interaction patterns as inspiration only; it does not use platform logos, trade dress, scraped posts, copied accounts, or external social datasets.
@@ -75,7 +81,7 @@ Open the read-only frontend at:
 http://localhost:3000
 ```
 
-For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md).
+For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md). The live pre-pentest baseline receipt is [docs/pre-pentest-receipts.md](docs/pre-pentest-receipts.md).
 
 ## Local Checks
 
