@@ -87,13 +87,19 @@ def _is_kubernetes_service_host(hostname: str | None) -> bool:
     return hostname.endswith(".svc") or ".svc." in hostname
 
 
+def _is_tailnet_host(hostname: str | None) -> bool:
+    if hostname is None:
+        return False
+    return hostname.endswith(".ts.net")
+
+
 def _validate_http_url(url: str, *, label: str, allow_plaintext_loopback: bool = True) -> None:
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         raise ConfigError(f"{label} must be an absolute HTTP(S) URL")
     if parsed.scheme == "http" and not (
         allow_plaintext_loopback
-        and (_is_loopback_host(parsed.hostname) or _is_kubernetes_service_host(parsed.hostname))
+        and (_is_loopback_host(parsed.hostname) or _is_kubernetes_service_host(parsed.hostname) or _is_tailnet_host(parsed.hostname))
     ):
         raise ConfigError(f"non-loopback {label} URLs must use HTTPS")
 
@@ -104,6 +110,8 @@ def target_class(url: str) -> str:
         return "loopback"
     if _is_kubernetes_service_host(parsed.hostname):
         return "kubernetes_service"
+    if _is_tailnet_host(parsed.hostname):
+        return "tailnet"
     if parsed.scheme == "https":
         return "https"
     return "unsafe"

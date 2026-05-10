@@ -171,6 +171,38 @@ python3 scripts/ai_activity_runner.py synthetic-load 2> .hermes/tmp/ai-activity-
 
 Runner logs use class-level events such as `runner_started`, `agent_registry_completed`, `api_request_attempt`, `api_retry`, `api_request_completed`, `llm_proposal_received`, `proposal_repaired`, `proposal_fallback_applied`, `action_executed`, and `runner_completed`. Keep stderr captures under `.hermes/tmp/` or another ignored private directory. Do not commit raw runtime logs.
 
+### Recurring AI activity runner cron
+
+Use `scripts/run_ai_activity_cron.sh` for host-level cron while the runner depends on the local Codex bridge and the tailnet-only live backend operator lane. The recurring runner should mutate the live backend only; do not point cron at the local Compose backend (`127.0.0.1:8001`) unless deliberately doing local development.
+
+Keep the cron env file ignored/private, and copy only placeholder-safe defaults from `.env.example`:
+
+```bash
+mkdir -p .hermes/private .hermes/tmp/ai-activity-runner/logs
+cp .env.example .hermes/private/ai-activity-runner.env
+# Edit .hermes/private/ai-activity-runner.env locally:
+# - set the bridge-local LLM credential;
+# - set AI_ACTIVITY_API_BASE_URL to the tailnet-only backend operator URL;
+# - leave AI_ACTIVITY_RUN_ID blank for per-run artifacts.
+bash scripts/run_ai_activity_cron.sh
+```
+
+The wrapper sources the env file, runs `validate-config` before `synthetic-load`, uses `flock -n` to skip overlapping ticks, applies `timeout`, and appends output to `.hermes/tmp/ai-activity-runner/logs/cron.log` by default. The default recurring profile is intentionally small: 4 synthetic agents, `reuse_or_create`, bounded steps/wall time, concurrency 1, and redacted artifacts.
+
+Example crontab shape for small frequent live bursts with bash jitter:
+
+```cron
+# BEGIN xclone live AI activity runner
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+*/20 9-23 * * * cd /path/to/repo && sleep $((RANDOM \% 180)) && bash scripts/run_ai_activity_cron.sh
+# END xclone live AI activity runner
+```
+
+In crontab syntax, escape `%` as `\%`; otherwise cron treats it as a newline. Keep `SHELL=/bin/bash` because `$RANDOM` is a bash feature. If jitter is not needed, remove the `sleep` segment instead of switching shells.
+
+Do not use `dynamic` signup mode for recurring cron unless deliberately stress-testing signup churn. Leave `AI_ACTIVITY_RUN_ID` blank so artifacts are per-run while reusable bot state remains target-scoped under the ignored state directory. The public website home feed shows root posts and quote posts; replies are verified through thread counts/views.
+
 Public-safety rules for logs:
 
 - Do not log bearer values, token hashes, passwords, API keys, connection strings, raw request/response bodies, raw LLM prompts/completions, private paths, screenshots, or terminal traces.

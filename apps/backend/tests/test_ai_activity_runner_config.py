@@ -4,6 +4,30 @@ from scripts.ai_activity_runner_lib.config import AIActivityConfig, ConfigError
 
 
 def base(monkeypatch):
+    for name in [
+        "AI_ACTIVITY_API_BASE_URL",
+        "AI_ACTIVITY_AGENT_COUNT",
+        "AI_ACTIVITY_CONCURRENCY",
+        "AI_ACTIVITY_MAX_STEPS",
+        "AI_ACTIVITY_MAX_WALL_SECONDS",
+        "AI_ACTIVITY_MAX_CONVERSATION_TURNS",
+        "AI_ACTIVITY_REPLIES_FIRST",
+        "AI_ACTIVITY_TARGET_COOLDOWN_STEPS",
+        "AI_ACTIVITY_RECENT_ACTION_WINDOW",
+        "AI_ACTIVITY_MAX_REPLY_SHARE",
+        "AI_ACTIVITY_SILLINESS_LEVEL",
+        "AI_ACTIVITY_CHAOS_LEVEL",
+        "AI_ACTIVITY_SIGNUP_MODE",
+        "AI_ACTIVITY_OUTPUT_DIR",
+        "AI_ACTIVITY_STATE_DIR",
+        "AI_ACTIVITY_RUN_ID",
+        "AI_ACTIVITY_RANDOM_SEED",
+        "AI_ACTIVITY_LLM_BASE_URL",
+        "AI_ACTIVITY_LLM_MODEL",
+        "AI_ACTIVITY_STYLE_PACK",
+        "AI_ACTIVITY_STYLE_PACK_POOL",
+    ]:
+        monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("AI_ACTIVITY_LLM_API_KEY", "bridge_local_key_placeholder")
 
 def test_default_config_values(monkeypatch):
@@ -29,6 +53,11 @@ def test_api_url_plaintext_safety(monkeypatch):
         "http://xclone-backend-internal.xclone-demo.svc.cluster.local:8000",
     )
     assert AIActivityConfig.from_env().redacted_summary()["api_target_class"] == "kubernetes_service"
+    monkeypatch.setenv(
+        "AI_ACTIVITY_API_BASE_URL",
+        "http://xclone-backend-operator-tailnet.example.ts.net:8000",
+    )
+    assert AIActivityConfig.from_env().redacted_summary()["api_target_class"] == "tailnet"
 
 def test_llm_requires_key_and_loopback_https_or_kubernetes_service(monkeypatch):
     monkeypatch.delenv("AI_ACTIVITY_LLM_API_KEY", raising=False)
