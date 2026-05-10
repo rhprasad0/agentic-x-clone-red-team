@@ -57,8 +57,16 @@ codex-bootstrap-prompt.md
 .worktrees/
 
 # Private security-tool evidence/workspaces
+# Strix is retired from the active workflow; old local evidence remains private if present.
 strix_runs/
 caido-workspaces/
+
+# PentestGPT local install/config/evidence (private; never commit raw tool output).
+pentestgpt-workspace
+pentestgpt_runs
+.hermes/tools/PentestGPT/
+.hermes/tmp/pentestgpt/
+.env.pentestgpt.local
 
 # Terraform local state and generated plans
 **/.terraform/
