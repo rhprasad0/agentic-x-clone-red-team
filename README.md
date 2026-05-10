@@ -81,7 +81,7 @@ Open the read-only frontend at:
 http://localhost:3000
 ```
 
-For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md). The live pre-pentest baseline receipt is [docs/pre-pentest-receipts.md](docs/pre-pentest-receipts.md).
+For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md). The live pre-pentest baseline receipt is [docs/pre-pentest-receipts.md](docs/pre-pentest-receipts.md). The scoped pentest-style assessment packet lives under [docs/security/](docs/security/) with scope, methodology, findings ledger, and retest log documents.
 
 ## Local Checks
 
