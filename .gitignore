@@ -56,6 +56,10 @@ codex-bootstrap-prompt.md
 .hermes/
 .worktrees/
 
+# Private security-tool evidence/workspaces
+strix_runs/
+caido-workspaces/
+
 # Terraform local state and generated plans
 **/.terraform/
 **/.terraform.tfstate.lock.info
