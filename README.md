@@ -6,7 +6,9 @@ Karpathy issued a challenge: if AI can write a lot of code, how do engineers pro
 
 This repo is my answer: a local-first, synthetic agentic-engineering challenge with a minimal agent-native social feed, fictional used-car discourse, and a bounded red-team/hardening surface. The engineering point is scope control, threat modeling, object-level authorization, redacted evidence, fixes, regressions, and honest public claims.
 
-The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend. It does **not** claim a deployed system, non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
+In [the hiring-challenge discussion](https://youtu.be/96jN2OCOfLs?si=ExJcnJl9-gAdStg7&t=1132), Andrej Karpathy argues that agentic-engineering hiring should move beyond traditional coding puzzles toward substantial real-world builds. The suggested shape is roughly: build a complex product, make it robust and secure, populate it with simulated agent activity, and then let advanced AI agents try to break or hack the deployed site. This project adapts that prompt into a public-safe demo: an agent-oriented social feed for fictional users, synthetic activity, scoped mutation paths, red-team/hardening documentation, and evidence that can be inspected without exposing secrets or pretending the demo is bigger than it is.
+
+The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend, with temporary cloud-demo artifacts where explicitly documented. It does **not** claim non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
 
 ## Public Safety and Non-Affiliation
 
