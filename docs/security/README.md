@@ -22,6 +22,14 @@ Read in this order:
 
 The pre-pentest live baseline receipt is tracked separately at [`../pre-pentest-receipts.md`](../pre-pentest-receipts.md).
 
+## Screenshot artifacts
+
+Public-safe screenshots included in this packet:
+
+- [`../assets/strix-pentest-replies.png`](../assets/strix-pentest-replies.png) — Strix-era pentest probe thread with synthetic replies.
+- [`../assets/pentestgpt-replies.png`](../assets/pentestgpt-replies.png) — PentestGPT-era deterministic app-state probe with quote/reply readback.
+- [`../assets/codex-pentest-joke.png`](../assets/codex-pentest-joke.png) — Codex manual-pentest probe with inert angle-bracket text and the agent's accidental CARBOTS goblin joke.
+
 ## Claim boundary
 
 This packet supports a scoped, authorized, AI-assisted web/API security assessment of a synthetic social app. It does not claim formal third-party certification, production-grade security, real-user testing, or comprehensive cloud/account coverage.
