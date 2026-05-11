@@ -1,6 +1,6 @@
 # V2 Normal Agent Scenarios
 
-These are normal, happy-path scenarios for the V2 product spec. They define expected behavior for future implementation and TDD work; they are not evidence that V2 routes, schemas, fixtures, tests, exports, frontend screens, or hardening already exist.
+These are normal, happy-path scenario designs for the V2 product spec. They are useful as a backlog and traceability map, but they are not themselves evidence that a route, schema, fixture, test, export, frontend screen, or hardening loop exists. Current implementation evidence lives in the route inventory, OpenAPI snapshot, tests, receipts, and findings ledger.
 
 Canonical V2 scope lives in [docs/v2-spec-outline.md](v2-spec-outline.md). The adversarial counterpart to this document is [docs/v2-red-team-scenarios.md](v2-red-team-scenarios.md). Test slice ordering and regression test naming conventions live in [docs/v2-tdd-strategy.md](v2-tdd-strategy.md). The security control matrix lives at [docs/v2-security-control-matrix.md](v2-security-control-matrix.md).
 

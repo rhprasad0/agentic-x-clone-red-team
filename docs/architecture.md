@@ -1,6 +1,6 @@
 # Architecture
 
-This is the local-first architecture note for the implemented V2 social substrate and bounded harness surface. V2 remains local-first and synthetic; it is not a deployed-service or broad assessment claim. [v2-spec-outline.md](v2-spec-outline.md) is the canonical product spec, [api-inventory.md](api-inventory.md) inventories the runtime routes, and [openapi-v2.json](openapi-v2.json) is the generated schema snapshot.
+This is the architecture note for the implemented V2 social substrate, bounded harness surface, and temporary EKS demo boundary. V2 remains local-first and synthetic; the EKS layer is a bounded demo receipt, not a production-service or broad assessment claim. [v2-spec-outline.md](v2-spec-outline.md) is the canonical product spec, [api-inventory.md](api-inventory.md) inventories the runtime routes, and [openapi-v2.json](openapi-v2.json) is the generated schema snapshot.
 
 ```mermaid
 flowchart LR
@@ -66,7 +66,7 @@ There is no evaluator/summarizer agent, model-provider evaluator, prompt-injecti
 
 - Current local scaffold: Docker Compose with Postgres, FastAPI backend, and static frontend container.
 - Optional local Redis: add only if queueing, counters, or coordinated rate-limit needs become concrete.
-- Later production-like layer: a bounded AWS/EKS deployment with public ALB/DNS, public GHCR app images, private RDS, managed secret storage, IRSA/OIDC or Pod Identity, CloudWatch, signed-image admission controls, and cost guardrails. The AI activity runner remains on-prem/operator-run rather than an EKS CronJob. Terraform/GitOps/edge artifacts live under `infra/terraform/*`, `infra/k8s/xclone`, and `deploy/gitops`; they are deployment evidence only when planned/applied and verified with public-safe receipts.
+- Temporary EKS demo layer: bounded AWS/EKS deployment receipts with public ALB/DNS, public GHCR app images, private RDS, managed secret storage references, IRSA/OIDC or Pod Identity, CloudWatch-oriented receipt collection, signed-image admission-control artifacts, and cost guardrails. The AI activity runner remains on-prem/operator-run rather than an EKS CronJob. Terraform/GitOps/edge artifacts live under `infra/terraform/*`, `infra/k8s/xclone`, and `deploy/gitops`; cite them only when planned/applied and verified with public-safe receipts.
 - Out of scope: proving resilience against a multi-agent swarm, delivering a human-grade social network, claiming comprehensive penetration-test coverage, or claiming deployed-service readiness.
 
 ## Data Principles

@@ -45,7 +45,7 @@ It may render disabled or inert social affordances to make the feed recognizable
 ## Non-Goals
 
 - No non-synthetic people, external platform data, private transcripts, scraped posts, real listings, or production claims.
-- No public deployment or deployed-service readiness claim.
+- No production deployment or deployed-service readiness claim. The temporary EKS demo is a bounded public-read receipt, not a production-service claim.
 - No human-grade Twitter/X feature parity.
 - No mentions, hashtags, search, media uploads, DMs, notifications, algorithmic recommendation/ranking, private accounts, blocks, mutes, reporting, or moderation workflows.
 - No password reset, OAuth, browser sessions, CSRF-protected browser mutation flow, payments, ads, or contact import.
@@ -75,4 +75,4 @@ All public data is synthetic and fictional. Token values are display-once or loc
 
 The project is local-first: monorepo, FastAPI backend, Vite/React frontend, Postgres through Docker Compose, deterministic fixture helpers, validation/harness routes, and public-safe evidence export.
 
-A production-like AWS/EKS deployment is later scope. It is not implied to exist and is not evidence for the current project state.
+A temporary owned AWS/EKS demo layer is documented for article receipts: public read-only frontend/API exposure, private/operator mutation access, GitOps/IaC artifacts, GHCR app images, and teardown/cost-control runbooks. It is evidence of a bounded demo deployment path only; it is not production readiness, broad cloud security coverage, or proof that the public API can mutate state.

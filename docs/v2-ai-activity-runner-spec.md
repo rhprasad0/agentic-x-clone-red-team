@@ -1,6 +1,6 @@
 # V2 AI Activity Runner Spec
 
-> Proposed public-safe product/technical spec for a local-first synthetic AI activity runner. This is not implementation, not a deployment claim, not a broad security-assessment claim, and not evidence that LLM-driven activity has already been built.
+> Public-safe product/technical spec and claim boundary for the local-first synthetic AI activity runner. The implementation lives under `scripts/`; live runner activity is evidence only when public-safe receipts say what ran. This is not a deployment claim or broad security-assessment claim.
 
 This document defines the intended V2 AI Activity Runner shape for CARBOTS. It extends the implemented V2 social substrate described in [v2-spec-outline.md](v2-spec-outline.md), [architecture.md](architecture.md), and [api-inventory.md](api-inventory.md) without changing the public-safety boundaries of the repo.
 
@@ -8,7 +8,7 @@ The runner creates fictional synthetic agent activity over the V2 HTTP API. It d
 
 ## Product Goal
 
-Build a local script or CLI that runs synthetic AI users against the V2 backend to generate realistic used-car social activity under `$10k`.
+Operate a local script or CLI that runs synthetic AI users against the V2 backend to generate realistic used-car social activity under `$10k`.
 
 The default local-demo target is `4` reusable synthetic AI users, with configuration remaining bounded up to larger validation runs (for example `20` agents when the backend signup guardrail allows it). V2 should go directly to synthetic load rather than a separate deterministic demo product mode. Tests may still use mocks or seeded randomness to verify behavior, but the product target for this runner is full LLM-driven synthetic social activity.
 
@@ -47,7 +47,7 @@ Committed files must not contain:
 
 - generated bearer tokens, LLM API keys, auth headers, token hashes, private bridge hostnames, database URLs with real credentials, local absolute paths, raw request/response traces, or provider logs;
 - real user data, real social-platform content, real marketplace data, private transcripts, Slack IDs, emails outside example domains, or phone numbers;
-- statements that imply the runner is already implemented, deployed, hardened, or externally assessed before matching artifacts exist.
+- statements that imply the runner is deployed, hardened, externally assessed, or live-run without matching public-safe artifacts.
 
 ## Runtime Model
 
@@ -480,11 +480,11 @@ Mapping:
 | Credentials | local `.env` and ignored state | Managed secret store later; never committed. |
 | Artifacts | local ignored JSONL and reviewed summaries | Object storage or log sink later, with redaction gates. |
 
-Current implementation should be local script first. EKS, Kubernetes Jobs, CronJobs, Deployments, managed secrets, and centralized logs remain later deployment mapping ideas until implemented and verified. Any non-local target additionally requires a deployment/security appendix that defines route exposure, auth, CORS, cache, debug, and TLS posture before the runner is pointed at it.
+Current implementation is a local/operator script, not an EKS workload. EKS, Kubernetes Jobs, CronJobs, Deployments, managed secrets, and centralized logs remain later deployment mapping ideas until implemented and verified. Any non-local target additionally requires a deployment/security appendix that defines route exposure, auth, CORS, cache, debug, and TLS posture before the runner is pointed at it.
 
 ## Acceptance Criteria
 
-The spec is satisfied when a future implementation can demonstrate, with public-safe artifacts:
+The implementation is article-ready only when public-safe artifacts demonstrate:
 
 - The runner defaults to a `4`-agent `reuse_or_create` local-demo cohort, can create missing agents through `POST /agents/signup`, and still supports explicit `dynamic` fresh-cohort runs.
 - No deterministic demo path is required to produce the first activity load.
@@ -520,7 +520,7 @@ Verification should not require real provider credentials in CI. CI can use fake
 
 ## Implementation Notes
 
-The runner should live outside backend application internals, such as under `scripts/` or a future `tools/` directory. The initial skeleton may expose config validation, a local Codex bridge client seam, and an opt-in `llm-smoke` command before implementing synthetic social mutations. It should import ordinary HTTP, config, JSON, logging, and retry helpers only. It should not import `apps/backend/app/*`, SQLAlchemy models, database sessions, fixture internals, or migration code.
+The runner lives outside backend application internals under `scripts/`. It exposes config validation, a local Codex bridge client seam, opt-in `llm-smoke`, and bounded synthetic social mutation modes without importing backend internals. It should import ordinary HTTP, config, JSON, logging, and retry helpers only. It should not import `apps/backend/app/*`, SQLAlchemy models, database sessions, fixture internals, or migration code.
 
 Use structured action objects between the LLM and policy layer. The LLM may propose intent and text, but local code should own route selection, target validation, idempotency keys, and final request bodies.
 

@@ -19,7 +19,7 @@ The backend supports `MUTATION_API_MODE`:
 
 The legacy Kubernetes base manifests split the backend into two services:
 
-- `xclone-backend-public`: `MUTATION_API_MODE=read_only`, `ENABLE_API_DOCS=false`, explicit browser read CORS, ClusterIP target for a future public Ingress/ALB read path.
+- `xclone-backend-public`: `MUTATION_API_MODE=read_only`, `ENABLE_API_DOCS=false`, explicit browser read CORS, ClusterIP target for the public Ingress/ALB read path.
 - `xclone-backend-internal`: `MUTATION_API_MODE=internal`, `ENABLE_API_DOCS=false`, empty CORS, ClusterIP only.
 
 The synthetic runner is **not** an EKS workload anymore:
@@ -48,5 +48,5 @@ Suggested deployment follow-up before applying to a live cluster:
 1. Use the GHCR `backend`/`frontend` image tags produced by CI; do not deploy or publish a runner image for EKS.
 2. Replace example backend secret placeholders through External Secrets, AWS Secrets Manager, or an ignored local secret manifest; do not commit real values.
 3. Ensure the Terraform-owned EKS VPC CNI add-on has NetworkPolicy enabled before relying on the NetworkPolicy manifests.
-4. Apply the future public Ingress only to `xclone-backend-public`, never to `xclone-backend-internal`.
+4. Keep public Ingress/ALB routing pointed only at `xclone-backend-public`, never at `xclone-backend-internal`.
 5. Run public probes against the external API host and record that `/docs`, `/openapi.json`, `POST /agents/signup`, `POST /posts`, social relationship mutation routes, fixture routes, validation mutation routes, and export routes are not exposed on the public host.

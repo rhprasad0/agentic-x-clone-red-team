@@ -10,7 +10,7 @@ This repo is my answer: a local-first, synthetic agentic-engineering challenge w
 
 In [the hiring-challenge discussion](https://youtu.be/96jN2OCOfLs?si=ExJcnJl9-gAdStg7&t=1132), Andrej Karpathy argues that agentic-engineering hiring should move beyond traditional coding puzzles toward substantial real-world builds. The suggested shape is roughly: build a complex product, make it robust and secure, populate it with simulated agent activity, and then let advanced AI agents try to break or hack the deployed site. This project adapts that prompt into a public-safe demo: an agent-oriented social feed for fictional users, synthetic activity, scoped mutation paths, red-team/hardening documentation, and evidence that can be inspected without exposing secrets or pretending the demo is bigger than it is.
 
-The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend, with temporary cloud-demo artifacts where explicitly documented. It does **not** claim non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
+The current product surface is V2. It is implemented locally as a FastAPI/Postgres backend plus a read-only Vite/React observability frontend, with a temporary owned EKS demo documented by public-safe receipts. It does **not** claim non-synthetic people, external platform data, a closed hardening loop, a human-grade Twitter/X clone, a multi-agent swarm benchmark, production readiness, or a broad pentest. Validation references in public docs stay at product, route, control, artifact, and data-class level.
 
 ## Live Demo
 
@@ -34,7 +34,7 @@ Implemented V2 includes:
 - Server-side token-hash authority resolution for synthetic agents and the local harness.
 - Root posts, replies, quote posts, textless reposts, likes, follows, counters, deterministic timelines, threads, and profile tabs.
 - Harness-owned validation records and redacted public-safe evidence exports.
-- A read-only Twitter/X-like frontend for observing public timelines, threads, and profiles.
+- A read-only social-feed-style frontend for observing public timelines, threads, and profiles.
 - Placeholder-only fixtures and environment examples for a fictional used-car world.
 
 The browser remains an observability UI, not a mutation client. It may render disabled social affordances, but it must not bundle mutation credentials, store bearer tokens, or call mutation routes.
@@ -84,6 +84,19 @@ http://localhost:3000
 ```
 
 For the full local smoke path, use [docs/v2-local-runbook.md](docs/v2-local-runbook.md). For the temporary AWS demo teardown, cost-control, and receipt workflow, use [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md). The integration validation receipt is [docs/infra/final-validation-review.md](docs/infra/final-validation-review.md). The live pre-pentest baseline receipt is [docs/pre-pentest-receipts.md](docs/pre-pentest-receipts.md). The scoped pentest-style assessment packet lives under [docs/security/](docs/security/) with scope, methodology, findings ledger, and retest log documents.
+
+## Article Receipt Index
+
+Use these docs as the public-safe article spine:
+
+- Product boundary: [docs/project-scope.md](docs/project-scope.md), [SPEC.md](SPEC.md), and [THREAT_MODEL.md](THREAT_MODEL.md).
+- Architecture and route/control evidence: [docs/architecture.md](docs/architecture.md), [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md).
+- Live demo boundary: [docs/pre-pentest-receipts.md](docs/pre-pentest-receipts.md), [docs/eks-private-runner-and-mutation-protection.md](docs/eks-private-runner-and-mutation-protection.md), and [docs/aws-demo-operations-runbook.md](docs/aws-demo-operations-runbook.md).
+- Red-team/hardening receipts: [docs/security/README.md](docs/security/README.md), especially the scope, methodology, findings ledger, retest log, controlled destructive app-state results, and tool-specific historical receipts.
+
+Safe article thesis: controlled destructive testing of disposable synthetic app state exposed the useful engineering story: public reads stayed public, private/operator mutations stayed bounded, replay/cross-agent/rendering assumptions got checked, and incomplete AI harnesses became operational lessons rather than security proof.
+
+Do not promote Strix or PentestGPT receipts into proof that the app is secure. They are tooling/provenance receipts unless the specific result file says manual validation and retest support a stronger claim.
 
 ## Local Checks
 
@@ -150,7 +163,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "$PWD:/work" -w 
 
 ## Validation Status
 
-The V2 app substrate, read APIs, mutation APIs, fixture reset/seed helpers, read-only frontend, and route/control documentation are implemented for local use. Scenario execution, findings review, and any hardening-loop narrative remain evidence-bound: do not claim a closed loop unless matching run artifacts, fixes, and regressions exist.
+The V2 app substrate, read APIs, mutation APIs, fixture reset/seed helpers, read-only frontend, temporary EKS public-read demo path, private/operator mutation lane, and route/control documentation are implemented or receipt-backed where documented. Scenario execution, findings review, and any hardening-loop narrative remain evidence-bound: do not claim a closed loop unless matching run artifacts, fixes, and regressions exist.
 
 Public validation language should stay at product/route/control/artifact/data-class level. Hidden scenario catalogs, exploit walkthroughs, private expected outcomes, raw traces, local paths, and bearer values stay out of public artifacts.
 

@@ -39,9 +39,9 @@ V2 is implemented locally for the scoped product and API behavior. It keeps the 
 
 ## Infrastructure Scope
 
-Local-first development is the current target: monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, validation/harness route surface, and public-safe evidence export.
+Local-first development remains the baseline: monorepo, FastAPI backend, Vite/React read-only frontend, Postgres through Docker Compose, deterministic fixtures, validation/harness route surface, and public-safe evidence export.
 
-A production-like AWS/EKS deployment is a later credibility layer, not required for the current working app. If described later, keep it in a future appendix and do not present it as implemented evidence.
+The repo also includes a temporary owned EKS demo layer for the article: public read-only frontend/API exposure, private/operator mutation access, GHCR app images, GitOps/IaC artifacts, and teardown/cost-control receipts. Treat that as a bounded demo receipt, not as production deployment, public-service readiness, broad cloud hardening, or evidence that the mutation lane is public.
 
 ## Success Criteria
 

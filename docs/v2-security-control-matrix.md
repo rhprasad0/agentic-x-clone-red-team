@@ -2,7 +2,7 @@
 
 This matrix maps implemented V2 route/control classes to public-safe evidence artifacts. It is requirement/artifact-level only: it does not publish hidden validation catalogs, procedural exploit detail, private expected outcomes, raw traces, or local-only artifacts.
 
-V2 remains a local-first synthetic challenge. The matrix is not a deployment claim, compliance claim, broad assessment claim, platform-affiliation claim, or promise that every future abuse case is closed.
+V2 remains a local-first synthetic challenge with a temporary owned EKS demo boundary documented separately. The matrix is not a production-deployment claim, compliance claim, broad assessment claim, platform-affiliation claim, or promise that every future abuse case is closed.
 
 ## Source alignment
 

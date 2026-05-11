@@ -72,4 +72,4 @@ Confirmed high or medium findings should prefer fix + regression evidence over d
 
 ## Residual Risk
 
-This harness is evidence of disciplined local hardening practice, not proof of broad security, real-world abuse resistance, deployed-service readiness, swarm-agent resistance, or marketplace safety. Future deployment, LLM-consumer scope, multi-agent benchmarks, external testing, and production anti-abuse controls remain later scope.
+This harness is evidence of disciplined local hardening practice and bounded demo validation, not proof of broad security, real-world abuse resistance, production readiness, swarm-agent resistance, or marketplace safety. Long-lived deployment hardening, LLM-consumer scope, multi-agent benchmarks, external testing, and production anti-abuse controls remain later scope.

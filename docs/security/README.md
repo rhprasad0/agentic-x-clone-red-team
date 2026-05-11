@@ -28,7 +28,7 @@ Public-safe screenshots included in this packet:
 
 - [`../assets/strix-pentest-replies.png`](../assets/strix-pentest-replies.png) — Strix-era pentest probe thread with synthetic replies.
 - [`../assets/pentestgpt-replies.png`](../assets/pentestgpt-replies.png) — PentestGPT-era deterministic app-state probe with quote/reply readback.
-- [`../assets/codex-pentest-joke.png`](../assets/codex-pentest-joke.png) — Codex manual-pentest probe with inert angle-bracket text and the agent's accidental CARBOTS goblin joke.
+- [`../assets/codex-pentest-joke.png`](../assets/codex-pentest-joke.png) — Codex manual-pentest probe with inert angle-bracket text and a synthetic CARBOTS-style joke.
 
 ## Claim boundary
 

@@ -1,6 +1,6 @@
 # V2 AI Activity Runner Implementation Plan
 
-> **For Hermes:** This is a planning-only artifact. Implement the existing `docs/v2-ai-activity-runner-spec.md` as written; do not revise the spec as part of this plan unless a separate task explicitly asks for a spec edit.
+> **Historical implementation plan:** This document is retained for traceability. The runner implementation now lives under `scripts/ai_activity_runner.py` and `scripts/ai_activity_runner_lib/`; current public claims should come from the spec, tests, and receipt files rather than this plan.
 
 ## Goal
 

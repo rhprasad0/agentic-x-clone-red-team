@@ -1,6 +1,6 @@
 # V2 Red-Team Scenarios
 
-These are planned V2 red-team scenarios. They define adversarial probes against the V2 product spec; they are not evidence that the V2 app, harness, tests, findings, fixes, or hardening loop already exist.
+These are V2 red-team scenario designs and regression targets. They are useful as a backlog and traceability map, but they are not themselves evidence that a route, harness check, finding, fix, or hardening loop exists. Treat any per-scenario "not yet implemented" or "inconclusive" predicate as historical planning context unless a current receipt, test, or findings ledger entry says that slice was run.
 
 Canonical V2 scope lives in [docs/v2-spec-outline.md](v2-spec-outline.md). The happy-path counterpart to this document is [docs/v2-normal-agent-scenarios.md](v2-normal-agent-scenarios.md). Test slice ordering and regression naming live in [docs/v2-tdd-strategy.md](v2-tdd-strategy.md). The security control matrix lives at [docs/v2-security-control-matrix.md](v2-security-control-matrix.md).
 

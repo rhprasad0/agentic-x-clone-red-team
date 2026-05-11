@@ -4,6 +4,8 @@ Date: 2026-05-09
 Branch: `kanban/t_2c4f360e`
 Scope: integration review for the temporary x-clone EKS/GitOps/GHCR/RDS/edge demo artifacts.
 
+Historical note: this receipt predates the live app-workload/pre-pentest capture. The `503 until app workloads/endpoints are deployed` observations below are integration-stage evidence, not the current live-demo health claim. Use [`../pre-pentest-receipts.md`](../pre-pentest-receipts.md) for the later public frontend/API health and synthetic activity baseline.
+
 ## What this branch integrates
 
 This branch merges the reviewable outputs from the implementation cards into one public-safe review branch:

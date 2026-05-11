@@ -1,6 +1,6 @@
 # AWS Demo Operations Runbook
 
-This runbook makes the short-lived EKS demo boring to operate and easy to kill. That is the point. The public portfolio artifact should show a production-shaped deployment without accidentally becoming a tiny money furnace with a login page.
+This runbook makes the short-lived EKS demo boring to operate and easy to kill. That is the point. The public portfolio artifact should show a credible cloud-demo path without accidentally becoming a tiny money furnace with a login page.
 
 The repo does not commit live AWS identifiers, account IDs, ARNs, raw logs, private paths, bearer values, or screenshots. The scripts below write receipts under `.hermes/tmp/aws-demo-receipts/`, which is ignored by git. Publish only reviewed, redacted excerpts.
 

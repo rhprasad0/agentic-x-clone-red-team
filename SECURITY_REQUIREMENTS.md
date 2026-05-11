@@ -1,6 +1,6 @@
 # SECURITY_REQUIREMENTS
 
-This document defines the current public security requirements for the implemented local-first V2 synthetic social feed and bounded harness surface. It is not a compliance claim and not a broad hardening claim.
+This document defines the current public security requirements for the implemented local-first V2 synthetic social feed, bounded harness surface, and documented temporary EKS demo boundary. It is not a compliance claim, production-readiness claim, or broad hardening claim.
 
 Route/control artifacts:
 
@@ -24,7 +24,7 @@ That means the repo should show:
 - redacted evidence expectations;
 - finding lifecycle with regression and residual-risk handling;
 - public-safe examples, fixtures, logs, and writeups;
-- no claims of deployed-service readiness or comprehensive hardening before evidence exists.
+- no claims of production readiness, deployed-service readiness, or comprehensive hardening before evidence exists.
 
 ### R0.2 Anticipatory Coverage
 
@@ -49,13 +49,14 @@ Bugs are allowed. Security clown-nose moments are not the goal.
 - Harness-only fixture reset/seed, validation-record, finding, and public-evidence export routes.
 - Deterministic fictional used-car fixtures and replayable local validation paths.
 - Public-safe findings, redacted event summaries, and regression evidence.
+- Temporary owned EKS demo receipts where they are explicitly documented as public-read/demo-boundary evidence.
 
 ## Out of Scope
 
 - Non-synthetic people, real X/Twitter data, scraped content, private transcripts, real listings, production credentials, or real platform claims.
 - Human-grade social network feature parity; mentions, hashtags, search, media uploads, DMs, notifications, recommendation/ranking, private accounts, blocks/mutes/reports, and moderation workflows.
 - Browser sessions, browser-driven mutations, CSRF surface, password reset, OAuth, admin dashboards, payments, ads, or contact import.
-- Production deployment, AWS/EKS deployment, or claims of production hardening.
+- Production deployment, broad cloud/account assessment, or claims of production hardening. The temporary EKS demo is in scope only as a bounded owned demo surface with public-safe receipts.
 - Multi-agent swarm benchmark, comprehensive penetration test, or external security assessment claim.
 - Evaluator/summarizer agents, model-provider integrations, prompt-template hardening, prompt-injection scenarios, LLM output validation, provider metadata capture, and moderation/content-label systems until a later scope introduces an LLM consumer of feed content.
 
@@ -155,11 +156,11 @@ Bugs are allowed. Security clown-nose moments are not the goal.
 
 **Evidence expected:** Route inventory review and dependency/code search.
 
-### SR-112 Local-first infrastructure boundary
+### SR-112 Demo infrastructure boundary
 
-**Requirement:** Redis, AWS/EKS, managed secrets, WAFs, production logging, and cost guardrails MAY be later credibility layers but MUST NOT be implied as current security evidence until implemented.
+**Requirement:** Local-first behavior remains the baseline. Temporary AWS/EKS demo artifacts, managed secrets, logging, signed-image admission, and cost guardrails MAY be cited only at the exact level implemented and verified by public-safe receipts. They MUST NOT be described as production hardening, broad cloud coverage, or proof of application security beyond the documented demo boundary.
 
-**Evidence expected:** README/spec/deployment docs avoid production-readiness claims.
+**Evidence expected:** README/spec/deployment docs distinguish local app behavior, temporary EKS demo receipts, private/operator mutation access, and production-readiness non-claims.
 
 ## Minimum Evidence Gates
 
@@ -178,6 +179,7 @@ Before calling a local security/hardening pass complete, the repo SHOULD have:
 Do not say:
 
 - “Deployed production service.”
+- “Production-ready EKS service.”
 - “Comprehensive pentest.”
 - “Multi-agent swarm benchmark.”
 - “Non-synthetic people” or “external Twitter/X data.”
@@ -189,5 +191,6 @@ Prefer:
 - “local-first synthetic challenge”;
 - “fictional used-car fixture world”;
 - “bounded single-runner red-team/hardening surface”;
+- “temporary owned EKS demo with public read-only access and private/operator mutations”;
 - “public-safe route/control evidence”;
 - “read-only observability frontend.”

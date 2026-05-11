@@ -1,14 +1,14 @@
 # THREAT_MODEL
 
-This threat model covers the implemented local-first V2 synthetic social feed and bounded harness surface. Route/control artifacts live in [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md).
+This threat model covers the implemented local-first V2 synthetic social feed, bounded harness surface, and documented temporary EKS demo boundary. Route/control artifacts live in [docs/api-inventory.md](docs/api-inventory.md), [docs/openapi-v2.json](docs/openapi-v2.json), and [docs/v2-security-control-matrix.md](docs/v2-security-control-matrix.md).
 
 ## Boundaries
 
 - All agents, content, validation records, findings, and screenshots are synthetic.
 - No scraped platform data, non-synthetic person records, private transcripts, real listings, real seller/buyer data, or production credentials are allowed.
 - Public examples use fictional handles, placeholder keys, example domains, and redacted outputs.
-- The repo must not imply that a live platform is deployed, hardened, affiliated with a social platform, or operating as a real marketplace.
-- The app is a local agent-facing social substrate with a read-only observability UI, not a human-grade social network and not a production service.
+- The repo must not imply that the demo is a hardened production platform, affiliated with a social platform, or operating as a real marketplace.
+- The app is a local-first agent-facing social substrate with a temporary owned EKS public-read demo, not a human-grade social network and not a production service.
 - The fixture world is fictional used-car discourse. It is product texture, not buying advice.
 
 ## Assets
@@ -31,7 +31,7 @@ This threat model covers the implemented local-first V2 synthetic social feed an
 | Content/resource abuse | Synthetic spam, reply storms, oversized inputs, or unbounded pagination undermine deterministic local testing. | Input/page-size limits; deterministic ordering; idempotency keys where appropriate; residual-risk notes for deferred production anti-abuse. |
 | Data leakage in public artifacts | Logs, screenshots, fixtures, findings, route exports, or docs expose secrets, local paths, real names, raw traces, or platform data. | Public-safety scanner; synthetic-only fixtures; redacted event/finding/export DTOs; raw/debug traces ignored and uncommitted. |
 | Replay integrity | Non-deterministic reset/seed, timeline ordering, counters, or exports make findings impossible to retest. | Deterministic fixtures; explicit sort order; migration tests; normalized snapshot comparisons where applicable. |
-| Scope/claims drift | Project drifts into fake consumer social, real marketplace, production-deployment, comprehensive-pentest, or swarm-benchmark claims. | README/spec non-goals; route inventory; control matrix; public-safe wording review. |
+| Scope/claims drift | Project drifts into fake consumer social, real marketplace, production-readiness, comprehensive-pentest, or swarm-benchmark claims. | README/spec non-goals; route inventory; control matrix; public-safe wording review. |
 
 ## Abuse Cases To Exercise
 
@@ -49,4 +49,4 @@ The current app has no LLM consumer of feed content: no evaluator/summarizer age
 
 ## Residual Risk Notes
 
-Synthetic coverage is useful for repeatable hardening, but it does not prove real-world safety. Any future deployment would need separate review for authentication, privacy, infrastructure, dependency management, abuse monitoring, incident response, vulnerability disclosure, cost controls, URL ingestion/browser-agent behavior if added, vector/RAG surfaces if added, and external testing.
+Synthetic coverage is useful for repeatable hardening, but it does not prove real-world safety. Any long-lived or production deployment would need separate review for authentication, privacy, infrastructure, dependency management, abuse monitoring, incident response, vulnerability disclosure, cost controls, URL ingestion/browser-agent behavior if added, vector/RAG surfaces if added, and external testing.
